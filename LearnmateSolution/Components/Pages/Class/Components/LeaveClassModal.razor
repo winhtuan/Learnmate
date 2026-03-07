@@ -1,0 +1,35 @@
+@if (IsOpen)
+{
+    <div class="fixed inset-0 z-[100] flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-slate-900/30 backdrop-blur-md transition-opacity"
+             @onclick="OnClose"></div>
+        <div class="relative w-full max-w-[480px] bg-white/80 backdrop-blur-xl border border-white/60 rounded-[2.5rem] p-8 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.2)] flex flex-col items-center text-center"
+             @onclick:stopPropagation="true">
+            <div class="mb-6 p-5 rounded-full bg-rose-50 text-rose-500 shadow-sm border border-rose-100">
+                <span class="material-symbols-outlined text-4xl">logout</span>
+            </div>
+            <h3 class="text-2xl font-extrabold text-slate-900 mb-3 tracking-tight">Leave Class</h3>
+            <p class="text-slate-500 font-medium mb-10 leading-relaxed text-lg">
+                Are you sure you want to leave
+                <span class="text-slate-900 font-bold">@ClassName</span>?
+            </p>
+            <div class="flex items-center gap-4 w-full">
+                <button @onclick="OnClose"
+                        class="flex-1 py-3.5 px-6 rounded-2xl text-slate-500 font-bold hover:bg-slate-100 hover:text-slate-700 transition-colors">
+                    Cancel
+                </button>
+                <button @onclick="OnConfirm"
+                        class="flex-1 py-3.5 px-6 rounded-2xl bg-rose-500 hover:bg-rose-600 text-white font-bold shadow-lg shadow-rose-500/30 transition-all hover:-translate-y-0.5 active:translate-y-0">
+                    Confirm Leave
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public bool IsOpen { get; set; }
+    [Parameter] public string ClassName { get; set; } = "";
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public EventCallback OnConfirm { get; set; }
+}

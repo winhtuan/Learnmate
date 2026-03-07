@@ -1,0 +1,30 @@
+@inject NavigationManager Nav
+
+<nav aria-label="Breadcrumb" class="flex items-center gap-1 text-base">
+    @for (var i = 0; i < Items.Count; i++)
+    {
+        var item = Items[i];
+        var isLast = i == Items.Count - 1;
+
+        if (isLast)
+        {
+            <span class="font-semibold text-slate-800">@item.Label</span>
+        }
+        else
+        {
+            <a href="@item.Href"
+               @onclick="() => Nav.NavigateTo(item.Href!)"
+               @onclick:preventDefault
+               class="text-slate-500 font-medium hover:text-slate-800 transition-colors no-underline">
+                @item.Label
+            </a>
+            <span class="material-symbols-outlined text-slate-300 text-[16px] select-none">chevron_right</span>
+        }
+    }
+</nav>
+
+@code {
+    [Parameter, EditorRequired] public List<BreadcrumbItem> Items { get; set; } = [];
+
+    public record BreadcrumbItem(string Label, string? Href = null);
+}

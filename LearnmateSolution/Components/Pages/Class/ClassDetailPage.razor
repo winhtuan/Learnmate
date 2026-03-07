@@ -1,0 +1,99 @@
+@page "/classes/{Id:int}"
+@layout ClassLayout
+@rendermode InteractiveServer
+@using LearnmateSolution.Components.Layout
+@using LearnmateSolution.Components.Pages.Class.Components
+@using LearnmateSolution.Components.Pages.Class.Models
+
+<div class="space-y-6 max-w-screen-xl mx-auto">
+    <HeroBanner
+        ClassCode="@classInfo.Code"
+        ClassStatus="@classInfo.Status"
+        ClassName="@classInfo.Name"
+        Description="@classInfo.Description"
+        BackgroundImage="@classInfo.BackgroundImage" />
+
+    <ClassTabNav ClassId="@Id" ActiveTab="overview" />
+
+    <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        @* Left: Tasks + Assignments *@
+        <div class="xl:col-span-2 space-y-6">
+            @* Next Up *@
+            <div class="bg-white rounded-[2rem] p-6 border border-slate-100 shadow-sm">
+                <h3 class="text-lg font-bold text-slate-900 mb-4">Next Up</h3>
+                <div class="space-y-3">
+                    @foreach (var task in tasks)
+                    {
+                        <TaskCard Task="task" />
+                    }
+                </div>
+            </div>
+
+            @* Active Assignments *@
+            <div class="bg-white rounded-[2rem] p-6 border border-slate-100 shadow-sm">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-bold text-slate-900">Active Assignments</h3>
+                    <a href="/classes/@Id/assignments" class="text-sm font-semibold text-primary hover:text-primary/80 transition-colors">View all</a>
+                </div>
+                <div class="space-y-3">
+                    @foreach (var asg in activeAssignments)
+                    {
+                        <AssignmentCard Assignment="asg" />
+                    }
+                </div>
+            </div>
+        </div>
+
+        @* Right: Instructor + Resources *@
+        <div class="space-y-6">
+            <InstructorCard Instructor="instructor" />
+            <ResourcesList Resources="resources" />
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private ClassInfo classInfo = new(
+        Code: "MATH101",
+        Status: "Live Now",
+        Name: "Advanced Calculus",
+        Description: "Multivariable calculus, vector analysis, and differential equations for science and engineering students.",
+        BackgroundImage: "https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=1200"
+    );
+
+    private List<TaskItem> tasks =
+    [
+        new TaskItem(1, "Problem Set 7", "Due Tomorrow, 11:59 PM", "assignment", "edit_note", "bg-rose-100", "text-rose-600"),
+        new TaskItem(2, "Watch Lecture 12", "Available Now", "lecture", "play_circle", "bg-sky-100", "text-sky-600"),
+        new TaskItem(3, "Office Hours", "Wed 3–4 PM", "event", "groups", "bg-emerald-100", "text-emerald-600"),
+    ];
+
+    private List<AssignmentItem> activeAssignments =
+    [
+        new AssignmentItem(
+            Id: 1, Title: "Problem Set 7", Due: "Tomorrow", Metadata: "100 pts",
+            Status: "In Progress", StatusColor: "text-amber-700", StatusBg: "bg-amber-100",
+            Icon: "edit_note", IconBg: "bg-rose-100", IconColor: "text-rose-600"
+        ),
+        new AssignmentItem(
+            Id: 2, Title: "Midterm Review Quiz", Due: "In 5 days", Metadata: "50 pts",
+            Status: "Not Started", StatusColor: "text-slate-600", StatusBg: "bg-slate-100",
+            Icon: "quiz", IconBg: "bg-purple-100", IconColor: "text-purple-600"
+        ),
+    ];
+
+    private InstructorInfo instructor = new(
+        Name: "Prof. Sarah Smith",
+        Department: "Department of Mathematics",
+        Avatar: "https://api.dicebear.com/7.x/notionists/svg?seed=sarah"
+    );
+
+    private List<ResourceItem> resources =
+    [
+        new ResourceItem(1, "Syllabus", "PDF", "320 KB", "description", "bg-rose-100", "text-rose-600", "#"),
+        new ResourceItem(2, "Lecture Notes", "ZIP", "4.2 MB", "folder_zip", "bg-sky-100", "text-sky-600", "#"),
+        new ResourceItem(3, "Formula Sheet", "PDF", "180 KB", "functions", "bg-emerald-100", "text-emerald-600", "#"),
+    ];
+}

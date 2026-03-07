@@ -15,7 +15,7 @@
 
 <div class="lm-auth-container">
 
-    <!-- ══════════════ LEFT PANEL ══════════════ -->
+    @* ══════════════ LEFT PANEL ══════════════ *@
     <div class="lm-left-panel">
         <div>
             <div class="lm-logo-row">
@@ -48,7 +48,7 @@
         </div>
     </div>
 
-    <!-- ══════════════ RIGHT PANEL ══════════════ -->
+    @* ══════════════ RIGHT PANEL ══════════════ *@
     <div class="lm-right-panel">
         <div class="lm-form-container">
 
@@ -66,7 +66,7 @@
 
             <div class="lm-form">
 
-                <!-- Email -->
+                @* Email *@
                 <div class="lm-field">
                     <label class="lm-label" for="email">
                         Email address <span class="lm-required">*</span>
@@ -84,7 +84,7 @@
                     }
                 </div>
 
-                <!-- Password -->
+                @* Password *@
                 <div class="lm-field">
                     <div class="lm-label-row">
                         <label class="lm-label" for="password">
@@ -124,7 +124,7 @@
                     }
                 </div>
 
-                <!-- Sign in button -->
+                @* Sign in button *@
                 <button class="lm-btn-primary" @onclick="HandleLogin" disabled="@isLoading">
                     @if (isLoading)
                     {
@@ -136,14 +136,14 @@
                     }
                 </button>
 
-                <!-- Divider -->
+                @* Divider *@
                 <div class="lm-divider">
                     <div class="lm-divider-line"></div>
                     <span class="lm-divider-label">Or continue with</span>
                     <div class="lm-divider-line"></div>
                 </div>
 
-                <!-- Google -->
+                @* Google *@
                 <button class="lm-btn-google" type="button">
                     <svg width="20" height="20" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                         <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
@@ -213,7 +213,9 @@
 
         if (result.Success)
         {
-            Nav.NavigateTo("/");
+            var role = result.Data?.Role;
+            var destination = role == "STUDENT" ? "/student-dashboard" : "/";
+            Nav.NavigateTo(destination);
         }
         else
         {
