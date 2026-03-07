@@ -9,6 +9,23 @@
     <link rel="stylesheet" href="app.css" />
     <link rel="stylesheet" href="LearnmateSolution.styles.css" />
     <link rel="icon" type="image/svg+xml" href="images/logo.svg" />
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script>
+        tailwind.config = {
+            corePlugins: { preflight: false },
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#137fec",
+                        "background-light": "#f6f7f8",
+                        "background-dark": "#101922",
+                    },
+                    fontFamily: { "display": ["Inter"] },
+                    borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" },
+                },
+            },
+        }
+    </script>
     <HeadOutlet />
 </head>
 
