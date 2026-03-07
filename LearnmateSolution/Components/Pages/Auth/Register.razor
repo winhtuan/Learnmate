@@ -3,7 +3,7 @@
 @rendermode InteractiveServer
 @using LearnmateSolution.Components.Layout
 
-<PageTitle>Create account – LearnMate</PageTitle>
+<PageTitle>Create account - LearnMate</PageTitle>
 
 <HeadContent>
     <link rel="stylesheet" href="css/auth/login.css" />
@@ -12,7 +12,7 @@
 
 <div class="lm-auth-container">
 
-    <!-- ══════════════ LEFT PANEL ══════════════ -->
+    @* ══════════════ LEFT PANEL ══════════════ *@
     <div class="lm-left-panel">
         <div>
             <div class="lm-logo-row">
@@ -27,11 +27,11 @@
         </div>
     </div>
 
-    <!-- ══════════════ RIGHT PANEL ══════════════ -->
+    @* ══════════════ RIGHT PANEL ══════════════ *@
     <div class="lm-right-panel">
         <div class="lm-form-container">
 
-            <!-- Mobile-only logo -->
+            @* Mobile-only logo *@
             <div class="lm-mobile-logo">
                 <AuthLogo Dark="false" />
             </div>
@@ -46,15 +46,15 @@
                 <div class="lm-global-error" role="alert">@globalError</div>
             }
 
-            <!-- Stepper (always visible, all done when on step 4) -->
+            @* Stepper (always visible, all done when on step 4) *@
             <Stepper CurrentStep="@Math.Min(currentStep, 4)" />
 
-            <!-- Step content with slide animation -->
+            @* Step content with slide animation *@
             <div class="lm-step-content @(isGoingBack ? "lm-step-content--back" : "")" @key="currentStep">
 
                 @if (currentStep == 1)
                 {
-                    <!-- ── Step 1: Email ── -->
+                    @* ── Step 1: Email ── *@
                     <div class="lm-field">
                         <label class="lm-label" for="reg-email">What's your email?</label>
                         <div class="lm-input-wrapper">
@@ -71,7 +71,7 @@
 
                 @if (currentStep == 2)
                 {
-                    <!-- ── Step 2: Basic info ── -->
+                    @* ── Step 2: Basic info ── *@
                     <div class="lm-field">
                         <label class="lm-label" for="reg-name">Your name</label>
                         <div class="lm-input-wrapper">
@@ -130,7 +130,7 @@
 
                 @if (currentStep == 3)
                 {
-                    <!-- ── Step 3: Password ── -->
+                    @* ── Step 3: Password ── *@
                     <div class="lm-field">
                         <label class="lm-label" for="reg-password">Create a password</label>
                         <div class="lm-input-wrapper">
@@ -179,7 +179,7 @@
 
                 @if (currentStep == 4)
                 {
-                    <!-- ── Step 4: OTP ── -->
+                    @* ── Step 4: OTP ── *@
                     <div class="lm-field">
                         <label class="lm-label">Enter the verification code</label>
                         <div class="lm-otp-boxes">
@@ -219,7 +219,7 @@
 
             </div>
 
-            <!-- Divider + Google (steps 1–2 only) -->
+            @* Divider + Google (steps 1–2 only) *@
             @if (currentStep <= 2)
             {
                 <div class="lm-divider">

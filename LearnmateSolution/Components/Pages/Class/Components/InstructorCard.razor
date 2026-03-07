@@ -1,0 +1,28 @@
+@using LearnmateSolution.Components.Pages.Class.Models
+
+<div class="bg-white rounded-[2.5rem] p-6 border border-slate-100 shadow-sm">
+    <h3 class="text-lg font-bold text-slate-900 mb-4">Instructor</h3>
+    <div class="flex items-center gap-4 mb-6">
+        <div class="size-14 rounded-full bg-slate-200 overflow-hidden">
+            <img alt="@Instructor.Name" class="w-full h-full object-cover" src="@Instructor.Avatar" />
+        </div>
+        <div>
+            <h4 class="font-bold text-slate-900">@Instructor.Name</h4>
+            <p class="text-sm text-slate-500">@Instructor.Department</p>
+        </div>
+    </div>
+    <div class="flex gap-2">
+        <button class="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 transition-colors text-sm font-medium text-slate-600">
+            <span class="material-symbols-outlined text-[18px]">mail</span>
+            Email
+        </button>
+        <button class="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 transition-colors text-sm font-medium text-slate-600">
+            <span class="material-symbols-outlined text-[18px]">calendar_add_on</span>
+            Office Hrs
+        </button>
+    </div>
+</div>
+
+@code {
+    [Parameter] public InstructorInfo Instructor { get; set; } = null!;
+}

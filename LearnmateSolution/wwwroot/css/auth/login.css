@@ -86,14 +86,15 @@
 .lm-input-icon-left { position: absolute; left: .875rem; color: #94a3b8; pointer-events: none; }
 .lm-input {
     width: 100%; padding: .75rem 1rem !important; background: #f8fafc !important;
-    border: 2px solid #e2e8f0 !important; border-radius: 8px !important; font-size: .9375rem !important;
-    color: #0f172a; transition: border-color .15s ease, background .15s ease;
+    border: 2px solid #e2e8f0 !important; border-radius: 16px !important; font-size: .9375rem !important;
+    font-family: inherit !important; color: #0f172a;
+    transition: border-color .15s ease, background .15s ease;
     outline: none; box-sizing: border-box; appearance: none;
 }
 .lm-input--icon-left { padding-left: 2.75rem !important; }
 .lm-input--icon-right { padding-right: 2.75rem !important; }
 .lm-input::placeholder { color: #94a3b8; }
-.lm-input:focus { border-color: #0f172a !important; }
+.lm-input:focus { border-color: #1e293b !important; box-shadow: none !important; outline: none !important; }
 .lm-input--error { border-color: #fb7185 !important; background: rgba(255,241,242,.3) !important; }
 .lm-input--error:focus { border-color: #f43f5e !important; }
 .lm-input:disabled { opacity: .5; cursor: not-allowed; }
@@ -108,7 +109,7 @@
 /* Buttons */
 .lm-btn-primary {
     width: 100%; padding: .625rem 1rem; background: #0f172a; color: #fff;
-    border: none; border-radius: 8px; font-size: .875rem; font-weight: 500;
+    border: none; border-radius: 16px; font-size: .875rem; font-weight: 500; font-family: inherit;
     cursor: pointer; display: flex; align-items: center; justify-content: center;
     gap: .5rem; transition: background .2s ease, transform .1s ease; outline: none; min-height: 42px;
 }
@@ -125,7 +126,7 @@
 
 .lm-btn-google {
     width: 100%; padding: .625rem 1rem; background: #fff; color: #334155;
-    border: 1px solid #e2e8f0; border-radius: 8px; font-size: .875rem; font-weight: 500;
+    border: 1px solid #e2e8f0; border-radius: 16px; font-size: .875rem; font-weight: 500; font-family: inherit;
     cursor: pointer; display: flex; align-items: center; justify-content: center;
     gap: .625rem; transition: background .15s ease; min-height: 42px;
 }
@@ -156,13 +157,13 @@
 .lm-modal-input-wrapper { position: relative; display: flex; align-items: center; }
 .lm-modal-input {
     width: 100%; padding: .5rem 2.5rem .5rem .75rem; border: 1px solid #e2e8f0;
-    border-radius: 8px; background: #f8fafc; font-size: .9375rem; color: #0f172a;
+    border-radius: 16px; background: #f8fafc; font-size: .9375rem; color: #0f172a;
     outline: none; transition: border-color .15s, box-shadow .15s; box-sizing: border-box;
 }
-.lm-modal-input:focus { border-color: transparent; box-shadow: 0 0 0 2px #0f172a; }
+.lm-modal-input:focus { border-color: transparent; box-shadow: 0 0 0 2px #1e293b; }
 .lm-modal-continue-btn {
     width: 100%; padding: .5rem 1rem; background: #0f172a; color: #fff;
-    border: none; border-radius: 8px; font-size: .875rem; font-weight: 500;
+    border: none; border-radius: 16px; font-size: .875rem; font-weight: 500;
     cursor: pointer; transition: background .15s;
 }
 .lm-modal-continue-btn:hover { background: #1e293b; }

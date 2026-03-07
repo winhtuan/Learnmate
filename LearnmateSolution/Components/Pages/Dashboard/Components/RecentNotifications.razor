@@ -1,0 +1,32 @@
+@using LearnmateSolution.Components.Pages.Dashboard.Models
+
+<div class="bg-white rounded-2xl border border-slate-200">
+    <div class="flex justify-between items-center mb-4 px-6 pt-6">
+        <h2 class="text-[22px] font-bold text-slate-900">Recent Notifications</h2>
+        <a href="#" class="text-base font-semibold text-slate-500 hover:text-primary transition-colors no-underline relative -top-[2px]">View All</a>
+    </div>
+
+    <div class="divide-y divide-slate-100">
+        @{
+            var dotColors = new[] { "bg-emerald-400", "bg-sky-400", "bg-amber-400", "bg-blue-400" };
+        }
+
+        @for (int i = 0; i < Notifications.Count; i++)
+        {
+            var notif = Notifications[i];
+            var dot = dotColors[i % dotColors.Length];
+
+            <div class="flex items-start gap-4 py-4 px-6 hover:bg-slate-50 transition-colors cursor-pointer">
+                <span class="mt-2 size-2.5 rounded-full @dot shrink-0"></span>
+                <div class="flex-1 min-w-0">
+                    <p class="text-[15px] text-slate-800 leading-snug">@notif.Text</p>
+                    <p class="text-[13px] text-slate-400 mt-1">@notif.Time</p>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter] public List<NotificationItem> Notifications { get; set; } = [];
+}

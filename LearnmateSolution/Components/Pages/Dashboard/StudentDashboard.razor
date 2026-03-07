@@ -1,0 +1,120 @@
+@page "/student-dashboard"
+@layout DashboardLayout
+@rendermode InteractiveServer
+@using LearnmateSolution.Components.Layout
+@using LearnmateSolution.Components.Pages.Dashboard.Components
+@using LearnmateSolution.Components.Pages.Dashboard.Models
+
+<PageTitle>Dashboard - LearnMate</PageTitle>
+
+@* Welcome Banner *@
+<WelcomeBanner
+    Greeting="@Greeting"
+    UserName="Alex"
+    CurrentDay="@DateTime.Now.DayOfWeek.ToString()"
+    CurrentDate="@FormattedDate"
+    CurrentTerm="Fall 2024-2025"
+    Stats="@bannerStats" />
+
+@* Main grid *@
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    @* Left col *@
+    <div class="lg:col-span-2 space-y-8">
+        <WeeklySchedule Days="scheduleDays" />
+        <CurrentCourses Courses="courses" />
+    </div>
+
+    @* Right col *@
+    <div class="space-y-8">
+        <QuickActions Actions="quickActions" />
+        <RecentNotifications Notifications="notifications" />
+    </div>
+</div>
+
+@code {
+    private string Greeting
+    {
+        get
+        {
+            var h = DateTime.Now.Hour;
+            if (h < 12) return "Good Morning";
+            if (h < 17) return "Good Afternoon";
+            return "Good Evening";
+        }
+    }
+
+    private string FormattedDate => DateTime.Now.ToString("MMM d");
+
+    private WelcomeBannerStats bannerStats = new(
+        ActiveClasses: "5 Active",
+        PendingTasks: "12 Items",
+        StudyStreak: "15 days",
+        NextSession: new NextSessionInfo("00:45:12", "Adv. Calculus", "Rm 302")
+    );
+
+    private List<ScheduleDay> scheduleDays =
+    [
+        new ScheduleDay("Today", DateTime.Now.Day.ToString(), true,
+        [
+            new ScheduleClass("10:00 AM", "Calculus II", "Rm 304", "primary"),
+            new ScheduleClass("02:00 PM", "History 101", "Lecture Hall B", "purple-500"),
+        ]),
+        new ScheduleDay("Thu", (DateTime.Now.Day + 1).ToString(), false,
+        [
+            new ScheduleClass("09:00 AM", "Physics Lab", "", "sky-500"),
+            new ScheduleClass("11:30 AM", "Study Group", "", "emerald-500"),
+        ]),
+        new ScheduleDay("Fri", (DateTime.Now.Day + 2).ToString(), false, []),
+        new ScheduleDay("Sat", (DateTime.Now.Day + 3).ToString(), false, []),
+        new ScheduleDay("Sun", (DateTime.Now.Day + 4).ToString(), false, []),
+    ];
+
+    private List<CourseItem> courses =
+    [
+        new CourseItem(
+            Icon: "functions",
+            IconBg: "bg-blue-100",
+            IconColor: "text-blue-600",
+            Title: "CS101 - Intro to Algorithms",
+            Progress: 80,
+            ProgressColor: "bg-primary",
+            NextTask: "Next: Binary Trees Quiz",
+            DueDate: "Due Tomorrow"
+        ),
+        new CourseItem(
+            Icon: "history_edu",
+            IconBg: "bg-emerald-100",
+            IconColor: "text-emerald-600",
+            Title: "ENG202 - Creative Writing",
+            Progress: 45,
+            ProgressColor: "bg-emerald-500",
+            NextTask: "Next: Peer Review Session",
+            DueDate: null
+        ),
+        new CourseItem(
+            Icon: "calculate",
+            IconBg: "bg-purple-100",
+            IconColor: "text-purple-600",
+            Title: "MATH201 - Advanced Calculus",
+            Progress: 62,
+            ProgressColor: "bg-purple-500",
+            NextTask: "Next: Problem Set 7",
+            DueDate: "Due in 3 days"
+        ),
+    ];
+
+    private List<QuickAction> quickActions =
+    [
+        new QuickAction("video_call", "Join Class"),
+        new QuickAction("school", "Find Tutor"),
+        new QuickAction("upload_file", "Upload"),
+        new QuickAction("calendar_add_on", "Schedule"),
+    ];
+
+    private List<NotificationItem> notifications =
+    [
+        new NotificationItem("bg-primary", "Assignment grade posted: Calculus I", "2 hours ago"),
+        new NotificationItem("bg-emerald-500", "Tutor session confirmed for 3 PM", "5 hours ago"),
+        new NotificationItem("bg-orange-500", "Reminder: Math test tomorrow", "1 day ago"),
+    ];
+}

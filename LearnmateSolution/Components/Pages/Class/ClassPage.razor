@@ -1,0 +1,90 @@
+@page "/classes"
+@layout ClassLayout
+@rendermode InteractiveServer
+@using LearnmateSolution.Components.Layout
+@using LearnmateSolution.Components.Pages.Class.Components
+@using LearnmateSolution.Components.Pages.Class.Models
+
+<div class="space-y-8 max-w-screen-xl mx-auto">
+    <h1 class="sr-only" tabindex="-1">My Classes</h1>
+    @* Header *@
+    <Breadcrumb Items="@([ new("Dashboard", "/student-dashboard"), new("My Classes") ])" />
+
+    @* Filter tabs + Search *@
+    <ClassFilterTabs ActiveTab="@activeTab" OnTabChange="@(tab => activeTab = tab)"
+                     SearchQuery="@searchQuery" OnSearchChange="@(q => searchQuery = q)" />
+
+    @* Class grid *@
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 items-start min-h-[400px]">
+        @foreach (var cls in FilteredClasses)
+        {
+            <ClassCard Class="cls" />
+        }
+        @if (!FilteredClasses.Any())
+        {
+            <div class="col-span-full flex flex-col items-center justify-center py-20 text-slate-400">
+                <span class="material-symbols-outlined text-5xl mb-3">search_off</span>
+                <p class="text-base font-medium">No classes found</p>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    private string activeTab = "all";
+    private string searchQuery = "";
+
+    private List<ClassItem> classes =
+    [
+        new ClassItem(
+            Id: 1,
+            Code: "MATH101",
+            Title: "Advanced Calculus",
+            Professor: "Prof. Sarah Smith",
+            Description: "Multivariable calculus, vector analysis, and differential equations.",
+            NextClass: "Tomorrow, 9:00 AM",
+            Image: "https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=800",
+            ButtonText: "Open Class"
+        ),
+        new ClassItem(
+            Id: 2,
+            Code: "HIST202",
+            Title: "World History II",
+            Professor: "Dr. Michael Chen",
+            Description: "A survey of global history from the 18th century to the modern era.",
+            NextClass: "Today, 2:00 PM",
+            Image: "https://images.unsplash.com/photo-1461360370896-922624d12aa1?w=800",
+            ButtonText: "Submit Task",
+            HasWarning: true
+        ),
+        new ClassItem(
+            Id: 3,
+            Code: "PSY101",
+            Title: "Introduction to Psychology",
+            Professor: "Prof. Emily Davis",
+            Description: "An exploration of human behavior, cognition, and the principles of psychology.",
+            NextClass: "Mon, 11:00 AM",
+            Image: "https://images.unsplash.com/photo-1507413245164-6160d8298b31?w=800",
+            ButtonText: "Open Class"
+        ),
+        new ClassItem(
+            Id: 4,
+            Code: "CS305",
+            Title: "Data Structures",
+            Professor: "Dr. James Wilson",
+            Description: "Advanced data structures, algorithms, and complexity analysis.",
+            NextClass: null,
+            Image: "https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=800",
+            ButtonText: null,
+            IsUpcoming: true
+        ),
+    ];
+
+    private IEnumerable<ClassItem> FilteredClasses => classes
+        .Where(c => activeTab == "all"
+            || (activeTab == "active"   && !c.IsUpcoming)
+            || (activeTab == "upcoming" &&  c.IsUpcoming))
+        .Where(c => string.IsNullOrEmpty(searchQuery)
+            || c.Title.Contains(searchQuery, StringComparison.OrdinalIgnoreCase)
+            || c.Code.Contains(searchQuery, StringComparison.OrdinalIgnoreCase));
+}

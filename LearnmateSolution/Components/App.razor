@@ -5,14 +5,15 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <base href="/" />
-    <link rel="stylesheet" href="bootstrap/bootstrap.min.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" />
     <link rel="stylesheet" href="app.css" />
     <link rel="stylesheet" href="LearnmateSolution.styles.css" />
     <link rel="icon" type="image/svg+xml" href="images/logo.svg" />
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <script>
         tailwind.config = {
-            corePlugins: { preflight: false },
+
             theme: {
                 extend: {
                     colors: {
@@ -29,9 +30,14 @@
     <HeadOutlet />
 </head>
 
-<body>
+<body id="app">
     <Routes />
     <script src="_framework/blazor.web.js"></script>
+    <script>
+        Blazor.addEventListener('enhancedload', function () {
+            window.scrollTo(0, 0);
+        });
+    </script>
 </body>
 
 </html>

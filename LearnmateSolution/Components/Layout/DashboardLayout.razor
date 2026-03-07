@@ -1,0 +1,14 @@
+@using LearnmateSolution.Components.Pages.Dashboard.Components
+@inherits LayoutComponentBase
+
+<HeadContent>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" />
+</HeadContent>
+
+<div class="bg-background-light font-display text-slate-900 min-h-screen">
+    <StudentHeader />
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        @Body
+    </main>
+</div>
