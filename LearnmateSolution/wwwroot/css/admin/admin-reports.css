@@ -1,0 +1,219 @@
+:root {
+    --reports-primary: #2563eb;
+    --reports-bg: #f8fafc;
+    --reports-border: #e2e8f0;
+    --reports-text: #1e293b;
+    --reports-muted: #64748b;
+}
+
+.reports-page {
+    color: var(--reports-text);
+    padding-bottom: 3rem;
+}
+
+.reports-title {
+    font-weight: 800;
+    font-size: 1.85rem;
+    margin-bottom: 0.25rem;
+    letter-spacing: -0.02em;
+}
+
+.reports-subtitle {
+    color: var(--reports-muted);
+    font-size: 1rem;
+}
+
+.breadcrumb {
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-bottom: 0;
+}
+
+.breadcrumb-item+.breadcrumb-item::before {
+    content: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='9 18 15 12 9 6'%3E%3C/polyline%3E%3C/svg%3E");
+    vertical-align: middle;
+    padding-right: 0.5rem;
+}
+
+/* Stats Cards */
+.stat-card {
+    border-radius: 12px;
+    transition: transform 0.2s;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+}
+
+.stat-icon-box {
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.bg-primary-soft {
+    background-color: #eff6ff;
+}
+
+.bg-success-soft {
+    background-color: #f0fdf4;
+}
+
+.bg-warning-soft {
+    background-color: #fffbeb;
+}
+
+.bg-danger-soft {
+    background-color: #fef2f2;
+}
+
+/* Filters */
+.bg-light-faint {
+    background-color: #f1f5f9;
+}
+
+.border-faint {
+    border-color: #f1f5f9;
+}
+
+/* Table & Badges */
+.report-icon-box {
+    width: 36px;
+    height: 36px;
+    background-color: #f8fafc;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #f1f5f9;
+}
+
+.status-badge {
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-weight: 700;
+    font-size: 0.75rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.status-badge.ready {
+    background-color: #dcfce7;
+    color: #166534;
+}
+
+.status-badge.processing {
+    background-color: #fef3c7;
+    color: #92400e;
+}
+
+.status-badge.failed {
+    background-color: #fee2e2;
+    color: #991b1b;
+}
+
+.status-badge::before {
+    content: "";
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: currentColor;
+}
+
+/* Export Format Selection */
+.format-option-wrapper {
+    flex: 1;
+    cursor: pointer;
+}
+
+.format-card {
+    border: 2px solid var(--reports-border);
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    position: relative;
+    transition: all 0.2s;
+}
+
+.format-option-wrapper.active .format-card {
+    border-color: var(--reports-primary);
+    background-color: #eff6ff;
+}
+
+.format-check {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 18px;
+    height: 18px;
+    border: 2px solid var(--reports-border);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.format-option-wrapper.active .format-check {
+    border-color: var(--reports-primary);
+    background-color: var(--reports-primary);
+}
+
+.check-dot {
+    width: 6px;
+    height: 6px;
+    background-color: white;
+    border-radius: 50%;
+    display: none;
+}
+
+.format-option-wrapper.active .check-dot {
+    display: block;
+}
+
+.format-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--reports-muted);
+}
+
+.format-option-wrapper.active .format-icon {
+    color: var(--reports-primary);
+    background-color: white !important;
+}
+
+/* Buttons */
+.generate-btn {
+    background-color: var(--reports-primary);
+    border-radius: 8px;
+    font-weight: 700;
+    border: none;
+}
+
+.generate-btn:hover {
+    background-color: #1d4ed8;
+}
+
+.btn-icon-only {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+}
+
+.alert-success {
+    background-color: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    border-radius: 10px;
+    color: #166534;
+}
