@@ -1,0 +1,24 @@
+@using LearnmateSolution.Components.Layout.Admin
+@inherits LayoutComponentBase
+
+<HeadContent>
+    <link rel="stylesheet" href="css/admin/admin-layout.css" />
+</HeadContent>
+
+<div class="admin-layout">
+    <AdminSidebar />
+    
+    <div class="admin-main">
+        <AdminHeader />
+        
+        <main class="admin-content">
+            @Body
+        </main>
+    </div>
+</div>
+
+<div id="blazor-error-ui">
+    An unhandled error has occurred.
+    <a href="" class="reload">Reload</a>
+    <a class="dismiss">🗙</a>
+</div>
