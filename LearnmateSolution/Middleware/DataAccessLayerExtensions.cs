@@ -1,8 +1,9 @@
+using DataAccessLayer.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace DataAccessLayer.Data;
+namespace LearnmateSolution.Middleware;
 
 public static class ServiceExtensions
 {
