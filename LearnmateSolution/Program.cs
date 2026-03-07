@@ -1,40 +1,78 @@
+using System.Text;
+using BusinessLogicLayer;
+using DataAccessLayer;
 using LearnmateSolution.Components;
-using LearnmateSolution.Middleware;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
 
-namespace LearnmateSolution
+namespace LearnmateSolution;
+
+public class Program
 {
-    public class Program
+    public static void Main(string[] args)
     {
-        public static void Main(string[] args)
-        {
-            var builder = WebApplication.CreateBuilder(args);
+        var builder = WebApplication.CreateBuilder(args);
 
-            // Database
-            builder.Services.AddDataAccessLayer(builder.Configuration);
+        // ── Database ──────────────────────────────────────────────────────────
+        builder.Services.AddDataAccessLayer(builder.Configuration);
 
-            // Add services to the container.
-            builder.Services.AddRazorComponents()
-                .AddInteractiveServerComponents();
+        // ── Business Logic + Repositories ────────────────────────────────────
+        builder.Services.AddBusinessLogicLayer();
 
-            var app = builder.Build();
+        // ── JWT Authentication ────────────────────────────────────────────────
+        var jwtSecret = builder.Configuration["Jwt:SecretKey"]
+            ?? throw new InvalidOperationException("Jwt:SecretKey is not configured.");
 
-            // Configure the HTTP request pipeline.
-            if (!app.Environment.IsDevelopment())
+        builder.Services
+            .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+            .AddJwtBearer(options =>
             {
-                app.UseExceptionHandler("/Error");
-                // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
-                app.UseHsts();
-            }
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidateLifetime = true,
+                    ValidateIssuerSigningKey = true,
+                    ValidIssuer = builder.Configuration["Jwt:Issuer"],
+                    ValidAudience = builder.Configuration["Jwt:Audience"],
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret)),
+                    ClockSkew = TimeSpan.Zero
+                };
+            });
 
-            app.UseHttpsRedirection();
+        builder.Services.AddAuthorization();
 
-            app.UseStaticFiles();
-            app.UseAntiforgery();
+        // ── Web API controllers ───────────────────────────────────────────────
+        builder.Services.AddControllers();
 
-            app.MapRazorComponents<App>()
-                .AddInteractiveServerRenderMode();
+        // ── Blazor Server ─────────────────────────────────────────────────────
+        builder.Services.AddRazorComponents()
+            .AddInteractiveServerComponents();
 
-            app.Run();
+        var app = builder.Build();
+
+        // ── HTTP Pipeline ─────────────────────────────────────────────────────
+        if (!app.Environment.IsDevelopment())
+        {
+            app.UseExceptionHandler("/Error");
+            app.UseHsts();
         }
+
+        app.UseHttpsRedirection();
+        app.UseStaticFiles();
+
+        app.UseAuthentication();
+        app.UseAuthorization();
+
+        app.UseAntiforgery();
+
+        // API routes
+        app.MapControllers();
+
+        // Blazor routes
+        app.MapRazorComponents<App>()
+            .AddInteractiveServerRenderMode();
+
+        app.Run();
     }
 }
