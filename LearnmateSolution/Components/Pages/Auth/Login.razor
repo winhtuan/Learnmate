@@ -2,6 +2,10 @@
 @layout AuthLayout
 @rendermode InteractiveServer
 @using LearnmateSolution.Components.Layout
+@using BusinessLogicLayer.Services.Interfaces
+@using BusinessLogicLayer.DTOs.Auth
+@inject IAuthService AuthService
+@inject NavigationManager Nav
 
 <PageTitle>Sign in - LearnMate</PageTitle>
 
@@ -203,9 +207,17 @@
         isLoading = true;
         StateHasChanged();
 
-        await Task.Delay(1200); // TODO: replace with real auth service call
+        var result = await AuthService.LoginAsync(new LoginRequest(email, password));
 
         isLoading = false;
-        globalError = "Invalid email or password. Please try again.";
+
+        if (result.Success)
+        {
+            Nav.NavigateTo("/");
+        }
+        else
+        {
+            globalError = result.Message;
+        }
     }
 }
