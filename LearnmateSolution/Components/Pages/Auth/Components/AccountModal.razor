@@ -1,0 +1,93 @@
+@using LearnmateSolution.Components.Pages.Auth.Models
+
+@if (Account != null)
+{
+    <div class="lm-modal-overlay" @onclick="OnClose" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+        <div class="lm-modal" @onclick:stopPropagation="true">
+            <h3 class="lm-modal-title" id="modal-title">Sign in</h3>
+
+            <div class="lm-modal-avatar-row">
+                <img src="@Account.AvatarUrl" alt="@Account.Name" class="lm-modal-avatar" />
+                <div>
+                    <p class="lm-modal-name">@Account.Name</p>
+                    <p class="lm-modal-email">@MaskEmail(Account.Email)</p>
+                </div>
+            </div>
+
+            <div class="lm-modal-input-wrapper">
+                <input type="@(showPassword ? "text" : "password")"
+                       class="lm-modal-input"
+                       placeholder="Enter password"
+                       @bind="password"
+                       @bind:event="oninput"
+                       autocomplete="current-password" />
+                <button type="button" class="lm-eye-btn" @onclick="() => showPassword = !showPassword" tabindex="-1">
+                    @if (showPassword)
+                    {
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" />
+                            <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68" />
+                            <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61" />
+                            <line x1="2" x2="22" y1="2" y2="22" />
+                        </svg>
+                    }
+                    else
+                    {
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+                            <circle cx="12" cy="12" r="3" />
+                        </svg>
+                    }
+                </button>
+            </div>
+
+            @if (!string.IsNullOrEmpty(error))
+            {
+                <span class="lm-error-text">@error</span>
+            }
+
+            <button class="lm-modal-continue-btn" @onclick="HandleLogin">
+                Continue as @Account.Name
+            </button>
+            <button class="lm-modal-notyou-btn" @onclick="OnClose">Not you?</button>
+            <a href="#" class="lm-modal-other-link" @onclick="OnClose" @onclick:preventDefault>Use another account</a>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired] public RecentAccount? Account { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+
+    private string password = "";
+    private bool showPassword;
+    private string? error;
+
+    protected override void OnParametersSet()
+    {
+        password = "";
+        error = null;
+        showPassword = false;
+    }
+
+    private async Task HandleLogin()
+    {
+        if (string.IsNullOrWhiteSpace(password))
+        {
+            error = "Password is required.";
+            return;
+        }
+
+        error = null;
+        // TODO: authenticate Account with password
+        await Task.CompletedTask;
+        await OnClose.InvokeAsync();
+    }
+
+    private static string MaskEmail(string email)
+    {
+        var at = email.IndexOf('@');
+        if (at <= 2) return email;
+        return string.Concat(email.AsSpan(0, 2), new string('*', at - 2), email.AsSpan(at));
+    }
+}

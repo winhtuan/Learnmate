@@ -1,0 +1,368 @@
+@page "/register"
+@layout AuthLayout
+@rendermode InteractiveServer
+@using LearnmateSolution.Components.Layout
+
+<PageTitle>Create account – LearnMate</PageTitle>
+
+<HeadContent>
+    <link rel="stylesheet" href="css/auth/login.css" />
+    <link rel="stylesheet" href="css/auth/register.css" />
+</HeadContent>
+
+<div class="lm-auth-container">
+
+    <!-- ══════════════ LEFT PANEL ══════════════ -->
+    <div class="lm-left-panel">
+        <div>
+            <div class="lm-logo-row">
+                <AuthLogo />
+            </div>
+            <div class="lm-left-hero">
+                <h1 class="lm-welcome-heading">Create your account</h1>
+                <p class="lm-welcome-sub">
+                    Join LearnMate to start your personalized learning journey.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══════════════ RIGHT PANEL ══════════════ -->
+    <div class="lm-right-panel">
+        <div class="lm-form-container">
+
+            <!-- Mobile-only logo -->
+            <div class="lm-mobile-logo">
+                <AuthLogo Dark="false" />
+            </div>
+
+            <h2 class="lm-signin-heading">Create an account</h2>
+            <p class="lm-signin-sub">
+                Already have an account? <a href="/login" class="lm-signup-link">Sign in</a>
+            </p>
+
+            @if (!string.IsNullOrEmpty(globalError))
+            {
+                <div class="lm-global-error" role="alert">@globalError</div>
+            }
+
+            <!-- Stepper (always visible, all done when on step 4) -->
+            <Stepper CurrentStep="@Math.Min(currentStep, 4)" />
+
+            <!-- Step content with slide animation -->
+            <div class="lm-step-content @(isGoingBack ? "lm-step-content--back" : "")" @key="currentStep">
+
+                @if (currentStep == 1)
+                {
+                    <!-- ── Step 1: Email ── -->
+                    <div class="lm-field">
+                        <label class="lm-label" for="reg-email">What's your email?</label>
+                        <div class="lm-input-wrapper">
+                            <svg class="lm-input-icon-left" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect width="20" height="16" x="2" y="4" rx="2" />
+                                <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+                            </svg>
+                            <input id="reg-email" type="email"
+                                   class="lm-input lm-input--icon-left"
+                                   placeholder="Enter your email address"
+                                   @bind="email" @bind:event="oninput" autocomplete="email" />
+                        </div>
+                    </div>
+                    <button class="lm-btn-next" @onclick="NextStep" disabled="@(!EmailValid)">
+                        Next
+                    </button>
+                }
+
+                @if (currentStep == 2)
+                {
+                    <!-- ── Step 2: Basic info ── -->
+                    <div class="lm-field">
+                        <label class="lm-label" for="reg-name">Your name</label>
+                        <div class="lm-input-wrapper">
+                            <input id="reg-name" type="text"
+                                   class="lm-input"
+                                   placeholder="Enter your full name"
+                                   @bind="fullName" @bind:event="oninput"
+                                   autocomplete="name" />
+                        </div>
+                    </div>
+
+                    <div class="lm-field">
+                        <label class="lm-label">Date of birth</label>
+                        <div class="lm-dob-wrapper">
+                            <svg class="lm-dob-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect width="18" height="18" x="3" y="4" rx="2" ry="2" />
+                                <line x1="16" x2="16" y1="2" y2="6" />
+                                <line x1="8" x2="8" y1="2" y2="6" />
+                                <line x1="3" x2="21" y1="10" y2="10" />
+                            </svg>
+                            <div class="lm-dob-selects">
+                                <select class="lm-select @(dobDay == null ? "lm-select--placeholder" : "")"
+                                        @onchange="e => dobDay = int.TryParse(e.Value?.ToString(), out var d) ? d : null">
+                                    <option value="">Day</option>
+                                    @foreach (var d in DayOptions)
+                                    {
+                                        <option value="@d" selected="@(dobDay == d)">@d</option>
+                                    }
+                                </select>
+                                <select class="lm-select @(dobMonth == null ? "lm-select--placeholder" : "")"
+                                        @onchange="OnMonthChanged">
+                                    <option value="">Month</option>
+                                    @foreach (var (num, name) in MonthOptions)
+                                    {
+                                        <option value="@num" selected="@(dobMonth == num)">@name</option>
+                                    }
+                                </select>
+                                <select class="lm-select @(dobYear == null ? "lm-select--placeholder" : "")"
+                                        @onchange="OnYearChanged">
+                                    <option value="">Year</option>
+                                    @foreach (var y in YearOptions)
+                                    {
+                                        <option value="@y" selected="@(dobYear == y)">@y</option>
+                                    }
+                                </select>
+                            </div>
+                        </div>
+                        <p class="lm-hint">You must be between 13 and 100 years old.</p>
+                    </div>
+
+                    <div class="lm-step-nav lm-step-nav--between">
+                        <button class="lm-btn-step-back" @onclick="PrevStep">Back</button>
+                        <button class="lm-btn-step-primary" @onclick="NextStep" disabled="@(!Step2Valid)">Next</button>
+                    </div>
+                }
+
+                @if (currentStep == 3)
+                {
+                    <!-- ── Step 3: Password ── -->
+                    <div class="lm-field">
+                        <label class="lm-label" for="reg-password">Create a password</label>
+                        <div class="lm-input-wrapper">
+                            <input id="reg-password"
+                                   type="@(showPassword ? "text" : "password")"
+                                   class="lm-input lm-input--icon-right"
+                                   placeholder="••••••••"
+                                   @bind="password" @bind:event="oninput"
+                                   autocomplete="new-password" />
+                            <button type="button" class="lm-eye-btn" @onclick="() => showPassword = !showPassword" tabindex="-1" aria-label="Toggle password visibility">
+                                @if (showPassword)
+                                {
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" />
+                                        <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68" />
+                                        <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61" />
+                                        <line x1="2" x2="22" y1="2" y2="22" />
+                                    </svg>
+                                }
+                                else
+                                {
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+                                        <circle cx="12" cy="12" r="3" />
+                                    </svg>
+                                }
+                            </button>
+                        </div>
+                        <PasswordStrength Password="@password" />
+                    </div>
+
+                    <div class="lm-step-nav lm-step-nav--between">
+                        <button class="lm-btn-step-back" @onclick="PrevStep">Back</button>
+                        <button class="lm-btn-step-primary" @onclick="NextStep" disabled="@(!PasswordAllPass || isLoading)">
+                            @if (isLoading)
+                            {
+                                <span class="lm-spinner" aria-label="Creating account..."></span>
+                            }
+                            else
+                            {
+                                <span>Create account</span>
+                            }
+                        </button>
+                    </div>
+                }
+
+                @if (currentStep == 4)
+                {
+                    <!-- ── Step 4: OTP ── -->
+                    <div class="lm-field">
+                        <label class="lm-label">Enter the verification code</label>
+                        <div class="lm-otp-boxes">
+                            @for (int i = 0; i < 6; i++)
+                            {
+                                var idx = i;
+                                <input type="text"
+                                       class="lm-otp-box @(otpDigits[idx] != "" ? "lm-otp-box--filled" : "")"
+                                       maxlength="1"
+                                       inputmode="numeric"
+                                       value="@otpDigits[idx]"
+                                       autocomplete="@(idx == 0 ? "one-time-code" : "off")"
+                                       @oninput="e => OnOtpDigitInput(e, idx)"
+                                       @onkeydown="e => OnOtpKeyDown(e, idx)"
+                                       @ref="otpRefs[idx]" />
+                            }
+                        </div>
+                        <p class="lm-otp-hint">
+                            A 6-digit code has been sent to <b>@email</b>. Please check your inbox.
+                        </p>
+                    </div>
+
+                    <div class="lm-step-nav lm-step-nav--between">
+                        <button class="lm-btn-step-back" @onclick="PrevStep">Back</button>
+                        <button class="lm-btn-step-primary" @onclick="ConfirmOtp" disabled="@(OtpCode.Length < 6 || isLoading)">
+                            @if (isLoading)
+                            {
+                                <span class="lm-spinner" aria-label="Confirming..."></span>
+                            }
+                            else
+                            {
+                                <span>Confirm</span>
+                            }
+                        </button>
+                    </div>
+                }
+
+            </div>
+
+            <!-- Divider + Google (steps 1–2 only) -->
+            @if (currentStep <= 2)
+            {
+                <div class="lm-divider">
+                    <div class="lm-divider-line"></div>
+                    <span class="lm-divider-label">Or continue with</span>
+                    <div class="lm-divider-line"></div>
+                </div>
+                <button class="lm-btn-google" type="button" style="border-radius:9999px;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                        <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
+                        <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
+                        <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
+                        <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
+                    </svg>
+                    <span>Google</span>
+                </button>
+            }
+
+        </div>
+    </div>
+
+</div>
+
+@code {
+    private int currentStep = 1;
+    private bool isGoingBack;
+    private bool isLoading;
+    private string? globalError;
+
+    // Step 1 – Email
+    private string email = "";
+    private static readonly System.Text.RegularExpressions.Regex EmailRegex =
+        new(@"^[^\s@]+@[^\s@]+\.[^\s@]+$", System.Text.RegularExpressions.RegexOptions.Compiled);
+    private bool EmailValid => EmailRegex.IsMatch(email);
+
+    // Step 2 – Basic info
+    private string fullName = "";
+    private int? dobDay, dobMonth, dobYear;
+
+    private int MaxDays =>
+        dobMonth.HasValue && dobYear.HasValue
+        ? DateTime.DaysInMonth(dobYear.Value, dobMonth.Value)
+        : 31;
+
+    private IEnumerable<int> DayOptions => Enumerable.Range(1, MaxDays);
+
+    private IEnumerable<(int Number, string Name)> MonthOptions =>
+        Enumerable.Range(1, 12).Select(m => (m, new DateTime(2000, m, 1).ToString("MMMM")));
+
+    private IEnumerable<int> YearOptions =>
+        Enumerable.Range(DateTime.Today.Year - 100, 88).Reverse();
+
+    private bool Step2Valid =>
+        !string.IsNullOrWhiteSpace(fullName) &&
+        dobDay.HasValue && dobMonth.HasValue && dobYear.HasValue;
+
+    private void OnMonthChanged(ChangeEventArgs e)
+    {
+        dobMonth = int.TryParse(e.Value?.ToString(), out var m) ? m : (int?)null;
+        ClampDay();
+    }
+
+    private void OnYearChanged(ChangeEventArgs e)
+    {
+        dobYear = int.TryParse(e.Value?.ToString(), out var y) ? y : (int?)null;
+        ClampDay();
+    }
+
+    private void ClampDay()
+    {
+        if (dobDay.HasValue && dobDay > MaxDays)
+            dobDay = MaxDays;
+    }
+
+    // Step 3 – Password
+    private string password = "";
+    private bool showPassword;
+
+    private bool PasswordAllPass =>
+        password.Length >= 8 &&
+        password.Any(char.IsUpper) &&
+        password.Any(char.IsLower) &&
+        password.Any(char.IsDigit) &&
+        password.Any(c => !char.IsLetterOrDigit(c));
+
+    // Step 4 – OTP
+    private readonly string[] otpDigits = new string[6];
+    private readonly ElementReference[] otpRefs = new ElementReference[6];
+    private string OtpCode => string.Concat(otpDigits);
+
+    private async Task OnOtpDigitInput(ChangeEventArgs e, int idx)
+    {
+        var raw = e.Value?.ToString() ?? "";
+        var digit = raw.Where(char.IsDigit).LastOrDefault();
+        otpDigits[idx] = digit == default ? "" : digit.ToString();
+
+        if (digit != default && idx < 5)
+            await otpRefs[idx + 1].FocusAsync();
+    }
+
+    private async Task OnOtpKeyDown(KeyboardEventArgs e, int idx)
+    {
+        if (e.Key == "Backspace" && otpDigits[idx] == "" && idx > 0)
+        {
+            otpDigits[idx - 1] = "";
+            await otpRefs[idx - 1].FocusAsync();
+        }
+    }
+
+    // Navigation
+    private async Task NextStep()
+    {
+        isGoingBack = false;
+        globalError = null;
+
+        if (currentStep == 3)
+        {
+            isLoading = true;
+            StateHasChanged();
+            await Task.Delay(1000); // TODO: call registration API, send OTP
+            isLoading = false;
+        }
+
+        currentStep++;
+    }
+
+    private void PrevStep()
+    {
+        isGoingBack = true;
+        globalError = null;
+        currentStep--;
+    }
+
+    private async Task ConfirmOtp()
+    {
+        isLoading = true;
+        StateHasChanged();
+        await Task.Delay(1000); // TODO: verify OTP via API
+        isLoading = false;
+        globalError = "Invalid verification code. Please try again.";
+    }
+}

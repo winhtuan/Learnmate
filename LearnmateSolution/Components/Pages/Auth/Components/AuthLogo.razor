@@ -1,0 +1,6 @@
+<img src="images/logo.svg" class="lm-logo-img" alt="LearnMate" />
+<span class="lm-logo-brand @(Dark ? "" : "lm-logo-brand--dark")">LearnMate</span>
+
+@code {
+    [Parameter] public bool Dark { get; set; } = true;
+}
