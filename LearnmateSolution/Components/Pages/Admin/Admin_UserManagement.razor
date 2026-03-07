@@ -1,0 +1,567 @@
+@page "/admin/users"
+@using LearnmateSolution.Components.Layout.Admin
+@layout AdminLayout
+@rendermode InteractiveServer
+
+<PageTitle>Admin User Management - LearnMate</PageTitle>
+
+<HeadContent>
+    <link rel="stylesheet" href="css/admin/Admin_UserManagement.css" />
+</HeadContent>
+
+<div style="display:flex;flex-direction:column;gap:2rem;">
+
+    <!-- ═══════ PAGE HEADING ═══════ -->
+    <div style="display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;gap:1rem;">
+        <div>
+            <h2 style="font-size:1.75rem;font-weight:700;color:#0d141b;margin:0;">User Management</h2>
+            <p style="color:#4c739a;margin:0.25rem 0 0;">Manage system access, roles, and user status.</p>
+        </div>
+        <div style="display:flex;align-items:center;gap:0.75rem;">
+            <button class="um-btn um-btn--ghost" @onclick="OpenExportModal">
+                <span class="material-symbols-outlined" style="font-size:18px;">file_download</span>
+                Export
+            </button>
+            <button class="um-btn um-btn--primary" @onclick="OpenAddUserModal">
+                <span class="material-symbols-outlined" style="font-size:18px;">add</span>
+                Add New User
+            </button>
+        </div>
+    </div>
+
+    <!-- ═══════ STATS CARDS ═══════ -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;">
+        <div style="background:#fff;border:1px solid #e7edf3;border-radius:0.75rem;padding:1.25rem;box-shadow:0 1px 3px rgba(0,0,0,.06);">
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+                <p style="color:#4c739a;font-size:0.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin:0;">Total Users</p>
+                <span class="material-symbols-outlined" style="color:#4c739a;">group</span>
+            </div>
+            <div style="display:flex;align-items:baseline;gap:0.5rem;margin-top:0.5rem;">
+                <p style="font-size:1.875rem;font-weight:700;color:#0d141b;margin:0;">2,453</p>
+                <p style="color:#10b981;font-size:0.8125rem;font-weight:500;margin:0;">+5%</p>
+            </div>
+        </div>
+        <div style="background:#fff;border:1px solid #e7edf3;border-radius:0.75rem;padding:1.25rem;box-shadow:0 1px 3px rgba(0,0,0,.06);">
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+                <p style="color:#4c739a;font-size:0.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin:0;">Active Users</p>
+                <span class="material-symbols-outlined icon-fill" style="color:#10b981;">check_circle</span>
+            </div>
+            <div style="display:flex;align-items:baseline;gap:0.5rem;margin-top:0.5rem;">
+                <p style="font-size:1.875rem;font-weight:700;color:#0d141b;margin:0;">2,350</p>
+                <p style="color:#10b981;font-size:0.8125rem;font-weight:500;margin:0;">+2%</p>
+            </div>
+        </div>
+        <div style="background:#fff;border:1px solid #e7edf3;border-radius:0.75rem;padding:1.25rem;box-shadow:0 1px 3px rgba(0,0,0,.06);">
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+                <p style="color:#4c739a;font-size:0.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin:0;">Blocked Users</p>
+                <span class="material-symbols-outlined icon-fill" style="color:#ef4444;">block</span>
+            </div>
+            <div style="display:flex;align-items:baseline;gap:0.5rem;margin-top:0.5rem;">
+                <p style="font-size:1.875rem;font-weight:700;color:#0d141b;margin:0;">103</p>
+                <p style="color:#ef4444;font-size:0.8125rem;font-weight:500;margin:0;">-1%</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════ TABLE CARD ═══════ -->
+    <div style="background:#fff;border:1px solid #e7edf3;border-radius:0.75rem;box-shadow:0 1px 3px rgba(0,0,0,.06);overflow:hidden;">
+
+        <!-- Toolbar -->
+        <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:1rem;padding:1rem 1.25rem;border-bottom:1px solid #e7edf3;">
+            <div style="position:relative;width:100%;max-width:20rem;">
+                <span class="material-symbols-outlined" style="position:absolute;left:0.625rem;top:50%;transform:translateY(-50%);color:#90a4ae;font-size:20px;pointer-events:none;">search</span>
+                <input class="um-search-input" type="text" placeholder="Search users by name, email or ID..." style="padding-left:2.25rem;" />
+            </div>
+            <div style="display:flex;align-items:center;gap:0.75rem;">
+                <div style="position:relative;">
+                    <select class="um-select" @bind="filterRole">
+                        <option value="">All Roles</option>
+                        <option>Admin</option>
+                        <option>Instructor</option>
+                        <option>Student</option>
+                    </select>
+                    <span class="material-symbols-outlined" style="position:absolute;right:0.5rem;top:50%;transform:translateY(-50%);font-size:18px;color:#4c739a;pointer-events:none;">expand_more</span>
+                </div>
+                <div style="position:relative;">
+                    <select class="um-select" @bind="filterStatus">
+                        <option value="">All Status</option>
+                        <option>Active</option>
+                        <option>Blocked</option>
+                    </select>
+                    <span class="material-symbols-outlined" style="position:absolute;right:0.5rem;top:50%;transform:translateY(-50%);font-size:18px;color:#4c739a;pointer-events:none;">expand_more</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Table -->
+        <div style="overflow-x:auto;">
+            <table class="um-table">
+                <thead>
+                    <tr>
+                        <th style="width:3rem;text-align:center;"><input type="checkbox" /></th>
+                        <th>User ID &amp; Name</th>
+                        <th>Role</th>
+                        <th>Status</th>
+                        <th>Last Login</th>
+                        <th style="text-align:right;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var u in users)
+                    {
+                        <tr class="@(u.Status == "Blocked" ? "um-row--blocked" : "")">
+                            <td style="text-align:center;"><input type="checkbox" /></td>
+                            <td>
+                                <div style="display:flex;align-items:center;gap:0.75rem;">
+                                    @if (!string.IsNullOrEmpty(u.AvatarUrl))
+                                    {
+                                        <div class="um-avatar @(u.Status == "Blocked" ? "um-avatar--grayscale" : "")"
+                                             style="background-image:url('@u.AvatarUrl');"></div>
+                                    }
+                                    else
+                                    {
+                                        <div class="um-avatar--initials" style="background-color:@u.InitialsBg;color:@u.InitialsColor;">
+                                            @u.Initials
+                                        </div>
+                                    }
+                                    <div style="display:flex;flex-direction:column;">
+                                        <span style="font-weight:600;color:#0d141b;@(u.Status == "Blocked" ? "text-decoration:line-through;color:#94a3b8;" : "")">@u.Name</span>
+                                        <span style="font-size:0.75rem;color:#4c739a;">ID: #@u.Id • @u.Email</span>
+                                    </div>
+                                </div>
+                            </td>
+                            <td><span class="um-badge um-badge--@u.Role.ToLower()">@u.Role</span></td>
+                            <td>
+                                <div style="display:flex;align-items:center;gap:0.375rem;">
+                                    <span class="um-status-dot um-status-dot--@u.Status.ToLower()"></span>
+                                    <span style="font-weight:500;color:@(u.Status == "Blocked" ? "#ef4444" : "#0d141b");">@u.Status</span>
+                                </div>
+                            </td>
+                            <td style="color:#4c739a;">@u.LastLogin</td>
+                            <td style="text-align:right;">
+                                <div style="display:flex;align-items:center;justify-content:flex-end;gap:0.25rem;">
+                                    @if (u.Status == "Blocked")
+                                    {
+                                        <button class="um-action-btn um-action-btn--unblock" title="Unblock user" @onclick="() => OpenUnblockModal(u)">
+                                            <span class="material-symbols-outlined" style="font-size:18px;">lock_open</span>
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <button class="um-action-btn um-action-btn--block" title="Block user" @onclick="() => OpenBlockModal(u)">
+                                            <span class="material-symbols-outlined" style="font-size:18px;">block</span>
+                                        </button>
+                                    }
+                                    <button class="um-action-btn um-action-btn--delete" title="Delete user" @onclick="() => OpenDeleteModal(u)">
+                                        <span class="material-symbols-outlined" style="font-size:18px;">delete</span>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:0.875rem 1.5rem;border-top:1px solid #e7edf3;background:#fff;">
+            <div style="display:flex;align-items:center;gap:0.5rem;">
+                <span style="font-size:0.875rem;color:#4c739a;">Rows per page:</span>
+                <select class="um-select" style="height:2rem;font-size:0.78rem;">
+                    <option>10</option><option>20</option><option>50</option>
+                </select>
+            </div>
+            <div style="display:flex;align-items:center;gap:1rem;">
+                <span style="font-size:0.875rem;color:#4c739a;">1–@users.Count of 2,453</span>
+                <div style="display:flex;align-items:center;gap:0.25rem;">
+                    <button class="um-page-btn"><span class="material-symbols-outlined" style="font-size:18px;">chevron_left</span></button>
+                    <button class="um-page-btn um-page-btn--active">1</button>
+                    <button class="um-page-btn">2</button>
+                    <button class="um-page-btn">3</button>
+                    <span style="color:#4c739a;padding:0 4px;">...</span>
+                    <button class="um-page-btn">10</button>
+                    <button class="um-page-btn"><span class="material-symbols-outlined" style="font-size:18px;">chevron_right</span></button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     MODAL: ADD NEW USER
+══════════════════════════════════════════════════════ -->
+@if (showAddModal)
+{
+    <div class="um-modal-backdrop" @onclick="CloseAllModals">
+        <div class="um-modal" @onclick:stopPropagation>
+            <div class="um-modal-header">
+                <span class="um-modal-title">
+                    <span class="material-symbols-outlined um-icon--primary">person_add</span>
+                    Add New User
+                </span>
+                <button class="um-modal-close" @onclick="CloseAllModals">
+                    <span class="material-symbols-outlined" style="font-size:20px;">close</span>
+                </button>
+            </div>
+            <div class="um-modal-body">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.875rem;">
+                    <div class="um-form-group" style="grid-column:1/-1;">
+                        <label class="um-label">Full Name *</label>
+                        <input class="um-input" type="text" placeholder="e.g. John Doe" @bind="newUser.Name" />
+                    </div>
+                    <div class="um-form-group" style="grid-column:1/-1;">
+                        <label class="um-label">Email Address *</label>
+                        <input class="um-input" type="email" placeholder="user@example.com" @bind="newUser.Email" />
+                    </div>
+                    <div class="um-form-group">
+                        <label class="um-label">Role *</label>
+                        <select class="um-input um-form-select" @bind="newUser.Role">
+                            <option value="">Select role...</option>
+                            <option>Student</option>
+                            <option>Instructor</option>
+                            <option>Admin</option>
+                        </select>
+                    </div>
+                    <div class="um-form-group">
+                        <label class="um-label">Temporary Password *</label>
+                        <input class="um-input" type="password" placeholder="Min 8 characters" @bind="newUser.TempPassword" />
+                    </div>
+                </div>
+                <div class="um-warning-box um-warning-box--yellow" style="margin-top:0.75rem;">
+                    <span class="material-symbols-outlined icon-fill" style="font-size:18px;flex-shrink:0;">info</span>
+                    <span>User will receive an email with login credentials and be required to change their password on first login.</span>
+                </div>
+                @if (!string.IsNullOrEmpty(formError))
+                {
+                    <div class="um-warning-box um-warning-box--red" style="margin-top:0.5rem;">
+                        <span class="material-symbols-outlined icon-fill" style="font-size:18px;flex-shrink:0;">error</span>
+                        <span>@formError</span>
+                    </div>
+                }
+            </div>
+            <div class="um-modal-footer">
+                <button class="um-btn um-btn--ghost" @onclick="CloseAllModals">Cancel</button>
+                <button class="um-btn um-btn--primary" @onclick="ConfirmAddUser">
+                    <span class="material-symbols-outlined" style="font-size:16px;">person_add</span>
+                    Create User
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- ══════════════════════════════════════════════════════
+     MODAL: BLOCK USER
+══════════════════════════════════════════════════════ -->
+@if (showBlockModal && selectedUser != null)
+{
+    <div class="um-modal-backdrop" @onclick="CloseAllModals">
+        <div class="um-modal" @onclick:stopPropagation>
+            <div class="um-modal-header">
+                <span class="um-modal-title">
+                    <span class="material-symbols-outlined um-icon--warning">block</span>
+                    Block User Account
+                </span>
+                <button class="um-modal-close" @onclick="CloseAllModals">
+                    <span class="material-symbols-outlined" style="font-size:20px;">close</span>
+                </button>
+            </div>
+            <div class="um-modal-body">
+                <div class="um-user-preview">
+                    @if (!string.IsNullOrEmpty(selectedUser.AvatarUrl))
+                    {
+                        <div class="um-avatar" style="background-image:url('@selectedUser.AvatarUrl');width:44px;height:44px;"></div>
+                    }
+                    else
+                    {
+                        <div class="um-avatar--initials" style="width:44px;height:44px;background-color:@selectedUser.InitialsBg;color:@selectedUser.InitialsColor;">
+                            @selectedUser.Initials
+                        </div>
+                    }
+                    <div>
+                        <div class="um-user-preview-name">@selectedUser.Name</div>
+                        <div class="um-user-preview-email">@selectedUser.Email · @selectedUser.Role</div>
+                    </div>
+                </div>
+                <div class="um-warning-box um-warning-box--yellow">
+                    <span class="material-symbols-outlined icon-fill" style="font-size:18px;flex-shrink:0;">warning</span>
+                    <span>Blocking this account will immediately revoke all access. The user will not be able to log in until unblocked.</span>
+                </div>
+                <div class="um-form-group" style="margin-top:0.75rem;">
+                    <label class="um-label">Reason for blocking *</label>
+                    <select class="um-input um-form-select" @bind="blockReason">
+                        <option value="">Select reason...</option>
+                        <option>Violation of terms of service</option>
+                        <option>Suspicious activity detected</option>
+                        <option>Account security concern</option>
+                        <option>Admin request</option>
+                        <option>Other</option>
+                    </select>
+                </div>
+                <div class="um-form-group">
+                    <label class="um-label">Additional notes (optional)</label>
+                    <input class="um-input" type="text" placeholder="Internal note for audit log..." @bind="blockNotes" />
+                </div>
+                @if (!string.IsNullOrEmpty(formError))
+                {
+                    <div class="um-warning-box um-warning-box--red">
+                        <span class="material-symbols-outlined icon-fill" style="font-size:18px;flex-shrink:0;">error</span>
+                        <span>@formError</span>
+                    </div>
+                }
+            </div>
+            <div class="um-modal-footer">
+                <button class="um-btn um-btn--ghost" @onclick="CloseAllModals">Cancel</button>
+                <button class="um-btn um-btn--warning" @onclick="ConfirmBlock">
+                    <span class="material-symbols-outlined" style="font-size:16px;">block</span>
+                    Block Account
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- ══════════════════════════════════════════════════════
+     MODAL: UNBLOCK USER
+══════════════════════════════════════════════════════ -->
+@if (showUnblockModal && selectedUser != null)
+{
+    <div class="um-modal-backdrop" @onclick="CloseAllModals">
+        <div class="um-modal" @onclick:stopPropagation>
+            <div class="um-modal-header">
+                <span class="um-modal-title">
+                    <span class="material-symbols-outlined um-icon--success">lock_open</span>
+                    Unblock User Account
+                </span>
+                <button class="um-modal-close" @onclick="CloseAllModals">
+                    <span class="material-symbols-outlined" style="font-size:20px;">close</span>
+                </button>
+            </div>
+            <div class="um-modal-body">
+                <div class="um-user-preview">
+                    @if (!string.IsNullOrEmpty(selectedUser.AvatarUrl))
+                    {
+                        <div class="um-avatar" style="background-image:url('@selectedUser.AvatarUrl');width:44px;height:44px;"></div>
+                    }
+                    else
+                    {
+                        <div class="um-avatar--initials" style="width:44px;height:44px;background-color:@selectedUser.InitialsBg;color:@selectedUser.InitialsColor;">
+                            @selectedUser.Initials
+                        </div>
+                    }
+                    <div>
+                        <div class="um-user-preview-name">@selectedUser.Name</div>
+                        <div class="um-user-preview-email">@selectedUser.Email · @selectedUser.Role</div>
+                    </div>
+                </div>
+                <div class="um-warning-box um-warning-box--green">
+                    <span class="material-symbols-outlined icon-fill" style="font-size:18px;flex-shrink:0;">check_circle</span>
+                    <span>Restoring access will allow this user to log in again. A notification email will be sent to the user.</span>
+                </div>
+                <div class="um-form-group" style="margin-top:0.75rem;">
+                    <label class="um-label">Reason for unblocking *</label>
+                    <select class="um-input um-form-select" @bind="unblockReason">
+                        <option value="">Select reason...</option>
+                        <option>Issue resolved</option>
+                        <option>Appeal approved</option>
+                        <option>Mistakenly blocked</option>
+                        <option>Admin request</option>
+                    </select>
+                </div>
+                @if (!string.IsNullOrEmpty(formError))
+                {
+                    <div class="um-warning-box um-warning-box--red">
+                        <span class="material-symbols-outlined icon-fill" style="font-size:18px;flex-shrink:0;">error</span>
+                        <span>@formError</span>
+                    </div>
+                }
+            </div>
+            <div class="um-modal-footer">
+                <button class="um-btn um-btn--ghost" @onclick="CloseAllModals">Cancel</button>
+                <button class="um-btn um-btn--success" @onclick="ConfirmUnblock">
+                    <span class="material-symbols-outlined" style="font-size:16px;">lock_open</span>
+                    Restore Access
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- ══════════════════════════════════════════════════════
+     MODAL: DELETE USER
+══════════════════════════════════════════════════════ -->
+@if (showDeleteModal && selectedUser != null)
+{
+    <div class="um-modal-backdrop" @onclick="CloseAllModals">
+        <div class="um-modal" @onclick:stopPropagation>
+            <div class="um-modal-header">
+                <span class="um-modal-title">
+                    <span class="material-symbols-outlined um-icon--danger">delete_forever</span>
+                    Delete User Account
+                </span>
+                <button class="um-modal-close" @onclick="CloseAllModals">
+                    <span class="material-symbols-outlined" style="font-size:20px;">close</span>
+                </button>
+            </div>
+            <div class="um-modal-body">
+                <div class="um-user-preview">
+                    @if (!string.IsNullOrEmpty(selectedUser.AvatarUrl))
+                    {
+                        <div class="um-avatar" style="background-image:url('@selectedUser.AvatarUrl');width:44px;height:44px;"></div>
+                    }
+                    else
+                    {
+                        <div class="um-avatar--initials" style="width:44px;height:44px;background-color:@selectedUser.InitialsBg;color:@selectedUser.InitialsColor;">
+                            @selectedUser.Initials
+                        </div>
+                    }
+                    <div>
+                        <div class="um-user-preview-name">@selectedUser.Name</div>
+                        <div class="um-user-preview-email">@selectedUser.Email · @selectedUser.Role</div>
+                    </div>
+                </div>
+                <div class="um-warning-box um-warning-box--red">
+                    <span class="material-symbols-outlined icon-fill" style="font-size:18px;flex-shrink:0;">dangerous</span>
+                    <span><strong>This action is permanent and cannot be undone.</strong> All data associated with this account — including classes, submissions, and history — will be permanently removed.</span>
+                </div>
+                <div class="um-form-group" style="margin-top:0.875rem;">
+                    <label class="um-label">
+                        Type the user's name to confirm: <strong>@selectedUser.Name</strong>
+                    </label>
+                    <input class="um-input" type="text" placeholder="@selectedUser.Name" @bind="deleteConfirmText" />
+                </div>
+                @if (!string.IsNullOrEmpty(formError))
+                {
+                    <div class="um-warning-box um-warning-box--red">
+                        <span class="material-symbols-outlined icon-fill" style="font-size:18px;flex-shrink:0;">error</span>
+                        <span>@formError</span>
+                    </div>
+                }
+            </div>
+            <div class="um-modal-footer">
+                <button class="um-btn um-btn--ghost" @onclick="CloseAllModals">Cancel</button>
+                <button class="um-btn um-btn--danger" @onclick="ConfirmDelete"
+                        disabled="@(deleteConfirmText != selectedUser.Name)">
+                    <span class="material-symbols-outlined" style="font-size:16px;">delete_forever</span>
+                    Permanently Delete
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    // ── State ─────────────────────────────────────────────
+    private string filterRole   = "";
+    private string filterStatus = "";
+
+    private bool showAddModal     = false;
+    private bool showBlockModal   = false;
+    private bool showUnblockModal = false;
+    private bool showDeleteModal  = false;
+
+    private string blockReason      = "";
+    private string blockNotes       = "";
+    private string unblockReason    = "";
+    private string deleteConfirmText = "";
+    private string formError        = "";
+
+    private UserRow? selectedUser;
+    private NewUserForm newUser = new();
+
+    // ── Data ──────────────────────────────────────────────
+    private List<UserRow> users = new()
+    {
+        new("1001", "Sarah Smith",    "sarah@univ.edu",       "Instructor", "Active",  "2 mins ago",  "https://lh3.googleusercontent.com/aida-public/AB6AXuA0Qzxvzl0knd3z1Y0WhSDo7-wv0clphsvO5zHN9Fa4-119Jf0rZ-WiD6ZdN0PqytuQ2qApIbPKZz5FpiNr-vnVPYhD8hTWEMN9T7n3AySe6vMWTEY3Dl47UAlJNKsC-5SczcXgRAmqPA8vX0K64ZnVLCNXVht_R4mwo9CJ8Q_casQiicSljZWV8iKUz_9jvhtyvMVL1mXohH1_KGn1lguQymNGV4idxkxB30lgdCu0EhIfStUIlAEGEslSDIAJ3dfMWfXYA-SmTGM"),
+        new("1005", "Michael Jordan", "m.jordan@univ.edu",    "Student",    "Active",  "1 day ago",   ""),
+        new("1024", "John Doe",       "j.doe@test.com",       "Student",    "Blocked", "3 months ago","https://lh3.googleusercontent.com/aida-public/AB6AXuDthMKBgxg4hexcTULlxs4skpoIZ_qsqFAY3srCwtW134sTDCkDEy0a1NHzRlEzBAxQmKnwruSoHfXGcg36XKLjasp8xw4qEWHqNllroqFo8PLA-5Uua3xwWFjqrgaElruGvo7A3-m0WE2F3k0t5pISaT6JUWSBbwu4XBHG8Anso4Pb7lwfZwWWxRTyQ6sghwBe6-6YysQzkNMwT8GSbLchueAt8_V0yPOeOctyNZwJmBTnBjVD-v5gs1aZsF9g8ku74-6cEu1erBg"),
+        new("1089", "Emily Chen",     "emily.c@univ.edu",     "Instructor", "Active",  "4 hours ago", "https://lh3.googleusercontent.com/aida-public/AB6AXuD7TMPBJ3PIQO-BGmxklKYI9U7AGUu0NvSSY_9Ck2JWotG5OBG2aaNJMHqYOgsXql9uQFq4Bg04G94C2ZIby6bQo0snRMh6b4vFVx4616qGQRuXqNmbOlNb7Ma5s4h8gsH-RKGam9z4l4RVvkFK4YAfm0rV2Coz_QO20j6JJ14QN3_a4KPOYO2YpsaHJZD5Kwn038ceJLLdmnhWCynHI7-y8sCmVCDqtaodITto9oryrHWD0nRsgVLpONq1VwcZWCqGM_I1raQ14a4"),
+        new("1102", "David Ross",     "dross@lab.com",        "Admin",      "Active",  "Now",         ""),
+    };
+
+    // ── Modal openers ─────────────────────────────────────
+    private void OpenAddUserModal()   { CloseAllModals(); newUser = new(); formError = ""; showAddModal = true; }
+    private void OpenBlockModal(UserRow u)   { CloseAllModals(); selectedUser = u; blockReason = ""; blockNotes = ""; formError = ""; showBlockModal = true; }
+    private void OpenUnblockModal(UserRow u) { CloseAllModals(); selectedUser = u; unblockReason = ""; formError = ""; showUnblockModal = true; }
+    private void OpenDeleteModal(UserRow u)  { CloseAllModals(); selectedUser = u; deleteConfirmText = ""; formError = ""; showDeleteModal = true; }
+    private void OpenExportModal() { /* TODO: implement export */ }
+
+    private void CloseAllModals()
+    {
+        showAddModal = showBlockModal = showUnblockModal = showDeleteModal = false;
+        formError = "";
+    }
+
+    // ── Actions ───────────────────────────────────────────
+    private void ConfirmAddUser()
+    {
+        if (string.IsNullOrWhiteSpace(newUser.Name) || string.IsNullOrWhiteSpace(newUser.Email) ||
+            string.IsNullOrWhiteSpace(newUser.Role) || string.IsNullOrWhiteSpace(newUser.TempPassword))
+        { formError = "Please fill in all required fields."; return; }
+
+        // TODO: call API to create user
+        users.Add(new(
+            (1200 + users.Count).ToString(),
+            newUser.Name, newUser.Email, newUser.Role,
+            "Active", "Just now", ""));
+        CloseAllModals();
+    }
+
+    private void ConfirmBlock()
+    {
+        if (string.IsNullOrWhiteSpace(blockReason))
+        { formError = "Please select a reason for blocking."; return; }
+
+        // TODO: call API to block user
+        if (selectedUser != null) selectedUser.Status = "Blocked";
+        CloseAllModals();
+    }
+
+    private void ConfirmUnblock()
+    {
+        if (string.IsNullOrWhiteSpace(unblockReason))
+        { formError = "Please select a reason for unblocking."; return; }
+
+        // TODO: call API to unblock user
+        if (selectedUser != null) selectedUser.Status = "Active";
+        CloseAllModals();
+    }
+
+    private void ConfirmDelete()
+    {
+        if (selectedUser == null || deleteConfirmText != selectedUser.Name)
+        { formError = "Name does not match. Please type the exact name to confirm."; return; }
+
+        // TODO: call API to delete user
+        users.Remove(selectedUser);
+        CloseAllModals();
+    }
+
+    // ── Models ────────────────────────────────────────────
+    private class UserRow
+    {
+        public string Id        { get; }
+        public string Name      { get; }
+        public string Email     { get; }
+        public string Role      { get; }
+        public string Status    { get; set; }
+        public string LastLogin { get; }
+        public string AvatarUrl { get; }
+
+        // Initials fallback
+        public string Initials      => string.Concat(Name.Split(' ').Take(2).Select(w => w[0].ToString().ToUpper()));
+        public string InitialsBg    => Role == "Admin" ? "#e0e7ff" : Role == "Instructor" ? "#f3e8ff" : "#dbeafe";
+        public string InitialsColor => Role == "Admin" ? "#4338ca" : Role == "Instructor" ? "#7c3aed" : "#1d4ed8";
+
+        public UserRow(string id, string name, string email, string role, string status, string lastLogin, string avatarUrl)
+        { Id = id; Name = name; Email = email; Role = role; Status = status; LastLogin = lastLogin; AvatarUrl = avatarUrl; }
+    }
+
+    private class NewUserForm
+    {
+        public string Name         { get; set; } = "";
+        public string Email        { get; set; } = "";
+        public string Role         { get; set; } = "";
+        public string TempPassword { get; set; } = "";
+    }
+}
