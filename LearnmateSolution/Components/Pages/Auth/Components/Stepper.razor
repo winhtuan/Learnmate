@@ -1,0 +1,38 @@
+<div class="lm-stepper">
+    <div class="lm-stepper-track">
+        <div class="lm-stepper-track-fill" style="width: @(TrackPercent.ToString("F1", System.Globalization.CultureInfo.InvariantCulture))%"></div>
+    </div>
+    <div class="lm-stepper-dots">
+        @for (int i = 1; i <= Labels.Length; i++)
+        {
+            var state = GetState(i);
+            <div class="lm-step-dot lm-step-dot--@state">
+                @if (state == "done")
+                {
+                    <svg width="8" height="8" viewBox="0 0 12 10" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="1 5 4 8 11 1" />
+                    </svg>
+                }
+            </div>
+        }
+    </div>
+    <div class="lm-step-labels">
+        @for (int i = 0; i < Labels.Length; i++)
+        {
+            var state = GetState(i + 1);
+            <span class="lm-step-label lm-step-label--@state">@Labels[i]</span>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter] public int CurrentStep { get; set; } = 1;
+    [Parameter] public string[] Labels { get; set; } = ["Enter your email", "Provide basic info", "Create your password"];
+
+    private double TrackPercent =>
+        Labels.Length <= 1 ? 0
+        : Math.Min(100, (double)(CurrentStep - 1) / (Labels.Length - 1) * 100);
+
+    private string GetState(int step) =>
+        step < CurrentStep ? "done" : step == CurrentStep ? "active" : "todo";
+}

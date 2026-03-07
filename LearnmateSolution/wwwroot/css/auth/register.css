@@ -1,0 +1,116 @@
+/* Register / Signup page styles
+   Depends on login.css being loaded first for shared auth layout & form styles */
+
+/* ── Step animation ── */
+.lm-step-content { animation: lm-slide-fwd .25s ease both; }
+.lm-step-content--back { animation: lm-slide-back .25s ease both; }
+
+@keyframes lm-slide-fwd {
+    from { opacity: 0; transform: translateX(24px); }
+    to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes lm-slide-back {
+    from { opacity: 0; transform: translateX(-24px); }
+    to   { opacity: 1; transform: translateX(0); }
+}
+
+/* ── Stepper ── */
+.lm-stepper { position: relative; margin-bottom: 2rem; }
+
+.lm-stepper-track { position: relative; height: 2px; background: #e2e8f0; border-radius: 9999px; top: 10px; z-index: 0; }
+.lm-stepper-track-fill { height: 100%; background: #16a34a; border-radius: 9999px; transition: width .7s ease-in-out; }
+
+.lm-stepper-dots { display: flex; justify-content: space-between; position: relative; z-index: 1; }
+.lm-step-dot {
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    background: #fff; border: 2px solid #cbd5e1; transition: all .3s ease; flex-shrink: 0;
+}
+.lm-step-dot--todo   { width: 14px; height: 14px; border-color: #cbd5e1; }
+.lm-step-dot--active { width: 20px; height: 20px; background: #0f172a; border-color: #0f172a; margin-top: -3px; }
+.lm-step-dot--done   { width: 16px; height: 16px; background: #16a34a; border-color: #16a34a; color: #fff; font-size: .6rem; font-weight: 700; margin-top: -1px; }
+
+.lm-step-labels { display: flex; justify-content: space-between; margin-top: .875rem; }
+.lm-step-label { font-size: .8125rem; max-width: 90px; line-height: 1.3; color: #94a3b8; }
+.lm-step-label:first-child { text-align: left; }
+.lm-step-label:last-child  { text-align: right; }
+.lm-step-label--todo   { color: #94a3b8; }
+.lm-step-label--active { color: #0f172a; font-weight: 600; font-size: .875rem; }
+.lm-step-label--done   { color: #16a34a; font-weight: 500; }
+
+/* ── Buttons (rounded-full variants for register) ── */
+.lm-btn-next {
+    width: 100%; padding: .75rem 1.25rem; background: #0f172a; color: #fff;
+    border: none; border-radius: 9999px; font-size: 1rem; font-weight: 500;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    gap: .5rem; transition: background .2s ease; min-height: 48px;
+}
+.lm-btn-next:hover:not(:disabled) { background: #1e293b; }
+.lm-btn-next:disabled { background: #cbd5e1; cursor: not-allowed; }
+
+.lm-btn-step-primary {
+    padding: .5rem 1.5rem; background: #0f172a; color: #fff; border: none;
+    border-radius: 9999px; font-size: .875rem; font-weight: 500;
+    cursor: pointer; display: flex; align-items: center; gap: .5rem;
+    transition: background .2s ease; min-height: 40px;
+}
+.lm-btn-step-primary:hover:not(:disabled) { background: #1e293b; }
+.lm-btn-step-primary:disabled { opacity: .5; cursor: not-allowed; }
+
+.lm-btn-step-back {
+    padding: .5rem 1.5rem; background: transparent; color: #334155;
+    border: 1.5px solid #e2e8f0; border-radius: 9999px; font-size: .875rem; font-weight: 500;
+    cursor: pointer; display: flex; align-items: center; gap: .5rem;
+    transition: background .15s ease, border-color .15s ease; min-height: 40px;
+}
+.lm-btn-step-back:hover { background: #f8fafc; border-color: #cbd5e1; }
+
+.lm-step-nav { display: flex; gap: .75rem; margin-top: 1.5rem; }
+.lm-step-nav--end     { justify-content: flex-end; }
+.lm-step-nav--between { justify-content: space-between; }
+
+/* ── Date of birth field ── */
+.lm-dob-wrapper { position: relative; }
+.lm-dob-icon { position: absolute; left: 0; top: 50%; transform: translateY(-50%); color: #94a3b8; pointer-events: none; z-index: 1; }
+.lm-dob-selects { display: grid; grid-template-columns: repeat(3, 1fr); gap: .75rem; padding-left: 2rem; }
+.lm-select {
+    width: 100%; padding: .625rem .5rem; background: #f8fafc;
+    border: 2px solid #e2e8f0; border-radius: 8px; font-size: .875rem; color: #0f172a; font-weight: 400;
+    outline: none; transition: border-color .15s ease; appearance: none; cursor: pointer;
+}
+.lm-select:focus { border-color: #0f172a; }
+.lm-select--placeholder { color: #475569; }
+.lm-hint { margin-top: .5rem; font-size: .75rem; color: #64748b; }
+
+/* ── Password strength ── */
+.lm-strength { margin-top: .75rem; }
+.lm-strength-header { display: flex; align-items: center; gap: .5rem; margin-bottom: .5rem; }
+.lm-strength-label { font-size: .8125rem; font-weight: 600; }
+.lm-strength--tooweak  { color: #f43f5e; }
+.lm-strength--weak     { color: #f97316; }
+.lm-strength--fair     { color: #eab308; }
+.lm-strength--strong   { color: #10b981; }
+.lm-strength--verystrong { color: #16a34a; }
+
+.lm-strength-bars { display: flex; gap: 4px; }
+.lm-strength-seg { flex: 1; height: 6px; border-radius: 9999px; background: #e2e8f0; transition: background .3s ease; }
+.lm-strength-seg--tooweak  { background: #f43f5e; }
+.lm-strength-seg--weak     { background: #f97316; }
+.lm-strength-seg--fair     { background: #eab308; }
+.lm-strength-seg--strong   { background: #10b981; }
+.lm-strength-seg--verystrong { background: #16a34a; }
+
+.lm-requirements { display: grid; grid-template-columns: 1fr 1fr; gap: .375rem .75rem; margin-top: .75rem; }
+.lm-req { display: flex; align-items: center; gap: .375rem; font-size: .8125rem; color: #94a3b8; }
+.lm-req--pass { color: #16a34a; }
+
+/* ── OTP ── */
+.lm-otp-boxes { display: flex; gap: .625rem; justify-content: center; margin-top: .25rem; }
+.lm-otp-box {
+    width: 46px; height: 52px; border: 2px solid #e2e8f0; border-radius: 8px;
+    text-align: center; font-size: 1.375rem; font-weight: 600; color: #0f172a;
+    background: #f8fafc; outline: none; caret-color: transparent;
+    transition: border-color .15s ease, background .15s ease;
+}
+.lm-otp-box:focus { border-color: #0f172a; background: #fff; }
+.lm-otp-box--filled { border-color: #0f172a; background: #fff; }
+.lm-otp-hint { font-size: .875rem; color: #64748b; margin-top: .75rem; line-height: 1.5; }
