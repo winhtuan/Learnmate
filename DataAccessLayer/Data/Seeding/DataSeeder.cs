@@ -7,23 +7,20 @@ namespace DataAccessLayer.Data.Seeding;
 /// <summary>
 /// Seeds initial data for development and testing.
 ///
-/// Passwords are BCrypt hashes. To regenerate:
-///   BCrypt.Net.BCrypt.HashPassword("YourPassword", workFactor: 12)
+/// Passwords are BCrypt hashes (workFactor: 12). To regenerate:
+///   BCrypt.Net.BCrypt.HashPassword("your_password", workFactor: 12)
 ///
-/// Seeded accounts:
-///   admin@learnmate.vn   / Admin@123
-///   teacher@learnmate.vn / Teacher@123
-///   student1@gmail.com   / Student@123
-///   student2@gmail.com   / Student@123
+/// Seeded accounts (all password: 123):
+///   admin@learnmate.vn   / 123  (ADMIN)
+///   teacher@learnmate.vn / 123  (TEACHER)
+///   student@learnmate.vn / 123  (STUDENT)
 /// </summary>
 public static class DataSeeder
 {
     private static readonly DateTime Now = new(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
-    // BCrypt hashes (workFactor: 12) — regenerate if needed
-    private const string AdminHash    = "$2a$12$LXTRCOBrEnOJuJcMl.ixPuqfqexImjFMmhWK4A4hcqxaW59WkS5K2";
-    private const string TeacherHash  = "$2a$12$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi";
-    private const string StudentHash  = "$2a$12$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi";
+    // BCrypt hash for password "123" (workFactor: 12)
+    private const string Hash123 = "$2a$12$BgRmemonnrWXu0O0hABfSuRgIBIjUevBcIGTk53b.y0oPqW45tCka";
 
     public static void Seed(ModelBuilder modelBuilder)
     {
@@ -39,43 +36,33 @@ public static class DataSeeder
         m.Entity<User>().HasData(
             new User
             {
-                Id          = 1,
-                Email       = "admin@learnmate.vn",
-                PasswordHash = AdminHash,
-                Role        = UserRole.ADMIN,
-                IsActive    = true,
-                CreatedAt   = Now,
-                UpdatedAt   = Now,
+                Id           = 1,
+                Email        = "admin@learnmate.vn",
+                PasswordHash = Hash123,
+                Role         = UserRole.ADMIN,
+                IsActive     = true,
+                CreatedAt    = Now,
+                UpdatedAt    = Now,
             },
             new User
             {
-                Id          = 2,
-                Email       = "teacher@learnmate.vn",
-                PasswordHash = TeacherHash,
-                Role        = UserRole.TEACHER,
-                IsActive    = true,
-                CreatedAt   = Now,
-                UpdatedAt   = Now,
+                Id           = 2,
+                Email        = "teacher@learnmate.vn",
+                PasswordHash = Hash123,
+                Role         = UserRole.TEACHER,
+                IsActive     = true,
+                CreatedAt    = Now,
+                UpdatedAt    = Now,
             },
             new User
             {
-                Id          = 3,
-                Email       = "student1@gmail.com",
-                PasswordHash = StudentHash,
-                Role        = UserRole.STUDENT,
-                IsActive    = true,
-                CreatedAt   = Now,
-                UpdatedAt   = Now,
-            },
-            new User
-            {
-                Id          = 4,
-                Email       = "student2@gmail.com",
-                PasswordHash = StudentHash,
-                Role        = UserRole.STUDENT,
-                IsActive    = true,
-                CreatedAt   = Now,
-                UpdatedAt   = Now,
+                Id           = 3,
+                Email        = "student@learnmate.vn",
+                PasswordHash = Hash123,
+                Role         = UserRole.STUDENT,
+                IsActive     = true,
+                CreatedAt    = Now,
+                UpdatedAt    = Now,
             }
         );
     }
@@ -102,21 +89,12 @@ public static class DataSeeder
         m.Entity<StudentProfile>().HasData(
             new StudentProfile
             {
-                Id        = 1,
-                UserId    = 3,
-                FullName  = "Tran Thi B",
+                Id         = 1,
+                UserId     = 3,
+                FullName   = "Tran Thi B",
                 GradeLevel = "12",
-                CreatedAt = Now,
-                UpdatedAt = Now,
-            },
-            new StudentProfile
-            {
-                Id        = 2,
-                UserId    = 4,
-                FullName  = "Le Van C",
-                GradeLevel = "11",
-                CreatedAt = Now,
-                UpdatedAt = Now,
+                CreatedAt  = Now,
+                UpdatedAt  = Now,
             }
         );
     }
@@ -149,14 +127,6 @@ public static class DataSeeder
                 Id        = 1,
                 ClassId   = 1,
                 StudentId = 3,
-                Status    = ClassMemberStatus.ACTIVE,
-                JoinedAt  = Now,
-            },
-            new ClassMember
-            {
-                Id        = 2,
-                ClassId   = 1,
-                StudentId = 4,
                 Status    = ClassMemberStatus.ACTIVE,
                 JoinedAt  = Now,
             }

@@ -3,9 +3,9 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace LearnmateSolution.Middleware;
+namespace DataAccessLayer;
 
-public static class ServiceExtensions
+public static class ServiceCollectionExtensions
 {
     public static IServiceCollection AddDataAccessLayer(
         this IServiceCollection services,
