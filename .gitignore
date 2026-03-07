@@ -41,6 +41,7 @@ artifacts/
 !.env.example
 appsettings.Development.json
 appsettings.Local.json
+appsettings.json
 secrets.json
 
 # ── OS ────────────────────────────────────────────────────────────────────────
