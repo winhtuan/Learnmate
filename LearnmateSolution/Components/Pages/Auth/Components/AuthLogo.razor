@@ -1,5 +1,7 @@
-<img src="images/logo.svg" class="lm-logo-img" alt="LearnMate" />
-<span class="lm-logo-brand @(Dark ? "" : "lm-logo-brand--dark")">LearnMate</span>
+<a href="/" class="lm-logo-link">
+    <img src="images/logo.svg" class="lm-logo-img" alt="LearnMate" />
+    <span class="lm-logo-brand @(Dark ? "" : "lm-logo-brand--dark")">LearnMate</span>
+</a>
 
 @code {
     [Parameter] public bool Dark { get; set; } = true;

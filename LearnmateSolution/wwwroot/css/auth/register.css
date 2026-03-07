@@ -73,11 +73,11 @@
 .lm-dob-icon { position: absolute; left: 0; top: 50%; transform: translateY(-50%); color: #94a3b8; pointer-events: none; z-index: 1; }
 .lm-dob-selects { display: grid; grid-template-columns: repeat(3, 1fr); gap: .75rem; padding-left: 2rem; }
 .lm-select {
-    width: 100%; padding: .625rem .5rem; background: #f8fafc;
-    border: 2px solid #e2e8f0; border-radius: 8px; font-size: .875rem; color: #0f172a; font-weight: 400;
+    width: 100%; padding: .625rem .5rem !important; background: #f8fafc !important;
+    border: 2px solid #e2e8f0 !important; border-radius: 8px !important; font-size: .875rem !important; color: #0f172a; font-weight: 400;
     outline: none; transition: border-color .15s ease; appearance: none; cursor: pointer;
 }
-.lm-select:focus { border-color: #0f172a; }
+.lm-select:focus { border-color: #0f172a !important; }
 .lm-select--placeholder { color: #475569; }
 .lm-hint { margin-top: .5rem; font-size: .75rem; color: #64748b; }
 
