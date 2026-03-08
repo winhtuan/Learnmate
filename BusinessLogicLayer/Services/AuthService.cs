@@ -149,7 +149,8 @@ public class AuthService(
             TokenType: "Bearer",
             ExpiresIn: expiryMinutes * 60,
             Email: user.Email,
-            Role: user.Role.ToString()));
+            Role: user.Role.ToString(),
+            AvatarUrl: user.AvatarUrl));
     }
 
     public Task<ApiResponse<object?>> LogoutAsync(string token)
