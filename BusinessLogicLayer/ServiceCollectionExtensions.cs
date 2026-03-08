@@ -13,11 +13,13 @@ public static class ServiceCollectionExtensions
         // Repositories
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IOtpVerificationRepository, OtpVerificationRepository>();
+        services.AddScoped<DataAccessLayer.Repositories.Interfaces.Teacher.Assignments.ITeacherAssignmentRepository, DataAccessLayer.Repositories.Teacher.Assignments.TeacherAssignmentRepository>();
 
         // Services
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IEmailService, EmailService>();
         services.AddScoped<IOtpService, OtpService>();
+        services.AddScoped<BusinessLogicLayer.Services.Interfaces.Teacher.Assignments.ITeacherAssignmentService, BusinessLogicLayer.Services.Teacher.Assignments.TeacherAssignmentService>();
         services.AddSingleton<IJwtService, JwtService>();
 
         // Token blacklist cache

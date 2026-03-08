@@ -1,0 +1,345 @@
+@page "/teacher/assignments/{AssignmentId:long}/edit"
+@rendermode InteractiveServer
+@layout Layout.TeacherLayout
+
+@using BusinessLogicLayer.DTOs.Teacher.Assignments
+@using BusinessLogicLayer.Services.Interfaces.Teacher.Assignments
+@using BusinessObject.Enum
+@inject ITeacherAssignmentService AssignmentService
+@inject NavigationManager NavigationManager
+
+<PageTitle>Edit Assignment | LearnMate</PageTitle>
+
+@if (IsLoading)
+{
+    <div class="flex items-center justify-center py-20">
+        <span class="material-symbols-outlined animate-spin text-primary text-4xl">progress_activity</span>
+    </div>
+}
+else if (Model == null)
+{
+    <div class="bg-white border border-slate-200 rounded-lg p-12 text-center shadow-sm">
+        <span class="material-symbols-outlined text-slate-300 text-6xl mb-4">error</span>
+        <h2 class="text-xl font-bold text-slate-900 mb-2">Assignment Not Found</h2>
+        <p class="text-slate-500 mb-6">The assignment you're looking for doesn't exist or has been deleted.</p>
+        <button type="button" @onclick='() => NavigationManager.NavigateTo("/teacher/assignments/create")' class="bg-primary text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-600 transition-colors">
+            Back to Assignments
+        </button>
+    </div>
+}
+else
+{
+    <!-- Page Heading -->
+    <div class="mb-8 flex items-center justify-between">
+        <div>
+            <h1 class="text-3xl font-bold tracking-tight text-slate-900 mb-1">Edit Assignment</h1>
+            <p class="text-slate-500 font-normal">Update your assignment details, questions, and settings.</p>
+        </div>
+        <button type="button" @onclick='() => NavigationManager.NavigateTo("/teacher/assignments/create")' class="flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-slate-800 transition-colors">
+            <span class="material-symbols-outlined text-[20px]">arrow_back</span>
+            Back to Assignments
+        </button>
+    </div>
+
+    <EditForm Model="Model" OnValidSubmit="HandleUpdate" class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        <DataAnnotationsValidator />
+
+        <!-- Left Column -->
+        <div class="lg:col-span-8 flex flex-col gap-6">
+            <div class="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden p-6">
+                <h3 class="text-lg font-bold text-slate-900 mb-4 border-b border-slate-100 pb-3">Basic Information</h3>
+
+                @if (!string.IsNullOrEmpty(ErrorMessage))
+                {
+                    <div class="mb-4 p-4 rounded-lg bg-red-50 text-red-600 border border-red-200 flex items-center gap-2 text-sm">
+                        <span class="material-symbols-outlined text-[20px]">error</span>
+                        @ErrorMessage
+                    </div>
+                }
+                @if (!string.IsNullOrEmpty(SuccessMessage))
+                {
+                    <div class="mb-4 p-4 rounded-lg bg-green-50 text-green-700 border border-green-200 flex items-center gap-2 text-sm">
+                        <span class="material-symbols-outlined text-[20px]">check_circle</span>
+                        @SuccessMessage
+                    </div>
+                }
+
+                <div class="flex flex-col gap-5">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Assignment Title <span class="text-red-500">*</span></label>
+                        <InputText @bind-Value="Model.Title" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all placeholder:text-slate-400" placeholder="e.g., Midterm Physics Test" />
+                        <ValidationMessage For="@(() => Model.Title)" class="text-red-500 text-xs mt-1" />
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Criteria &amp; Instructions</label>
+                        <InputTextArea @bind-Value="Model.Description" rows="5" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all placeholder:text-slate-400 resize-y" placeholder="Enter instructions, scoring criteria..." />
+                    </div>
+                </div>
+            </div>
+
+            <!-- Questions Section -->
+            <div class="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden p-6">
+                <div class="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
+                    <h3 class="text-lg font-bold text-slate-900">Questions (@Model.Questions.Count)</h3>
+                    <button type="button" @onclick="AddQuestion" class="flex items-center gap-1 text-sm font-medium text-primary hover:text-blue-600 transition-colors">
+                        <span class="material-symbols-outlined text-[18px]">add</span> Add Question
+                    </button>
+                </div>
+
+                @if (Model.Questions.Count == 0)
+                {
+                    <div class="py-8 text-center bg-slate-50 border border-dashed border-slate-200 rounded-lg">
+                        <span class="material-symbols-outlined text-slate-400 text-4xl mb-2">quiz</span>
+                        <p class="text-slate-500 text-sm">No questions yet. Click "Add Question" to get started.</p>
+                    </div>
+                }
+                else
+                {
+                    <div class="flex flex-col gap-6">
+                        @for (int i = 0; i < Model.Questions.Count; i++)
+                        {
+                            var idx = i;
+                            <div class="p-5 border border-slate-200 rounded-lg bg-slate-50 relative group">
+                                <button type="button" @onclick="() => RemoveQuestion(idx)" class="absolute top-4 right-4 text-slate-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <span class="material-symbols-outlined text-[20px]">delete</span>
+                                </button>
+
+                                <div class="flex gap-4 mb-4">
+                                    <div class="flex-1">
+                                        <label class="block text-xs font-medium text-slate-500 mb-1">Question @(idx + 1)</label>
+                                        <InputTextArea @bind-Value="Model.Questions[idx].Content" rows="2" class="w-full px-3 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary outline-none" placeholder="Enter question..." />
+                                    </div>
+                                    <div class="w-48">
+                                        <label class="block text-xs font-medium text-slate-500 mb-1">Type</label>
+                                        <InputSelect @bind-Value="Model.Questions[idx].Type" class="w-full px-3 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary outline-none text-sm">
+                                            <option value="@QuestionType.MULTIPLE_CHOICE">Multiple Choice</option>
+                                            <option value="@QuestionType.ESSAY">Essay</option>
+                                        </InputSelect>
+                                    </div>
+                                    <div class="w-24">
+                                        <label class="block text-xs font-medium text-slate-500 mb-1">Points</label>
+                                        <InputNumber @bind-Value="Model.Questions[idx].Points" class="w-full px-3 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary outline-none text-sm" />
+                                    </div>
+                                </div>
+
+                                @if (Model.Questions[idx].Type == QuestionType.MULTIPLE_CHOICE)
+                                {
+                                    <div class="pl-4 border-l-2 border-slate-200 ml-2 space-y-3">
+                                        <label class="block text-xs font-medium text-slate-500">Options <span class="text-slate-400">(check = correct answer)</span></label>
+                                        @for (int j = 0; j < Model.Questions[idx].Options.Count; j++)
+                                        {
+                                            var oi = j;
+                                            var qi = idx;
+                                            <div class="flex items-center gap-3">
+                                                <InputCheckbox @bind-Value="Model.Questions[qi].Options[oi].IsCorrect" class="size-4 text-primary rounded border-slate-300" />
+                                                <InputText @bind-Value="Model.Questions[qi].Options[oi].Content" class="flex-1 px-3 py-1.5 text-sm rounded-md border border-slate-300 focus:ring-2 focus:ring-primary outline-none" placeholder="Option text..." />
+                                                <button type="button" @onclick="() => RemoveOption(qi, oi)" class="text-slate-400 hover:text-red-500">
+                                                    <span class="material-symbols-outlined text-[18px]">close</span>
+                                                </button>
+                                            </div>
+                                        }
+                                        <button type="button" @onclick="() => AddOption(idx)" class="text-xs font-medium text-primary hover:text-blue-600 flex items-center gap-1 mt-2">
+                                            <span class="material-symbols-outlined text-[16px]">add</span> Add Option
+                                        </button>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Right Column -->
+        <div class="lg:col-span-4 flex flex-col gap-6">
+            <div class="bg-white rounded-lg border border-slate-200 shadow-sm p-6 flex flex-col gap-5">
+                <h3 class="text-lg font-bold text-slate-900 border-b border-slate-100 pb-3">Settings</h3>
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Target Class <span class="text-red-500">*</span></label>
+                    <InputSelect @bind-Value="Model.ClassId" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary outline-none transition-all appearance-none bg-white">
+                        <option value="0" disabled>Select a class...</option>
+                        <option value="1">Advanced Mathematics (10A)</option>
+                        <option value="2">Physics 101: Mechanics (10B)</option>
+                        <option value="3">Literature &amp; Arts (11A)</option>
+                    </InputSelect>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Due Date / Deadline</label>
+                    <InputDate Type="InputDateType.DateTimeLocal" @bind-Value="Model.DueDate" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary outline-none transition-all text-slate-700" />
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Status</label>
+                    <InputSelect @bind-Value="Model.Status" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary outline-none transition-all appearance-none bg-white">
+                        <option value="@AssignmentStatus.DRAFT">Draft</option>
+                        <option value="@AssignmentStatus.PUBLISHED">Published</option>
+                        <option value="@AssignmentStatus.CLOSED">Closed</option>
+                    </InputSelect>
+                </div>
+            </div>
+
+            <!-- Info card -->
+            <div class="bg-white rounded-lg border border-slate-200 shadow-sm p-5">
+                <h4 class="text-sm font-bold text-slate-700 mb-3">Assignment Info</h4>
+                <div class="space-y-2 text-xs text-slate-500">
+                    <div class="flex justify-between"><span>ID</span><span class="font-mono text-slate-700">#@AssignmentId</span></div>
+                    <div class="flex justify-between"><span>Created</span><span class="text-slate-700">@OriginalCreatedAt.ToString("MMM dd, yyyy HH:mm")</span></div>
+                    <div class="flex justify-between"><span>Questions</span><span class="text-slate-700">@Model.Questions.Count</span></div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex flex-col gap-3">
+                <button type="submit" disabled="@IsSubmitting" class="w-full flex items-center justify-center gap-2 bg-primary hover:bg-blue-600 text-white font-medium py-3 rounded-lg transition-all shadow-sm disabled:opacity-70 disabled:cursor-not-allowed">
+                    @if (IsSubmitting)
+                    {
+                        <span class="material-symbols-outlined animate-spin">progress_activity</span>
+                        <span>Saving...</span>
+                    }
+                    else
+                    {
+                        <span class="material-symbols-outlined text-[20px]">save</span>
+                        <span>Save Changes</span>
+                    }
+                </button>
+                <button type="button" @onclick='() => NavigationManager.NavigateTo("/teacher/assignments/create")' class="w-full flex items-center justify-center gap-2 bg-white border border-slate-200 text-slate-700 font-medium py-3 rounded-lg hover:bg-slate-50 transition-colors">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </EditForm>
+}
+
+@code {
+    [Parameter]
+    public long AssignmentId { get; set; }
+
+    private UpdateAssignmentDto? Model;
+    private bool IsLoading = true;
+    private bool IsSubmitting;
+    private string? ErrorMessage;
+    private string? SuccessMessage;
+    private DateTime OriginalCreatedAt;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAssignment();
+    }
+
+    private async Task LoadAssignment()
+    {
+        IsLoading = true;
+        try
+        {
+            var detail = await AssignmentService.GetAssignmentByIdAsync(AssignmentId);
+            if (detail != null)
+            {
+                OriginalCreatedAt = detail.CreatedAt;
+                Model = new UpdateAssignmentDto
+                {
+                    ClassId = detail.ClassId,
+                    Title = detail.Title,
+                    Description = detail.Description,
+                    DueDate = detail.DueDate,
+                    Status = detail.Status,
+                    Questions = detail.Questions.Select(q => new UpdateAssignmentQuestionDto
+                    {
+                        Id = q.Id,
+                        Content = q.Content,
+                        Type = q.Type,
+                        Points = q.Points,
+                        Options = q.Options.Select(o => new UpdateAssignmentOptionDto
+                        {
+                            Id = o.Id,
+                            Content = o.Content,
+                            IsCorrect = o.IsCorrect
+                        }).ToList()
+                    }).ToList()
+                };
+            }
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = "Failed to load assignment: " + ex.Message;
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    private async Task HandleUpdate()
+    {
+        if (Model == null) return;
+
+        ErrorMessage = null;
+        SuccessMessage = null;
+
+        if (Model.ClassId == 0)
+        {
+            ErrorMessage = "Please select a target class.";
+            return;
+        }
+
+        IsSubmitting = true;
+        StateHasChanged();
+
+        try
+        {
+            var response = await AssignmentService.UpdateAssignmentAsync(AssignmentId, Model);
+
+            if (response.Success)
+            {
+                SuccessMessage = "Assignment updated successfully!";
+            }
+            else
+            {
+                ErrorMessage = response.Message ?? "Failed to update assignment.";
+            }
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = "An unexpected error occurred: " + ex.Message;
+        }
+        finally
+        {
+            IsSubmitting = false;
+        }
+    }
+
+    private void AddQuestion()
+    {
+        Model?.Questions.Add(new UpdateAssignmentQuestionDto
+        {
+            Type = QuestionType.MULTIPLE_CHOICE,
+            Points = 1,
+            Options = new List<UpdateAssignmentOptionDto>
+            {
+                new() { Content = "" },
+                new() { Content = "" }
+            }
+        });
+    }
+
+    private void RemoveQuestion(int index)
+    {
+        if (Model != null && index >= 0 && index < Model.Questions.Count)
+            Model.Questions.RemoveAt(index);
+    }
+
+    private void AddOption(int questionIndex)
+    {
+        if (Model != null && questionIndex >= 0 && questionIndex < Model.Questions.Count)
+            Model.Questions[questionIndex].Options.Add(new UpdateAssignmentOptionDto { Content = "" });
+    }
+
+    private void RemoveOption(int questionIndex, int optionIndex)
+    {
+        if (Model != null && questionIndex >= 0 && questionIndex < Model.Questions.Count &&
+            optionIndex >= 0 && optionIndex < Model.Questions[questionIndex].Options.Count)
+            Model.Questions[questionIndex].Options.RemoveAt(optionIndex);
+    }
+}
