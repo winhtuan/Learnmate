@@ -16,5 +16,6 @@ public class StudentProfileRepository(AppDbContext db) : IStudentProfileReposito
 
     public Task<StudentProfile?> GetByUserIdAsync(long userId) =>
         db.StudentProfiles.AsNoTracking()
+            .Include(p => p.User)
             .FirstOrDefaultAsync(p => p.UserId == userId);
 }

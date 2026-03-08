@@ -96,7 +96,6 @@ public static class DataSeeder
                 Id               = 1,
                 UserId           = 3,
                 FullName         = "Nguyen Minh Tuan",
-                AvatarUrl        = "https://placehold.co/400?text=avatar",
                 GradeLevel       = "12",
                 StudyStreakDays   = 8,
                 CreatedAt        = Now,

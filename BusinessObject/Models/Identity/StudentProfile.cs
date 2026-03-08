@@ -13,9 +13,6 @@ public class StudentProfile : AuditableEntity
     [MaxLength(200)]
     public string FullName { get; set; } = null!;
 
-    [MaxLength(500)]
-    public string? AvatarUrl { get; set; }
-
     public DateOnly? DateOfBirth { get; set; }
 
     [MaxLength(20)]
