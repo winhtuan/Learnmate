@@ -8,26 +8,44 @@ namespace BusinessLogicLayer.Services;
 public class StudentDashboardService(
     IStudentProfileRepository studentProfileRepo,
     IClassMemberRepository    classMemberRepo,
-    INotificationRepository   notificationRepo) : IStudentDashboardService
+    INotificationRepository   notificationRepo,
+    IScheduleRepository       scheduleRepo) : IStudentDashboardService
 {
     public async Task<ApiResponse<StudentDashboardDto>> GetDashboardAsync(
         long userId, CancellationToken ct = default)
     {
+        // Compute current week bounds in UTC
+        var today          = DateOnly.FromDateTime(DateTime.Today);
+        // Sunday → show upcoming Mon-Sun (next week); other days → show current Mon-Sun
+        var daysFromMonday = today.DayOfWeek == DayOfWeek.Sunday ? -1 : (int)today.DayOfWeek - 1;
+        var monday         = today.AddDays(-daysFromMonday);
+        var sunday         = monday.AddDays(6);
+        var weekStartUtc   = monday.ToDateTime(TimeOnly.MinValue).ToUniversalTime();
+        var weekEndUtc     = sunday.ToDateTime(TimeOnly.MaxValue).ToUniversalTime();
+
         // Sequential — DbContext is not thread-safe; parallel queries on the same context throw.
         var profile       = await studentProfileRepo.GetByUserIdAsync(userId);
         var members       = await classMemberRepo.GetEnrolledWithClassAsync(userId, ct);
         var notifications = await notificationRepo.GetRecentForUserAsync(userId, limit: 10, ct);
+        var schedules     = await scheduleRepo.GetWeeklyForStudentAsync(userId, weekStartUtc, weekEndUtc, ct);
+
+        var nowUtc       = DateTime.UtcNow;
+        var nextSchedule = schedules.FirstOrDefault(s => s.StartTime > nowUtc);
 
         var dto = new StudentDashboardDto(
             FullName:    profile?.FullName ?? "Student",
             CurrentTerm: ComputeCurrentTerm(),
             Stats: new StudentStatsDto(
                 ActiveClasses:   members.Count,
-                PendingTasks:    0,           // TODO: COUNT submissions WHERE status = pending
+                PendingTasks:    0,  // TODO: COUNT submissions WHERE status = pending
                 StudyStreakDays: profile?.StudyStreakDays ?? 0,
-                NextSession:     null         // TODO: next schedule entry for this student
+                NextSession:     nextSchedule is null ? null : new NextSessionDto(
+                    ClassName: nextSchedule.Class.Name,
+                    Room:      "",
+                    StartTime: TimeOnly.FromDateTime(nextSchedule.StartTime.ToLocalTime())
+                )
             ),
-            WeekSchedule:  BuildCurrentWeek(),
+            WeekSchedule:  BuildWeekWithSchedules(monday, schedules),
             Classes:       MapClasses(members),
             Notifications: MapNotifications(notifications)
         );
@@ -42,7 +60,7 @@ public class StudentDashboardService(
 
         return ApiResponse<StudentProfileHeaderDto>.Ok(new StudentProfileHeaderDto(
             FullName:   profile?.FullName   ?? "Student",
-            AvatarUrl:  profile?.AvatarUrl,
+            AvatarUrl:  profile?.User.AvatarUrl,
             GradeLevel: profile?.GradeLevel
         ));
     }
@@ -54,18 +72,17 @@ public class StudentDashboardService(
     {
         return members.Select(m =>
         {
-            // Repo đã .OrderBy().Take(1) — lấy phần tử đầu trực tiếp
             var nextAssignment = m.Class.Assignments.FirstOrDefault();
 
             return new EnrolledClassDto(
-                ClassId:       m.ClassId,
-                ClassName:     m.Class.Name,
-                SubjectColor:  "",   // no color column — UI uses index-based fallback
-                ProgressPercent: 0,  // TODO: compute from submissions
-                NextTaskTitle: nextAssignment?.Title,
-                NextTaskDue:   nextAssignment?.DueDate is DateTime d
-                               ? DateOnly.FromDateTime(d)
-                               : null
+                ClassId:         m.ClassId,
+                ClassName:       m.Class.Name,
+                SubjectColor:    "",  // no color column — UI uses index-based fallback
+                ProgressPercent: 0,   // TODO: compute from submissions
+                NextTaskTitle:   nextAssignment?.Title,
+                NextTaskDue:     nextAssignment?.DueDate is DateTime d
+                                 ? DateOnly.FromDateTime(d)
+                                 : null
             );
         }).ToList();
     }
@@ -81,14 +98,36 @@ public class StudentDashboardService(
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
-    private static IReadOnlyList<DayScheduleDto> BuildCurrentWeek()
+    private static IReadOnlyList<DayScheduleDto> BuildWeekWithSchedules(
+        DateOnly monday, IReadOnlyList<BusinessObject.Models.Schedule> schedules)
     {
-        var today = DateOnly.FromDateTime(DateTime.Today);
-        var daysFromMonday = today.DayOfWeek == DayOfWeek.Sunday ? 6 : (int)today.DayOfWeek - 1;
-        var monday = today.AddDays(-daysFromMonday);
+        // Pre-convert UTC→local once per schedule to avoid repeated ToLocalTime() calls
+        var localSchedules = schedules.Select(s => (
+            s.Class.Name,
+            LocalStart: s.StartTime.ToLocalTime(),
+            LocalEnd:   s.EndTime.ToLocalTime()
+        )).ToList();
 
-        return Enumerable.Range(0, 5)
-            .Select(i => new DayScheduleDto(monday.AddDays(i), []))
+        var byDate = localSchedules
+            .GroupBy(s => DateOnly.FromDateTime(s.LocalStart))
+            .ToDictionary(g => g.Key, g => g.ToList());
+
+        return Enumerable.Range(0, 7)
+            .Select(i =>
+            {
+                var date = monday.AddDays(i);
+                var day  = byDate.TryGetValue(date, out var list) ? list : [];
+                return new DayScheduleDto(
+                    date,
+                    day.Select(s => new ScheduledClassDto(
+                        ClassName: s.Name,
+                        Room:      "",
+                        StartTime: TimeOnly.FromDateTime(s.LocalStart),
+                        EndTime:   TimeOnly.FromDateTime(s.LocalEnd)
+                    )).ToList()
+                );
+            })
+            .Where(d => d.Classes.Count > 0)
             .ToArray();
     }
 

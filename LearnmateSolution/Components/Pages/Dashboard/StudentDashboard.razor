@@ -188,7 +188,7 @@
         var fgs   = new[] { "text-blue-600", "text-emerald-600", "text-purple-600", "text-orange-600", "text-sky-600" };
         var bars  = new[] { "bg-primary", "bg-emerald-500", "bg-purple-500", "bg-orange-500", "bg-sky-500" };
 
-        return classes.Select((c, i) => new CourseItem(
+        return classes.Take(4).Select((c, i) => new CourseItem(
             Icon:          icons[i % icons.Length],
             IconBg:        bgs[i % bgs.Length],
             IconColor:     fgs[i % fgs.Length],
@@ -201,7 +201,7 @@
     }
 
     private static List<NotificationItem> MapNotifications(IReadOnlyList<NotificationDto> notifs) =>
-        notifs.Select(n => new NotificationItem(
+        notifs.Take(4).Select(n => new NotificationItem(
             Color: n.IsRead ? "bg-slate-300" : "bg-primary",
             Text:  n.Message,
             Time:  FormatTimeAgo(n.CreatedAt)
