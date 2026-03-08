@@ -5,5 +5,6 @@ public record LoginResponse(
     string TokenType,
     int ExpiresIn,
     string Email,
-    string Role
+    string Role,
+    string? AvatarUrl
 );

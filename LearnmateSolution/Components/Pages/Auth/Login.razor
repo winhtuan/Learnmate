@@ -205,9 +205,10 @@
         if (Session.IsAuthenticated) return;
         var email = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_email");
         var role  = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_role");
-        var token = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_token");
+        var token  = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_token");
+        var avatar = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_avatar");
         if (!string.IsNullOrEmpty(email) && !string.IsNullOrEmpty(role) && !string.IsNullOrEmpty(token))
-            Session.SetSession(email, role, token);
+            Session.SetSession(email, role, token, avatar);
     }
 
     private static string DashboardFor(string? role) => role switch
@@ -246,10 +247,19 @@
                 var userEmail  = result.Data!.Email;
                 var userRole   = result.Data!.Role;
                 var userToken  = result.Data!.AccessToken;
-                Session.SetSession(userEmail, userRole, userToken);
+                var userAvatar = result.Data!.AvatarUrl;
+                Session.SetSession(userEmail, userRole, userToken, userAvatar);
                 await JS.InvokeVoidAsync("sessionStorage.setItem", "lm_email", userEmail);
                 await JS.InvokeVoidAsync("sessionStorage.setItem", "lm_role",  userRole);
                 await JS.InvokeVoidAsync("sessionStorage.setItem", "lm_token", userToken);
+                if (!string.IsNullOrEmpty(userAvatar))
+                {
+                    await JS.InvokeVoidAsync("sessionStorage.setItem", "lm_avatar", userAvatar);
+                }
+                else
+                {
+                    await JS.InvokeVoidAsync("sessionStorage.removeItem", "lm_avatar");
+                }
                 var destination = userRole switch
                 {
                     "STUDENT" => "/student-dashboard",
