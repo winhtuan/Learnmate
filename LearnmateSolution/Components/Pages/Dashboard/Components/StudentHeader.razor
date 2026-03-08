@@ -1,5 +1,11 @@
 @rendermode InteractiveServer
 @inject NavigationManager Nav
+@inject UserSessionService Session
+@inject IJSRuntime JS
+@inject IHttpClientFactory HttpClientFactory
+@using BusinessLogicLayer.DTOs
+@using BusinessLogicLayer.DTOs.Student
+@using LearnmateSolution.Services
 
 @* Backdrop ngoài header — z-[49] để bắt click ở body page *@
 @if (_menuOpen)
@@ -18,11 +24,11 @@
 
         @* Nav links (lg+) *@
         <nav class="hidden lg:flex items-center gap-6">
-            @foreach (var link in navLinks)
+            @foreach (var link in _navLinks)
             {
                 var isActive = Nav.Uri.Contains(link.Href);
                 <a href="@link.Href"
-                   class="no-underline text-sm font-medium transition-colors @(isActive ? "text-primary" : "text-slate-600 hover:text-primary")">
+                       class="no-underline text-sm font-medium transition-colors @(isActive ? "text-primary" : "text-slate-600 hover:text-primary")">
                     @link.Label
                 </a>
             }
@@ -37,8 +43,8 @@
                 @* Trigger: name + avatar *@
                 <button @onclick="ToggleMenu"
                         class="flex items-center gap-2.5 rounded-full pl-3 pr-1 py-1 hover:bg-slate-100 transition-colors outline-none focus:outline-none border-0">
-                    <span class="hidden sm:block text-sm font-semibold text-slate-700 leading-none">@_user.FullName</span>
-                    <img src="@_user.AvatarUrl" alt="Profile"
+                    <span class="hidden sm:block text-sm font-semibold text-slate-700 leading-none">@_fullName</span>
+                    <img src="@AvatarSrc" alt="Profile"
                          class="size-8 rounded-full object-cover ring-2 transition-all @(_menuOpen ? "ring-slate-400" : "ring-slate-200")" />
                 </button>
 
@@ -50,15 +56,16 @@
 
                         @* Profile header *@
                         <div class="px-4 py-4 flex items-center gap-3 bg-slate-50 border-b border-slate-100">
-                            <img src="@_user.AvatarUrl" alt="Avatar"
+                            <img src="@AvatarSrc" alt="Avatar"
                                  class="size-11 rounded-full object-cover shrink-0 ring-2 ring-white shadow-sm" />
                             <div class="min-w-0">
-                                <p class="text-[15px] font-bold text-slate-900 truncate">@_user.FullName</p>
-                                <p class="text-[12px] text-slate-400 truncate">@_user.Email</p>
-                                @if (_user.GradeLevel is not null)
+                                <p class="text-[15px] font-bold text-slate-900 truncate">@_fullName</p>
+                                <p class="text-[12px] text-slate-400 truncate">@_email</p>
+                                @if (_gradeLevel is not null)
                                 {
-                                    <span class="inline-block mt-1 text-[11px] font-semibold text-primary bg-primary/10 rounded-full px-2 py-0.5 leading-tight">
-                                        @_user.GradeLevel
+                                    <span
+                                        class="inline-flex items-center gap-1 mt-1.5 text-[11px] font-bold tracking-wide text-indigo-700 bg-indigo-100 border border-indigo-200 rounded-full px-2.5 py-0.5 leading-tight">
+                                        Grade @_gradeLevel
                                     </span>
                                 }
                             </div>
@@ -66,11 +73,12 @@
 
                         @* Menu items *@
                         <div class="py-1.5">
-                            @foreach (var item in menuItems)
+                            @foreach (var item in _menuItems)
                             {
                                 <button @onclick="() => Navigate(item.Href)"
                                         class="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors outline-none focus:outline-none border-0 text-left">
-                                    <span class="material-symbols-outlined text-[20px] text-slate-400 shrink-0">@item.Icon</span>
+                                    <span
+                                    class="material-symbols-outlined text-[20px] text-slate-400 shrink-0">@item.Icon</span>
                                     <span class="font-medium">@item.Label</span>
                                 </button>
                             }
@@ -94,35 +102,76 @@
 @code {
     private record NavLink(string Label, string Href);
     private record MenuItem(string Label, string Icon, string Href);
-    private record UserMenuInfo(string FullName, string Email, string AvatarUrl, string? GradeLevel);
 
-    // Mock — sẽ thay bằng dữ liệu thật từ auth/service sau
-    private readonly UserMenuInfo _user = new(
-        FullName: "Alex Johnson",
-        Email: "alex.johnson@school.edu",
-        AvatarUrl: "https://api.dicebear.com/7.x/notionists/svg?seed=student",
-        GradeLevel: "Grade 10"
-    );
+    private string _fullName = "Student";
+    private string _email = "";
+    private string? _avatarUrl;
+    private string? _gradeLevel;
+    private bool _menuOpen;
 
-    private readonly NavLink[] navLinks =
+    private const string DefaultAvatar = "https://placehold.co/400?text=avatar";
+
+    private string AvatarSrc => _avatarUrl is not null and not "" ? _avatarUrl : DefaultAvatar;
+
+    private static readonly NavLink[] _navLinks =
     [
         new("Dashboard", "/student-dashboard"),
-        new("Class",     "/classes"),
-        new("Schedule",  "/schedule"),
+        new("Class", "/classes"),
+        new("Schedule", "/schedule"),
         new("Assignment","/assignments"),
     ];
 
-    private readonly MenuItem[] menuItems =
+    private static readonly MenuItem[] _menuItems =
     [
         new("My Profile", "account_circle", "/profile"),
-        new("Settings",   "settings",       "/settings"),
-        new("Help",       "help",           "/help"),
+        new("Settings", "settings", "/settings"),
+        new("Help", "help", "/help"),
     ];
 
-    private bool _menuOpen;
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+
+        // ── Restore session ───────────────────────────────────────────────────
+        if (!Session.IsAuthenticated)
+        {
+            var email = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_email");
+            var role = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_role");
+            var token = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_token");
+            if (!string.IsNullOrEmpty(email) && !string.IsNullOrEmpty(role) && !string.IsNullOrEmpty(token))
+                Session.SetSession(email, role, token);
+        }
+
+        if (!Session.IsAuthenticated) return; // page guard handles redirect
+
+        _email = Session.Email ?? "";
+
+        // ── Load profile from API ─────────────────────────────────────────────
+        try
+        {
+            var client = HttpClientFactory.CreateClient("learnmate");
+            client.BaseAddress = new Uri(Nav.BaseUri);
+            client.DefaultRequestHeaders.Authorization =
+                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", Session.AccessToken);
+
+            var resp = await client.GetFromJsonAsync<ApiResponse<StudentProfileHeaderDto>>("api/student/me");
+            if (resp?.Data is { } data)
+            {
+                _fullName = data.FullName;
+                _avatarUrl = data.AvatarUrl;
+                _gradeLevel = data.GradeLevel;
+            }
+        }
+        catch
+        {
+            // Keep defaults — header still renders with email from session
+        }
+
+        StateHasChanged();
+    }
 
     private void ToggleMenu() => _menuOpen = !_menuOpen;
-    private void CloseMenu()  => _menuOpen = false;
+    private void CloseMenu() => _menuOpen = false;
 
     private void Navigate(string href)
     {
@@ -130,9 +179,13 @@
         Nav.NavigateTo(href);
     }
 
-    private void SignOut()
+    private async Task SignOut()
     {
         _menuOpen = false;
-        Nav.NavigateTo("/login");
+        Session.Clear();
+        await JS.InvokeVoidAsync("sessionStorage.removeItem", "lm_email");
+        await JS.InvokeVoidAsync("sessionStorage.removeItem", "lm_role");
+        await JS.InvokeVoidAsync("sessionStorage.removeItem", "lm_token");
+        Nav.NavigateTo("/login", replace: true);
     }
 }

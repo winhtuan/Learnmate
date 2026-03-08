@@ -28,6 +28,7 @@ public static class DataSeeder
         SeedProfiles(modelBuilder);
         SeedClasses(modelBuilder);
         SeedClassMembers(modelBuilder);
+        ClassSeed.Seed(modelBuilder);
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -89,12 +90,14 @@ public static class DataSeeder
         m.Entity<StudentProfile>().HasData(
             new StudentProfile
             {
-                Id         = 1,
-                UserId     = 3,
-                FullName   = "Tran Thi B",
-                GradeLevel = "12",
-                CreatedAt  = Now,
-                UpdatedAt  = Now,
+                Id               = 1,
+                UserId           = 3,
+                FullName         = "Nguyen Minh Tuan",
+                AvatarUrl        = "https://placehold.co/400?text=avatar",
+                GradeLevel       = "12",
+                StudyStreakDays   = 8,
+                CreatedAt        = Now,
+                UpdatedAt        = Now,
             }
         );
     }

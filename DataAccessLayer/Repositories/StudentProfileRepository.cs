@@ -1,6 +1,7 @@
 using BusinessObject.Models;
 using DataAccessLayer.Data;
 using DataAccessLayer.Repositories.Interfaces;
+using Microsoft.EntityFrameworkCore;
 
 namespace DataAccessLayer.Repositories;
 
@@ -12,4 +13,8 @@ public class StudentProfileRepository(AppDbContext db) : IStudentProfileReposito
         await db.SaveChangesAsync();
         return profile;
     }
+
+    public Task<StudentProfile?> GetByUserIdAsync(long userId) =>
+        db.StudentProfiles.AsNoTracking()
+            .FirstOrDefaultAsync(p => p.UserId == userId);
 }
