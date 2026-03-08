@@ -3,6 +3,10 @@
 @using BusinessLogicLayer.Services.Interfaces
 @using BusinessLogicLayer.DTOs.Dashboard
 @inject IDashboardService DashboardService
+@inject NavigationManager Nav
+@inject UserSessionService Session
+@inject IJSRuntime JS
+@rendermode InteractiveServer
 
 @layout AdminLayout
 
@@ -158,9 +162,20 @@ else if (_overview != null)
     private DashboardOverviewDto? _overview;
     private IEnumerable<RecentActivityDto>? _activities;
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
+        if (!firstRender) return;
+        if (!Session.IsAuthenticated)
+        {
+            var email = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_email");
+            var role  = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_role");
+            if (!string.IsNullOrEmpty(email) && !string.IsNullOrEmpty(role))
+                Session.SetSession(email, role);
+        }
+        if (!Session.IsAuthenticated) { Nav.NavigateTo("/login", replace: true); return; }
+        if (Session.Role != "ADMIN") { Nav.NavigateTo(Session.Role == "STUDENT" ? "/student-dashboard" : "/", replace: true); return; }
         await LoadDataAsync();
+        StateHasChanged();
     }
 
     private async Task LoadDataAsync()

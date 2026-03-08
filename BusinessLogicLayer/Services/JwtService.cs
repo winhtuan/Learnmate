@@ -2,28 +2,21 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using BusinessLogicLayer.Services.Interfaces;
+using BusinessLogicLayer.Settings;
 using Microsoft.Extensions.Caching.Memory;
-using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
 namespace BusinessLogicLayer.Services;
 
-public class JwtService(IConfiguration config, IMemoryCache cache) : IJwtService
+public class JwtService(IOptions<JwtSettings> options, IMemoryCache cache) : IJwtService
 {
     private const string BlacklistPrefix = "blacklist_";
-
-    private string SecretKey =>
-        config["Jwt:SecretKey"] ?? throw new InvalidOperationException("Jwt:SecretKey is not configured.");
-
-    private string Issuer => config["Jwt:Issuer"] ?? "learnmate";
-    private string Audience => config["Jwt:Audience"] ?? "learnmate";
-
-    private int ExpiryMinutes =>
-        config.GetValue<int>("Jwt:ExpiryMinutes", 60);
+    private readonly JwtSettings _settings = options.Value;
 
     public string GenerateToken(long userId, string email, string role)
     {
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(SecretKey));
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_settings.SecretKey));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
         var claims = new[]
@@ -37,13 +30,11 @@ public class JwtService(IConfiguration config, IMemoryCache cache) : IJwtService
                 ClaimValueTypes.Integer64)
         };
 
-        var expiry = DateTime.UtcNow.AddMinutes(ExpiryMinutes);
-
         var token = new JwtSecurityToken(
-            issuer: Issuer,
-            audience: Audience,
+            issuer: _settings.Issuer,
+            audience: _settings.Audience,
             claims: claims,
-            expires: expiry,
+            expires: DateTime.UtcNow.AddMinutes(_settings.ExpiryMinutes),
             signingCredentials: credentials);
 
         return new JwtSecurityTokenHandler().WriteToken(token);

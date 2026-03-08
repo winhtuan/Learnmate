@@ -1,6 +1,13 @@
+@rendermode InteractiveServer
 @inject NavigationManager Nav
 
-<header class="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-200">
+@* Backdrop ngoài header — z-[49] để bắt click ở body page *@
+@if (_menuOpen)
+{
+    <div class="fixed inset-0 z-[49]" @onclick="CloseMenu"></div>
+}
+
+<header @onclick="CloseMenu" class="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-100">
     <div class="max-w-7xl mx-auto px-6 lg:px-10 py-3 flex items-center justify-between gap-4">
 
         @* Logo *@
@@ -8,14 +15,6 @@
             <img src="images/logo.svg" class="size-8" alt="LearnMate" />
             <span class="text-xl font-bold leading-tight tracking-tight text-slate-900 hidden sm:block">LearnMate</span>
         </a>
-
-        @* Search bar (md+) *@
-        <div class="hidden md:flex items-center bg-slate-100 rounded-full h-10 w-64 lg:w-80 focus-within:ring-2 focus-within:ring-primary/30 transition-all px-4 gap-2">
-            <span class="material-symbols-outlined text-[20px] text-slate-400 shrink-0">search</span>
-            <input type="text"
-                   placeholder="Search..."
-                   class="flex-1 bg-transparent text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none border-0 !shadow-none p-0" />
-        </div>
 
         @* Nav links (lg+) *@
         <nav class="hidden lg:flex items-center gap-6">
@@ -31,27 +30,109 @@
 
         @* Right side *@
         <div class="flex items-center gap-3 shrink-0">
-            @* Bell *@
-            <button class="relative size-9 flex items-center justify-center rounded-full hover:bg-slate-100 transition-colors outline-none focus:outline-none border-0">
-                <span class="material-symbols-outlined text-[22px] text-slate-500">notifications</span>
-                <span class="absolute top-1 right-1 size-2 bg-red-500 rounded-full border-2 border-white"></span>
-            </button>
 
-            @* Avatar *@
-            <button class="size-9 rounded-full bg-slate-200 ring-2 ring-slate-100 hover:ring-primary transition-all overflow-hidden">
-                <img src="https://api.dicebear.com/7.x/notionists/svg?seed=student" alt="Profile" class="w-full h-full object-cover" />
-            </button>
+            @* Avatar trigger + Dropdown: stopPropagation ngăn header CloseMenu khi click vào đây *@
+            <div class="relative" @onclick:stopPropagation>
+
+                @* Trigger: name + avatar *@
+                <button @onclick="ToggleMenu"
+                        class="flex items-center gap-2.5 rounded-full pl-3 pr-1 py-1 hover:bg-slate-100 transition-colors outline-none focus:outline-none border-0">
+                    <span class="hidden sm:block text-sm font-semibold text-slate-700 leading-none">@_user.FullName</span>
+                    <img src="@_user.AvatarUrl" alt="Profile"
+                         class="size-8 rounded-full object-cover ring-2 transition-all @(_menuOpen ? "ring-slate-400" : "ring-slate-200")" />
+                </button>
+
+                @* Panel *@
+                @if (_menuOpen)
+                {
+                    <div class="absolute right-0 mt-2 w-64 bg-white rounded-2xl border border-slate-200 shadow-xl overflow-hidden z-[51]"
+                         style="top: 100%;">
+
+                        @* Profile header *@
+                        <div class="px-4 py-4 flex items-center gap-3 bg-slate-50 border-b border-slate-100">
+                            <img src="@_user.AvatarUrl" alt="Avatar"
+                                 class="size-11 rounded-full object-cover shrink-0 ring-2 ring-white shadow-sm" />
+                            <div class="min-w-0">
+                                <p class="text-[15px] font-bold text-slate-900 truncate">@_user.FullName</p>
+                                <p class="text-[12px] text-slate-400 truncate">@_user.Email</p>
+                                @if (_user.GradeLevel is not null)
+                                {
+                                    <span class="inline-block mt-1 text-[11px] font-semibold text-primary bg-primary/10 rounded-full px-2 py-0.5 leading-tight">
+                                        @_user.GradeLevel
+                                    </span>
+                                }
+                            </div>
+                        </div>
+
+                        @* Menu items *@
+                        <div class="py-1.5">
+                            @foreach (var item in menuItems)
+                            {
+                                <button @onclick="() => Navigate(item.Href)"
+                                        class="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors outline-none focus:outline-none border-0 text-left">
+                                    <span class="material-symbols-outlined text-[20px] text-slate-400 shrink-0">@item.Icon</span>
+                                    <span class="font-medium">@item.Label</span>
+                                </button>
+                            }
+                        </div>
+
+                        @* Sign out *@
+                        <div class="border-t border-slate-100 py-1.5">
+                            <button @onclick="SignOut"
+                                    class="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-rose-600 hover:bg-rose-50 transition-colors outline-none focus:outline-none border-0 text-left">
+                                <span class="material-symbols-outlined text-[20px] shrink-0">logout</span>
+                                <span class="font-medium">Sign Out</span>
+                            </button>
+                        </div>
+                    </div>
+                }
+            </div>
         </div>
     </div>
 </header>
 
 @code {
     private record NavLink(string Label, string Href);
+    private record MenuItem(string Label, string Icon, string Href);
+    private record UserMenuInfo(string FullName, string Email, string AvatarUrl, string? GradeLevel);
+
+    // Mock — sẽ thay bằng dữ liệu thật từ auth/service sau
+    private readonly UserMenuInfo _user = new(
+        FullName: "Alex Johnson",
+        Email: "alex.johnson@school.edu",
+        AvatarUrl: "https://api.dicebear.com/7.x/notionists/svg?seed=student",
+        GradeLevel: "Grade 10"
+    );
+
     private readonly NavLink[] navLinks =
     [
         new("Dashboard", "/student-dashboard"),
-        new("Class", "/classes"),
-        new("Schedule", "/schedule"),
-        new("Assignment", "/assignments"),
+        new("Class",     "/classes"),
+        new("Schedule",  "/schedule"),
+        new("Assignment","/assignments"),
     ];
+
+    private readonly MenuItem[] menuItems =
+    [
+        new("My Profile", "account_circle", "/profile"),
+        new("Settings",   "settings",       "/settings"),
+        new("Help",       "help",           "/help"),
+    ];
+
+    private bool _menuOpen;
+
+    private void ToggleMenu() => _menuOpen = !_menuOpen;
+    private void CloseMenu()  => _menuOpen = false;
+
+    private void Navigate(string href)
+    {
+        _menuOpen = false;
+        Nav.NavigateTo(href);
+    }
+
+    private void SignOut()
+    {
+        _menuOpen = false;
+        Nav.NavigateTo("/login");
+    }
 }

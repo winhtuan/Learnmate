@@ -13,12 +13,14 @@ public static class ServiceCollectionExtensions
         // Repositories
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IOtpVerificationRepository, OtpVerificationRepository>();
+        services.AddScoped<IStudentProfileRepository, StudentProfileRepository>();
 
         // Services
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IEmailService, EmailService>();
         services.AddScoped<IOtpService, OtpService>();
         services.AddSingleton<IJwtService, JwtService>();
+        services.AddScoped<IDashboardService, DashboardService>();
 
         // Token blacklist cache
         services.AddMemoryCache();
