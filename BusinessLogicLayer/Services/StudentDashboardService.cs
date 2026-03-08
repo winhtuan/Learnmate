@@ -16,12 +16,12 @@ public class StudentDashboardService(
     {
         // Compute current week bounds in UTC
         var today          = DateOnly.FromDateTime(DateTime.Today);
-        // Sunday → show upcoming Mon-Fri (next week); other days → show current Mon-Fri
+        // Sunday → show upcoming Mon-Sun (next week); other days → show current Mon-Sun
         var daysFromMonday = today.DayOfWeek == DayOfWeek.Sunday ? -1 : (int)today.DayOfWeek - 1;
         var monday         = today.AddDays(-daysFromMonday);
-        var friday         = monday.AddDays(4);
+        var sunday         = monday.AddDays(6);
         var weekStartUtc   = monday.ToDateTime(TimeOnly.MinValue).ToUniversalTime();
-        var weekEndUtc     = friday.ToDateTime(TimeOnly.MaxValue).ToUniversalTime();
+        var weekEndUtc     = sunday.ToDateTime(TimeOnly.MaxValue).ToUniversalTime();
 
         // Sequential — DbContext is not thread-safe; parallel queries on the same context throw.
         var profile       = await studentProfileRepo.GetByUserIdAsync(userId);
@@ -101,24 +101,34 @@ public class StudentDashboardService(
     private static IReadOnlyList<DayScheduleDto> BuildWeekWithSchedules(
         DateOnly monday, IReadOnlyList<BusinessObject.Models.Schedule> schedules)
     {
-        var byDate = schedules
-            .GroupBy(s => DateOnly.FromDateTime(s.StartTime.ToLocalTime()))
+        // Pre-convert UTC→local once per schedule to avoid repeated ToLocalTime() calls
+        var localSchedules = schedules.Select(s => (
+            s.Class.Name,
+            LocalStart: s.StartTime.ToLocalTime(),
+            LocalEnd:   s.EndTime.ToLocalTime()
+        )).ToList();
+
+        var byDate = localSchedules
+            .GroupBy(s => DateOnly.FromDateTime(s.LocalStart))
             .ToDictionary(g => g.Key, g => g.ToList());
 
-        return Enumerable.Range(0, 5).Select(i =>
-        {
-            var date = monday.AddDays(i);
-            var day  = byDate.TryGetValue(date, out var list) ? list : [];
-            return new DayScheduleDto(
-                date,
-                day.Select(s => new ScheduledClassDto(
-                    ClassName: s.Class.Name,
-                    Room:      "",
-                    StartTime: TimeOnly.FromDateTime(s.StartTime.ToLocalTime()),
-                    EndTime:   TimeOnly.FromDateTime(s.EndTime.ToLocalTime())
-                )).ToList()
-            );
-        }).ToArray();
+        return Enumerable.Range(0, 7)
+            .Select(i =>
+            {
+                var date = monday.AddDays(i);
+                var day  = byDate.TryGetValue(date, out var list) ? list : [];
+                return new DayScheduleDto(
+                    date,
+                    day.Select(s => new ScheduledClassDto(
+                        ClassName: s.Name,
+                        Room:      "",
+                        StartTime: TimeOnly.FromDateTime(s.LocalStart),
+                        EndTime:   TimeOnly.FromDateTime(s.LocalEnd)
+                    )).ToList()
+                );
+            })
+            .Where(d => d.Classes.Count > 0)
+            .ToArray();
     }
 
     private static string ComputeCurrentTerm()
