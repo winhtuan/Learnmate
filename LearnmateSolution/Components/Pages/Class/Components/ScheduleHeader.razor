@@ -1,0 +1,32 @@
+<div class="flex flex-col lg:flex-row items-center justify-between gap-6">
+    <div class="flex items-center gap-4">
+        <h2 class="text-2xl font-bold text-slate-900">@Month @Year</h2>
+        <div class="flex items-center bg-white rounded-full border border-slate-200 p-1 shadow-sm">
+            <button class="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-500">
+                <span class="material-symbols-outlined text-[20px]">chevron_left</span>
+            </button>
+            <button class="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-500">
+                <span class="material-symbols-outlined text-[20px]">chevron_right</span>
+            </button>
+        </div>
+    </div>
+    <div class="flex items-center gap-4 w-full lg:w-auto justify-end">
+        <div class="flex p-1 bg-white rounded-xl border border-slate-200 shadow-sm">
+            <button class="px-5 py-2 bg-slate-100 rounded-lg text-sm font-bold text-slate-900 transition-all shadow-sm">
+                Month
+            </button>
+            <button class="px-5 py-2 text-sm font-medium text-slate-500 hover:text-slate-900 transition-all">
+                Week
+            </button>
+        </div>
+        <button class="flex items-center gap-2 px-5 py-2.5 bg-primary hover:bg-primary/90 text-white rounded-xl font-bold text-sm transition-all shadow-lg shadow-primary/20">
+            <span class="material-symbols-outlined text-[20px]">sync</span>
+            <span class="hidden sm:inline">Sync to Calendar</span>
+        </button>
+    </div>
+</div>
+
+@code {
+    [Parameter] public string Month { get; set; } = "";
+    [Parameter] public int Year { get; set; }
+}

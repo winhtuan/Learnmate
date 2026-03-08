@@ -1,0 +1,14 @@
+<div class="rounded-lg p-5 text-white flex items-center justify-between shadow-lg hover:shadow-xl transition-shadow"
+     style="background: linear-gradient(to bottom right, #f59e0b, #ea580c)">
+    <div>
+        <p class="text-xs text-amber-100 font-medium uppercase tracking-wide">Study Streak</p>
+        <p class="text-2xl font-bold mt-1 text-white">@Days days</p>
+    </div>
+    <div class="h-10 w-10 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
+        <span class="material-symbols-outlined text-white">trending_up</span>
+    </div>
+</div>
+
+@code {
+    [Parameter] public int Days { get; set; } = 15;
+}

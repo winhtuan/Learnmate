@@ -74,10 +74,10 @@
 .lm-dob-selects { display: grid; grid-template-columns: repeat(3, 1fr); gap: .75rem; padding-left: 2rem; }
 .lm-select {
     width: 100%; padding: .625rem .5rem !important; background: #f8fafc !important;
-    border: 2px solid #e2e8f0 !important; border-radius: 8px !important; font-size: .875rem !important; color: #0f172a; font-weight: 400;
+    border: 2px solid #e2e8f0 !important; border-radius: 16px !important; font-size: .875rem !important; color: #0f172a; font-weight: 400;
     outline: none; transition: border-color .15s ease; appearance: none; cursor: pointer;
 }
-.lm-select:focus { border-color: #0f172a !important; }
+.lm-select:focus { border-color: #1e293b !important; box-shadow: none !important; outline: none !important; }
 .lm-select--placeholder { color: #475569; }
 .lm-hint { margin-top: .5rem; font-size: .75rem; color: #64748b; }
 
@@ -106,11 +106,11 @@
 /* ── OTP ── */
 .lm-otp-boxes { display: flex; gap: .625rem; justify-content: center; margin-top: .25rem; }
 .lm-otp-box {
-    width: 46px; height: 52px; border: 2px solid #e2e8f0; border-radius: 8px;
+    width: 46px; height: 52px; border: 2px solid #e2e8f0; border-radius: 16px;
     text-align: center; font-size: 1.375rem; font-weight: 600; color: #0f172a;
     background: #f8fafc; outline: none; caret-color: transparent;
     transition: border-color .15s ease, background .15s ease;
 }
-.lm-otp-box:focus { border-color: #0f172a; background: #fff; }
-.lm-otp-box--filled { border-color: #0f172a; background: #fff; }
+.lm-otp-box:focus { border-color: #1e293b; background: #fff; box-shadow: none !important; outline: none !important; }
+.lm-otp-box--filled { border-color: #1e293b; background: #fff; }
 .lm-otp-hint { font-size: .875rem; color: #64748b; margin-top: .75rem; line-height: 1.5; }
