@@ -2,6 +2,9 @@
 @using LearnmateSolution.Components.Layout.Admin
 @layout AdminLayout
 @rendermode InteractiveServer
+@inject NavigationManager Nav
+@inject UserSessionService Session
+@inject IJSRuntime JS
 
 
 <div class="reports-page">
@@ -304,6 +307,20 @@
 </div>
 
 @code {
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        if (!Session.IsAuthenticated)
+        {
+            var email = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_email");
+            var role  = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_role");
+            if (!string.IsNullOrEmpty(email) && !string.IsNullOrEmpty(role))
+                Session.SetSession(email, role);
+        }
+        if (!Session.IsAuthenticated) { Nav.NavigateTo("/login", replace: true); return; }
+        if (Session.Role != "ADMIN") { Nav.NavigateTo(Session.Role == "STUDENT" ? "/student-dashboard" : "/", replace: true); }
+    }
+
     private bool isExportView = false;
     private bool showSuccessAlert = true;
     private string selectedFormat = "CSV";
