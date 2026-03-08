@@ -1,4 +1,4 @@
-namespace LearnmateSolution.Services;
+namespace LearnmateSolution.AppState;
 
 /// <summary>
 /// Per-circuit (Blazor Server) auth state.

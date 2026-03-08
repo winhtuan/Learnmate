@@ -3,7 +3,7 @@ using BusinessLogicLayer.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace LearnmateSolution.Controller;
+namespace LearnmateSolution.Controllers;
 
 [ApiController]
 [Route("auth")]
