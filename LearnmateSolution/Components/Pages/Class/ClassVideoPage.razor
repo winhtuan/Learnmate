@@ -1,0 +1,56 @@
+@page "/classes/{Id:int}/videos"
+@layout ClassLayout
+@rendermode InteractiveServer
+@using LearnmateSolution.Components.Layout
+@using LearnmateSolution.Components.Pages.Class.Components
+@using LearnmateSolution.Components.Pages.Class.Models
+
+<div class="space-y-6 max-w-screen-xl mx-auto">
+    <HeroBanner
+        ClassCode="MATH101"
+        ClassStatus="Active"
+        ClassName="Advanced Calculus"
+        Description="Multivariable calculus, vector analysis, and differential equations for science and engineering students."
+        BackgroundImage="https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=1200" />
+
+    <ClassTabNav ClassId="@Id" ActiveTab="videos" />
+
+    @* Live Session *@
+    <LiveSessionCard Session="liveSession" />
+
+    @* Recorded lectures *@
+    <div>
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-xl font-bold text-slate-900">Recorded Lectures</h3>
+            <button class="text-sm font-semibold text-primary hover:text-primary/80 transition-colors">View all (@lectures.Count)</button>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+            @foreach (var lecture in lectures)
+            {
+                <VideoLectureCard Lecture="lecture" />
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    // LiveSession(string Status, string Date, string Title, string Description, LiveSessionHost Host, int StudentsWaiting)
+    private LiveSession liveSession = new(
+        Status: "Live Now",
+        Date: "Monday, October 16 • 9:00 AM",
+        Title: "Multivariable Chain Rule",
+        Description: "Today we continue with advanced chain rule applications in multivariable calculus. Bring your problem sets!",
+        Host: new LiveSessionHost("Prof. Sarah Smith", "https://api.dicebear.com/7.x/notionists/svg?seed=sarah"),
+        StudentsWaiting: 12
+    );
+
+    // VideoLecture(int Id, string Title, string Duration, string Date, string Unit, string GradientFrom, string GradientTo, string AccentGradient)
+    private List<VideoLecture> lectures =
+    [
+        new VideoLecture(1, "Introduction to Partial Derivatives", "52:14", "Oct 2, 2023", "Unit 1", "from-sky-600",    "to-blue-900",   "from-sky-300"),
+        new VideoLecture(2, "Gradient Vectors and Directional Derivatives", "48:33", "Oct 4, 2023", "Unit 1", "from-emerald-600", "to-teal-900", "from-emerald-300"),
+        new VideoLecture(3, "Optimization with Lagrange Multipliers", "61:07", "Oct 9, 2023", "Unit 2", "from-purple-600", "to-indigo-900", "from-purple-300"),
+    ];
+}

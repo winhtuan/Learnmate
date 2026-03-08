@@ -1,0 +1,23 @@
+@using LearnmateSolution.Components.Pages.Class.Models
+
+<tr class="group hover:bg-slate-50 transition-colors border-b border-slate-100 last:border-0">
+    <td class="py-4 pl-6">
+        <div class="flex items-center gap-4">
+            <div class="size-10 rounded-lg @File.IconBg @File.IconColor flex items-center justify-center shrink-0">
+                <span class="material-symbols-outlined text-[20px]">@File.Icon</span>
+            </div>
+            <span class="font-medium text-slate-900 group-hover:text-primary transition-colors cursor-pointer">@File.Name</span>
+        </div>
+    </td>
+    <td class="py-4 text-slate-500">@File.Date</td>
+    <td class="py-4 text-slate-500">@File.Size</td>
+    <td class="py-4 pr-6 text-right">
+        <button class="p-2 text-slate-400 hover:text-slate-900 transition-colors rounded-full hover:bg-slate-200">
+            <span class="material-symbols-outlined text-[20px]">more_horiz</span>
+        </button>
+    </td>
+</tr>
+
+@code {
+    [Parameter] public MaterialFile File { get; set; } = null!;
+}

@@ -1,0 +1,142 @@
+@page "/classes/{Id:int}/assignments"
+@layout ClassLayout
+@rendermode InteractiveServer
+@using LearnmateSolution.Components.Layout
+@using LearnmateSolution.Components.Pages.Class.Components
+@using LearnmateSolution.Components.Pages.Class.Models
+
+<div class="space-y-6 max-w-screen-xl mx-auto">
+    <HeroBanner
+        ClassCode="MATH101"
+        ClassStatus="Active"
+        ClassName="Advanced Calculus"
+        Description="Multivariable calculus, vector analysis, and differential equations for science and engineering students."
+        BackgroundImage="https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=1200" />
+
+    <ClassTabNav ClassId="@Id" ActiveTab="assignments" />
+
+    <div class="grid grid-cols-1 xl:grid-cols-5 gap-6">
+        @* Left: Assignment list *@
+        <div class="xl:col-span-3 space-y-6">
+            @* Upcoming *@
+            <div>
+                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Upcoming</h3>
+                <div class="space-y-3">
+                    @foreach (var asg in upcoming)
+                    {
+                        <div @onclick="() => selectedAssignment = detailMap.GetValueOrDefault(asg.Title)"
+                             class="cursor-pointer">
+                            <AssignmentCard Assignment="asg" />
+                        </div>
+                    }
+                </div>
+            </div>
+
+            @* Missing *@
+            <div>
+                <h3 class="text-xs font-bold text-rose-400 uppercase tracking-wider mb-3">Missing</h3>
+                <div class="space-y-3">
+                    @foreach (var asg in missing)
+                    {
+                        <div @onclick="() => selectedAssignment = detailMap.GetValueOrDefault(asg.Title)"
+                             class="cursor-pointer">
+                            <AssignmentCard Assignment="asg" />
+                        </div>
+                    }
+                </div>
+            </div>
+
+            @* Completed *@
+            <div>
+                <h3 class="text-xs font-bold text-emerald-500 uppercase tracking-wider mb-3">Completed</h3>
+                <div class="space-y-3">
+                    @foreach (var asg in completed)
+                    {
+                        <div @onclick="() => selectedAssignment = detailMap.GetValueOrDefault(asg.Title)"
+                             class="cursor-pointer">
+                            <AssignmentCard Assignment="asg" />
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        @* Right: Detail panel *@
+        <div class="xl:col-span-2">
+            @if (selectedAssignment is not null)
+            {
+                <AssignmentDetailPanel Assignment="selectedAssignment" />
+            }
+            else
+            {
+                <div class="bg-white rounded-[2rem] border border-slate-100 shadow-sm p-10 flex flex-col items-center justify-center text-center h-full min-h-[300px]">
+                    <span class="material-symbols-outlined text-slate-200 text-[64px] mb-4">assignment</span>
+                    <p class="text-slate-400 font-medium">Select an assignment to view details</p>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private AssignmentDetail? selectedAssignment;
+
+    private List<AssignmentItem> upcoming =
+    [
+        new AssignmentItem(1, "Problem Set 7", "Tomorrow, 11:59 PM", "100 pts", "In Progress", "text-amber-700", "bg-amber-100", "edit_note", "bg-rose-100", "text-rose-600"),
+        new AssignmentItem(2, "Midterm Review Quiz", "In 5 days", "50 pts", "Not Started", "text-slate-600", "bg-slate-100", "quiz", "bg-purple-100", "text-purple-600"),
+        new AssignmentItem(3, "Chapter 8 Reading", "In 1 week", "20 pts", "Not Started", "text-slate-600", "bg-slate-100", "menu_book", "bg-sky-100", "text-sky-600"),
+    ];
+
+    private List<AssignmentItem> missing =
+    [
+        new AssignmentItem(4, "Problem Set 6", "Was due Oct 14", "100 pts", "Missing", "text-rose-700", "bg-rose-100", "edit_note", "bg-rose-100", "text-rose-600"),
+    ];
+
+    private List<AssignmentItem> completed =
+    [
+        new AssignmentItem(5, "Problem Set 5", "Submitted Oct 7", "94/100", "Graded", "text-emerald-700", "bg-emerald-100", "edit_note", "bg-emerald-100", "text-emerald-600"),
+        new AssignmentItem(6, "Quiz 3: Limits", "Submitted Oct 3", "88/100", "Graded", "text-emerald-700", "bg-emerald-100", "quiz", "bg-purple-100", "text-purple-600"),
+    ];
+
+    private Dictionary<string, AssignmentDetail> detailMap = new()
+    {
+        ["Problem Set 7"] = new AssignmentDetail(
+            Id: 1,
+            Title: "Problem Set 7",
+            Type: "Problem Set",
+            DueDate: "October 18, 2023 at 11:59 PM",
+            Points: "100 pts",
+            Instructions: new AssignmentInstructions(
+                Text: "Complete problems 1–10 from Chapter 7 on multivariable integration. Show all work for full credit.",
+                Items: ["Problems 1–5: Double integrals.", "Problems 6–8: Triple integrals.", "Problems 9–10: Change of variables."]
+            ),
+            Resources:
+            [
+                new AssignmentResource(1, "Problem Set 7.pdf", "320 KB", "picture_as_pdf", "bg-rose-100", "text-rose-600", "#"),
+                new AssignmentResource(2, "Lecture 11 Notes", "1.2 MB", "picture_as_pdf", "bg-rose-100", "text-rose-600", "#"),
+            ],
+            UploadText: "Upload your submission",
+            UploadSubtext: "PDF, DOCX, or ZIP up to 50 MB"
+        ),
+        ["Midterm Review Quiz"] = new AssignmentDetail(
+            Id: 2,
+            Title: "Midterm Review Quiz",
+            Type: "Quiz",
+            DueDate: "October 22, 2023 at 11:59 PM",
+            Points: "50 pts",
+            Instructions: new AssignmentInstructions(
+                Text: "20-question multiple choice quiz covering Chapters 1–6. One attempt only, 50-minute time limit.",
+                Items: ["No notes allowed.", "Quiz unlocks on October 20.", "Submit before the deadline."]
+            ),
+            Resources:
+            [
+                new AssignmentResource(3, "Study Guide", "520 KB", "picture_as_pdf", "bg-rose-100", "text-rose-600", "#"),
+            ],
+            UploadText: "No submission required",
+            UploadSubtext: "Auto-graded quiz"
+        ),
+    };
+}
