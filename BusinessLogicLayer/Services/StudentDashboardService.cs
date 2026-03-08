@@ -6,25 +6,30 @@ using DataAccessLayer.Repositories.Interfaces;
 namespace BusinessLogicLayer.Services;
 
 public class StudentDashboardService(
-    IStudentProfileRepository studentProfileRepo) : IStudentDashboardService
+    IStudentProfileRepository studentProfileRepo,
+    IClassMemberRepository    classMemberRepo,
+    INotificationRepository   notificationRepo) : IStudentDashboardService
 {
     public async Task<ApiResponse<StudentDashboardDto>> GetDashboardAsync(
         long userId, CancellationToken ct = default)
     {
-        var profile = await studentProfileRepo.GetByUserIdAsync(userId);
+        // Sequential — DbContext is not thread-safe; parallel queries on the same context throw.
+        var profile       = await studentProfileRepo.GetByUserIdAsync(userId);
+        var members       = await classMemberRepo.GetEnrolledWithClassAsync(userId, ct);
+        var notifications = await notificationRepo.GetRecentForUserAsync(userId, limit: 10, ct);
 
         var dto = new StudentDashboardDto(
             FullName:    profile?.FullName ?? "Student",
             CurrentTerm: ComputeCurrentTerm(),
             Stats: new StudentStatsDto(
-                ActiveClasses:  0,                            // TODO: COUNT class_members WHERE user_id = userId AND status = active
-                PendingTasks:   0,                            // TODO: COUNT submissions WHERE user_id = userId AND status = pending
+                ActiveClasses:   members.Count,
+                PendingTasks:    0,           // TODO: COUNT submissions WHERE status = pending
                 StudyStreakDays: profile?.StudyStreakDays ?? 0,
-                NextSession:    null                          // TODO: next schedule entry for this student
+                NextSession:     null         // TODO: next schedule entry for this student
             ),
-            WeekSchedule: BuildCurrentWeek(), // computed from real date, no DB needed
-            Classes:       [],              // TODO: query enrolled classes via class_members
-            Notifications: []               // TODO: query notifications WHERE user_id = userId
+            WeekSchedule:  BuildCurrentWeek(),
+            Classes:       MapClasses(members),
+            Notifications: MapNotifications(notifications)
         );
 
         return ApiResponse<StudentDashboardDto>.Ok(dto);
@@ -42,14 +47,43 @@ public class StudentDashboardService(
         ));
     }
 
-    // ── Helpers ──────────────────────────────────────────────────────────────
+    // ── Mapping ───────────────────────────────────────────────────────────────
 
-    /// <summary>Returns 5 working days (Mon–Fri) of the current week.</summary>
+    private static IReadOnlyList<EnrolledClassDto> MapClasses(
+        IReadOnlyList<BusinessObject.Models.ClassMember> members)
+    {
+        return members.Select(m =>
+        {
+            // Repo đã .OrderBy().Take(1) — lấy phần tử đầu trực tiếp
+            var nextAssignment = m.Class.Assignments.FirstOrDefault();
+
+            return new EnrolledClassDto(
+                ClassId:       m.ClassId,
+                ClassName:     m.Class.Name,
+                SubjectColor:  "",   // no color column — UI uses index-based fallback
+                ProgressPercent: 0,  // TODO: compute from submissions
+                NextTaskTitle: nextAssignment?.Title,
+                NextTaskDue:   nextAssignment?.DueDate is DateTime d
+                               ? DateOnly.FromDateTime(d)
+                               : null
+            );
+        }).ToList();
+    }
+
+    private static IReadOnlyList<NotificationDto> MapNotifications(
+        IReadOnlyList<BusinessObject.Models.Notification> notifications) =>
+        notifications.Select(n => new NotificationDto(
+            Id:        n.Id,
+            Message:   n.Content,
+            CreatedAt: n.CreatedAt,
+            IsRead:    n.IsRead
+        )).ToList();
+
+    // ── Helpers ───────────────────────────────────────────────────────────────
+
     private static IReadOnlyList<DayScheduleDto> BuildCurrentWeek()
     {
         var today = DateOnly.FromDateTime(DateTime.Today);
-
-        // Monday of current week (Sunday = 0 in DayOfWeek, treated as day 7)
         var daysFromMonday = today.DayOfWeek == DayOfWeek.Sunday ? 6 : (int)today.DayOfWeek - 1;
         var monday = today.AddDays(-daysFromMonday);
 

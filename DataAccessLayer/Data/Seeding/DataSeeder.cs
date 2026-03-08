@@ -42,6 +42,7 @@ public static class DataSeeder
                 PasswordHash = Hash123,
                 Role         = UserRole.ADMIN,
                 IsActive     = true,
+                AvatarUrl    = "https://placehold.co/400?text=Admin",
                 CreatedAt    = Now,
                 UpdatedAt    = Now,
             },
@@ -52,6 +53,7 @@ public static class DataSeeder
                 PasswordHash = Hash123,
                 Role         = UserRole.TEACHER,
                 IsActive     = true,
+                AvatarUrl    = "https://placehold.co/400?text=Teacher",
                 CreatedAt    = Now,
                 UpdatedAt    = Now,
             },
@@ -62,6 +64,7 @@ public static class DataSeeder
                 PasswordHash = Hash123,
                 Role         = UserRole.STUDENT,
                 IsActive     = true,
+                AvatarUrl    = "https://placehold.co/400?text=Student",
                 CreatedAt    = Now,
                 UpdatedAt    = Now,
             }

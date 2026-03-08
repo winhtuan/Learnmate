@@ -3,7 +3,7 @@ using BusinessLogicLayer;
 using BusinessLogicLayer.Settings;
 using DataAccessLayer;
 using LearnmateSolution.Components;
-using LearnmateSolution.Services;
+using LearnmateSolution.AppState;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 

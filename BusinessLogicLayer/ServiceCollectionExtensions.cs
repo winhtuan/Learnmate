@@ -14,6 +14,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IOtpVerificationRepository, OtpVerificationRepository>();
         services.AddScoped<IStudentProfileRepository, StudentProfileRepository>();
+        services.AddScoped<IClassMemberRepository, ClassMemberRepository>();
+        services.AddScoped<INotificationRepository, NotificationRepository>();
 
         // Services
         services.AddScoped<IAuthService, AuthService>();
