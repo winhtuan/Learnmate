@@ -1,0 +1,70 @@
+<div class="flex flex-col h-full bg-white border-r border-slate-200 w-64 transition-all duration-300">
+    <!-- Logo Section -->
+    <div class="p-6 flex items-center gap-3">
+        <div class="flex items-center justify-center size-8 bg-primary rounded-lg text-white">
+            <span class="material-symbols-outlined text-[20px]">school</span>
+        </div>
+        <h2 class="text-lg font-bold tracking-tight text-slate-900">LearnMate</h2>
+    </div>
+
+    <!-- Navigation Links -->
+    <nav class="flex-1 px-4 py-4 space-y-1 overflow-y-auto">
+        <div class="pb-4">
+            <p class="px-3 text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Main Menu</p>
+            <NavLink class="flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg text-slate-600 hover:bg-slate-50 hover:text-primary transition-all group" 
+                     href="/teacher/dashboard" Match="NavLinkMatch.All">
+                <span class="material-symbols-outlined text-[22px] group-hover:scale-110 transition-transform">dashboard</span>
+                <span>Dashboard</span>
+            </NavLink>
+            <NavLink class="flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg text-slate-600 hover:bg-slate-50 hover:text-primary transition-all group" 
+                     href="/teacher/classes">
+                <span class="material-symbols-outlined text-[22px] group-hover:scale-110 transition-transform">class</span>
+                <span>My Classes</span>
+            </NavLink>
+            <NavLink class="flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg text-slate-600 hover:bg-slate-50 hover:text-primary transition-all group" 
+                     href="/teacher/schedule">
+                <span class="material-symbols-outlined text-[22px] group-hover:scale-110 transition-transform">calendar_today</span>
+                <span>Schedule</span>
+            </NavLink>
+        </div>
+
+        <div class="pt-4 border-t border-slate-100">
+            <p class="px-3 text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Teaching</p>
+            <NavLink class="flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg text-slate-600 hover:bg-slate-50 hover:text-primary transition-all group" 
+                     href="/teacher/assignments">
+                <span class="material-symbols-outlined text-[22px] group-hover:scale-110 transition-transform">assignment</span>
+                <span>Assignments</span>
+            </NavLink>
+            <NavLink class="flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg text-slate-600 hover:bg-slate-50 hover:text-primary transition-all group" 
+                     href="/teacher/students">
+                <span class="material-symbols-outlined text-[22px] group-hover:scale-110 transition-transform">group</span>
+                <span>Students</span>
+            </NavLink>
+            <NavLink class="flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg text-slate-600 hover:bg-slate-50 hover:text-primary transition-all group" 
+                     href="/teacher/reports">
+                <span class="material-symbols-outlined text-[22px] group-hover:scale-110 transition-transform">bar_chart</span>
+                <span>Reports</span>
+            </NavLink>
+        </div>
+    </nav>
+
+    <!-- Bottom Profile / Settings -->
+    <div class="p-4 border-t border-slate-100">
+        <NavLink class="flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg text-slate-600 hover:bg-slate-50 transition-all" 
+                 href="/teacher/settings">
+            <span class="material-symbols-outlined text-[22px]">settings</span>
+            <span>Settings</span>
+        </NavLink>
+        <button class="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg text-red-500 hover:bg-red-50 transition-all mt-1">
+            <span class="material-symbols-outlined text-[22px]">logout</span>
+            <span>Logout</span>
+        </button>
+    </div>
+</div>
+
+<style>
+    .nav-link.active {
+        background-color: #f0f7ff;
+        color: #137fec !important;
+    }
+</style>

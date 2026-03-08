@@ -211,9 +211,17 @@
 
         isLoading = false;
 
-        if (result.Success)
+        if (result.Success && result.Data != null)
         {
-            Nav.NavigateTo("/");
+            var role = result.Data.Role;
+            if (role == "TEACHER")
+            {
+                Nav.NavigateTo("/teacher/dashboard");
+            }
+            else
+            {
+                Nav.NavigateTo("/");
+            }
         }
         else
         {
