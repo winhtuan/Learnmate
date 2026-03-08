@@ -1,5 +1,9 @@
 @page "/admin/dashboard"
 @using LearnmateSolution.Components.Layout.Admin
+@using BusinessLogicLayer.Services.Interfaces
+@using BusinessLogicLayer.DTOs.Dashboard
+@inject IDashboardService DashboardService
+
 @layout AdminLayout
 
 <PageTitle>Admin Dashboard | LearnMate</PageTitle>
@@ -11,120 +15,193 @@
     </div>
 </div>
 
-<div class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-4 mb-4">
-    <div class="col">
-        <div class="card border-0 shadow-sm p-3">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <h6 class="text-muted mb-1 text-uppercase small fw-bold">Total Users</h6>
-                    <h3 class="mb-0 fw-bold">1,284</h3>
+@if (_isLoading)
+{
+    <div class="text-center py-5">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <p class="mt-2 text-muted">Loading dashboard data...</p>
+    </div>
+}
+else if (_overview != null)
+{
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-4 mb-4">
+        <div class="col">
+            <div class="card border-0 shadow-sm p-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted mb-1 text-uppercase small fw-bold">Total Users</h6>
+                        <h3 class="mb-0 fw-bold">@_overview.TotalUsers.ToString("N0")</h3>
+                    </div>
+                    <div class="bg-primary bg-opacity-10 p-3 rounded-circle text-primary">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                    </div>
                 </div>
-                <div class="bg-primary bg-opacity-10 p-3 rounded-circle text-primary">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                <div class="mt-3">
+                    <span class="text-success small fw-bold"><i class="bi bi-arrow-up"></i> +@_overview.UserGrowthPercentage%</span>
+                    <span class="text-muted small ms-1">than last month</span>
                 </div>
-            </div>
-            <div class="mt-3">
-                <span class="text-success small fw-bold"><i class="bi bi-arrow-up"></i> +12%</span>
-                <span class="text-muted small ms-1">than last month</span>
             </div>
         </div>
-    </div>
-    
-    <div class="col">
-        <div class="card border-0 shadow-sm p-3">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <h6 class="text-muted mb-1 text-uppercase small fw-bold">Active Classes</h6>
-                    <h3 class="mb-0 fw-bold">156</h3>
+        
+        <div class="col">
+            <div class="card border-0 shadow-sm p-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted mb-1 text-uppercase small fw-bold">Active Classes</h6>
+                        <h3 class="mb-0 fw-bold">@_overview.ActiveClasses.ToString("N0")</h3>
+                    </div>
+                    <div class="bg-primary bg-opacity-10 p-3 rounded-circle text-primary">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                    </div>
                 </div>
-                <div class="bg-primary bg-opacity-10 p-3 rounded-circle text-primary">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                <div class="mt-3">
+                    <span class="text-success small fw-bold"><i class="bi bi-arrow-up"></i> +@_overview.ClassGrowthPercentage%</span>
+                    <span class="text-muted small ms-1">than last month</span>
                 </div>
             </div>
-            <div class="mt-3">
-                <span class="text-success small fw-bold"><i class="bi bi-arrow-up"></i> +5%</span>
-                <span class="text-muted small ms-1">than last month</span>
+        </div>
+
+        <div class="col">
+            <div class="card border-0 shadow-sm p-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted mb-1 text-uppercase small fw-bold">Avg. Attendance</h6>
+                        <h3 class="mb-0 fw-bold">@_overview.AverageAttendance%</h3>
+                    </div>
+                    <div class="bg-primary bg-opacity-10 p-3 rounded-circle text-primary">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <span class="text-success small fw-bold"><i class="bi bi-arrow-up"></i> +@_overview.AttendanceGrowthPercentage%</span>
+                    <span class="text-muted small ms-1">than last month</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="col">
+            <div class="card border-0 shadow-sm p-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted mb-1 text-uppercase small fw-bold">System Health</h6>
+                        <h3 class="mb-0 fw-bold">@_overview.SystemHealth%</h3>
+                    </div>
+                    <div class="bg-primary bg-opacity-10 p-3 rounded-circle text-primary">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <span class="text-muted small fw-bold">@_overview.SystemHealthStatus</span>
+                </div>
             </div>
         </div>
     </div>
 
-    <div class="col">
-        <div class="card border-0 shadow-sm p-3">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <h6 class="text-muted mb-1 text-uppercase small fw-bold">Avg. Attendance</h6>
-                    <h3 class="mb-0 fw-bold">94%</h3>
-                </div>
-                <div class="bg-primary bg-opacity-10 p-3 rounded-circle text-primary">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                </div>
-            </div>
-            <div class="mt-3">
-                <span class="text-success small fw-bold"><i class="bi bi-arrow-up"></i> +2%</span>
-                <span class="text-muted small ms-1">than last month</span>
-            </div>
+    <div class="card border-0 shadow-sm p-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h5 class="fw-bold mb-0">Recent Activities</h5>
+            <button class="btn btn-sm btn-outline-primary" @onclick="RefreshActivities">Refresh</button>
+        </div>
+        
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="bg-light">
+                    <tr>
+                        <th class="border-0">Action</th>
+                        <th class="border-0">User</th>
+                        <th class="border-0">Time</th>
+                        <th class="border-0">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (_activities != null && _activities.Any())
+                    {
+                        foreach (var act in _activities)
+                        {
+                            <tr>
+                                <td>@act.Action</td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        @if (!string.IsNullOrEmpty(act.UserAvatarUrl))
+                                        {
+                                            <img src="@act.UserAvatarUrl" class="rounded-circle me-2" width="32" height="32" />
+                                        }
+                                        @act.UserName
+                                    </div>
+                                </td>
+                                <td>@GetTimeAgo(act.Time)</td>
+                                <td><span class="badge bg-@act.StatusType bg-opacity-10 text-@act.StatusType">@act.Status</span></td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="4" class="text-center text-muted">No recent activities found.</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
         </div>
     </div>
-
-    <div class="col">
-        <div class="card border-0 shadow-sm p-3">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <h6 class="text-muted mb-1 text-uppercase small fw-bold">System Health</h6>
-                    <h3 class="mb-0 fw-bold">99.9%</h3>
-                </div>
-                <div class="bg-primary bg-opacity-10 p-3 rounded-circle text-primary">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                </div>
-            </div>
-            <div class="mt-3">
-                <span class="text-muted small fw-bold">Stable</span>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="card border-0 shadow-sm p-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h5 class="fw-bold mb-0">Recent Activities</h5>
-        <button class="btn btn-sm btn-outline-primary">View All</button>
-    </div>
-    
-    <div class="table-responsive">
-        <table class="table table-hover align-middle">
-            <thead class="bg-light">
-                <tr>
-                    <th class="border-0">Action</th>
-                    <th class="border-0">User</th>
-                    <th class="border-0">Time</th>
-                    <th class="border-0">Status</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>New Student Registered</td>
-                    <td><div class="d-flex align-items-center"><img src="https://i.pravatar.cc/32?img=1" class="rounded-circle me-2" /> Alex Johnson</div></td>
-                    <td>2 mins ago</td>
-                    <td><span class="badge bg-success bg-opacity-10 text-success">Completed</span></td>
-                </tr>
-                <tr>
-                    <td>Math 101 Session Started</td>
-                    <td><div class="d-flex align-items-center"><img src="https://i.pravatar.cc/32?img=5" class="rounded-circle me-2" /> Maria Chen</div></td>
-                    <td>15 mins ago</td>
-                    <td><span class="badge bg-primary bg-opacity-10 text-primary">Ongoing</span></td>
-                </tr>
-                <tr>
-                    <td>System Maintenance Schedule</td>
-                    <td><div class="d-flex align-items-center">System Bot</div></td>
-                    <td>1 hour ago</td>
-                    <td><span class="badge bg-warning bg-opacity-10 text-warning">Pending</span></td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
-</div>
+}
 
 <style>
     .card { transition: transform 0.2s; }
     .card:hover { transform: translateY(-4px); }
 </style>
+
+@code {
+    private bool _isLoading = true;
+    private DashboardOverviewDto? _overview;
+    private IEnumerable<RecentActivityDto>? _activities;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDataAsync();
+    }
+
+    private async Task LoadDataAsync()
+    {
+        _isLoading = true;
+        
+        try
+        {
+            _overview = await DashboardService.GetDashboardOverviewAsync();
+            _activities = await DashboardService.GetRecentActivitiesAsync(5);
+        }
+        catch (Exception ex)
+        {
+            // Log error
+            Console.WriteLine(ex.Message);
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task RefreshActivities()
+    {
+        try
+        {
+            _activities = await DashboardService.GetRecentActivitiesAsync(5);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+        }
+    }
+
+    private string GetTimeAgo(DateTime time)
+    {
+        var span = DateTime.UtcNow - time;
+        if (span.TotalSeconds < 60) return "Just now";
+        if (span.TotalMinutes < 60) return $"{(int)span.TotalMinutes} mins ago";
+        if (span.TotalHours < 24) return $"{(int)span.TotalHours} hours ago";
+        if (span.TotalDays < 30) return $"{(int)span.TotalDays} days ago";
+        return time.ToString("MMM dd, yyyy");
+    }
+}
