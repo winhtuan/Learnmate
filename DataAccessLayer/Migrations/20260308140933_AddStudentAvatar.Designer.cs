@@ -3,6 +3,7 @@ using System;
 using DataAccessLayer.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace DataAccessLayer.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260308140933_AddStudentAvatar")]
+    partial class AddStudentAvatar
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -992,7 +995,7 @@ namespace DataAccessLayer.Migrations
                         new
                         {
                             Id = 1L,
-                            AvatarUrl = "https://placehold.co/400?text=avatar",
+                            AvatarUrl = "https://api.dicebear.com/9.x/avataaars/svg?seed=NguyenMinhTuan&backgroundColor=b6e3f4&clothesColor=3c4f5c&hairColor=2c1b18&facialHairType=Blank&accessories=prescription02&clothesType=hoodie&eyeType=Happy&eyebrowType=Default&mouthType=Smile&skinColor=Light",
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             FullName = "Nguyen Minh Tuan",
                             GradeLevel = "12",

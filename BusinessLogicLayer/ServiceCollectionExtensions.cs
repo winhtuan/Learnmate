@@ -21,6 +21,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IOtpService, OtpService>();
         services.AddSingleton<IJwtService, JwtService>();
         services.AddScoped<IDashboardService, DashboardService>();
+        services.AddScoped<IStudentDashboardService, StudentDashboardService>();
 
         // Token blacklist cache
         services.AddMemoryCache();

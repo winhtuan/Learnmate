@@ -24,6 +24,8 @@ public class StudentProfile : AuditableEntity
     [MaxLength(20)]
     public string? ParentContact { get; set; }
 
+    public int StudyStreakDays { get; set; }
+
     // Navigation properties
     [ForeignKey("UserId")]
     public User User { get; set; } = null!;
