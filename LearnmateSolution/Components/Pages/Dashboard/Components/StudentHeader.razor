@@ -162,6 +162,14 @@
                 _gradeLevel = data.GradeLevel;
             }
         }
+        catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+        {
+            Session.Clear();
+            await JS.InvokeVoidAsync("sessionStorage.removeItem", "lm_email");
+            await JS.InvokeVoidAsync("sessionStorage.removeItem", "lm_role");
+            await JS.InvokeVoidAsync("sessionStorage.removeItem", "lm_token");
+            Nav.NavigateTo("/login", replace: true);
+        }
         catch
         {
             // Keep defaults — header still renders with email from session

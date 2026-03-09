@@ -1,78 +1,151 @@
-@page "/classes/{Id:int}/materials"
+@page "/classes/{Id:long}/materials"
 @layout ClassLayout
 @rendermode InteractiveServer
 @using LearnmateSolution.Components.Layout
 @using LearnmateSolution.Components.Pages.Class.Components
 @using LearnmateSolution.Components.Pages.Class.Models
+@using BusinessLogicLayer.DTOs
+@using BusinessLogicLayer.DTOs.Class
+@inject NavigationManager Nav
+@inject UserSessionService Session
+@inject IJSRuntime JS
+@inject IHttpClientFactory HttpClientFactory
 
 <div class="space-y-6 max-w-screen-xl mx-auto">
-    <Breadcrumb Items="@([ new("Dashboard", "/student-dashboard"), new("My Classes", "/classes"), new("Advanced Calculus", $"/classes/{Id}"), new("Materials") ])" />
+    <Breadcrumb Items="@([ new("Dashboard", "/student-dashboard"), new("My Classes", "/classes"), new(_className, $"/classes/{Id}"), new("Materials") ])" />
 
-    <HeroBanner
-        ClassCode="MATH101"
-        ClassStatus="Active"
-        ClassName="Advanced Calculus"
-        Description="Multivariable calculus, vector analysis, and differential equations for science and engineering students."
-        BackgroundImage="https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=1200" />
-
-    <ClassTabNav ClassId="@Id" ActiveTab="materials" />
-
-    <MaterialsToolbar />
-
-    @* Folders *@
-    <div>
-        <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Folders</h3>
-        <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-            @foreach (var folder in folders)
-            {
-                <MaterialFolderCard Folder="folder" />
-            }
+    @if (!_ready)
+    {
+        <div class="flex items-center justify-center h-64 text-slate-400">
+            <svg class="animate-spin h-8 w-8 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+            </svg>
+            <span class="text-sm font-medium">Loading...</span>
         </div>
-    </div>
+    }
+    else
+    {
+        <HeroBanner ClassCode="@_subject" ClassStatus="@_status" ClassName="@_className"
+                    Description="@_description" BackgroundImage="" />
 
-    @* Recent files *@
-    <div class="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden">
-        <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
-            <h3 class="text-base font-bold text-slate-900">Recent Files</h3>
-            <button class="text-sm font-semibold text-primary hover:text-primary/80 transition-colors">View all</button>
-        </div>
-        <table class="w-full">
-            <thead class="bg-slate-50 border-b border-slate-100">
-                <tr>
-                    <th class="px-6 py-3 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Name</th>
-                    <th class="px-6 py-3 text-left text-xs font-bold text-slate-400 uppercase tracking-wider hidden md:table-cell">Folder</th>
-                    <th class="px-6 py-3 text-left text-xs font-bold text-slate-400 uppercase tracking-wider hidden lg:table-cell">Size</th>
-                    <th class="px-6 py-3 text-left text-xs font-bold text-slate-400 uppercase tracking-wider hidden lg:table-cell">Modified</th>
-                    <th class="px-6 py-3"></th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-slate-50">
-                @foreach (var file in recentFiles)
-                {
-                    <MaterialFileRow File="file" />
-                }
-            </tbody>
-        </table>
-    </div>
+        <ClassTabNav ClassId="@Id" ActiveTab="materials" />
+
+        <MaterialsToolbar />
+
+        @* Materials *@
+        @if (_materialFiles.Count == 0)
+        {
+            <div class="flex flex-col items-center justify-center py-16 text-slate-400">
+                <span class="material-symbols-outlined text-5xl mb-3">folder_open</span>
+                <p class="text-base font-medium">No materials uploaded yet.</p>
+            </div>
+        }
+        else
+        {
+            <div class="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden">
+                <div class="px-6 py-4 border-b border-slate-100">
+                    <h3 class="text-base font-bold text-slate-900">All Materials</h3>
+                </div>
+                <table class="w-full">
+                    <thead class="bg-slate-50 border-b border-slate-100">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Name</th>
+                            <th class="px-6 py-3 text-left text-xs font-bold text-slate-400 uppercase tracking-wider hidden md:table-cell">Type</th>
+                            <th class="px-6 py-3 text-left text-xs font-bold text-slate-400 uppercase tracking-wider hidden lg:table-cell">Uploaded</th>
+                            <th class="px-6 py-3"></th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-50">
+                        @foreach (var file in _materialFiles)
+                        {
+                            <MaterialFileRow File="file" />
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    }
 </div>
 
 @code {
-    [Parameter] public int Id { get; set; }
+    [Parameter] public long Id { get; set; }
 
-    // MaterialFolder(int Id, string Name, int FileCount, string Size, string Icon, string IconColor, string IconBg)
-    private List<MaterialFolder> folders =
-    [
-        new MaterialFolder(1, "Lecture Slides", 12, "48 MB", "auto_stories", "text-sky-600", "bg-sky-100"),
-        new MaterialFolder(2, "Readings", 8, "22 MB", "menu_book", "text-emerald-600", "bg-emerald-100"),
-        new MaterialFolder(3, "Resources", 5, "6 MB", "folder_special", "text-purple-600", "bg-purple-100"),
-    ];
+    private bool _ready;
+    private string _className   = "Class";
+    private string _subject     = "";
+    private string _status      = "ACTIVE";
+    private string _description = "";
+    private List<ClassMaterialDto> _materials  = [];
+    private List<MaterialFile>     _materialFiles = [];
 
-    // MaterialFile(int Id, string Name, string Type, string Date, string Size, string Icon, string IconColor, string IconBg)
-    private List<MaterialFile> recentFiles =
-    [
-        new MaterialFile(1, "Lecture 12 - Chain Rule.pdf", "Lecture Slides", "Today", "2.4 MB", "picture_as_pdf", "text-rose-600", "bg-rose-100"),
-        new MaterialFile(2, "Chapter 7 Reading.pdf", "Readings", "Yesterday", "1.8 MB", "picture_as_pdf", "text-rose-600", "bg-rose-100"),
-        new MaterialFile(3, "Problem Set 7.pdf", "Resources", "Oct 12", "320 KB", "picture_as_pdf", "text-rose-600", "bg-rose-100"),
-        new MaterialFile(4, "Formula Sheet.pdf", "Resources", "Oct 10", "180 KB", "picture_as_pdf", "text-rose-600", "bg-rose-100"),
-    ];
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+
+        if (!Session.IsAuthenticated)
+        {
+            var email = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_email");
+            var role  = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_role");
+            var token = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_token");
+            if (!string.IsNullOrEmpty(email) && !string.IsNullOrEmpty(role) && !string.IsNullOrEmpty(token))
+                Session.SetSession(email, role, token);
+        }
+
+        if (!Session.IsAuthenticated) { Nav.NavigateTo("/login", replace: true); return; }
+        if (Session.Role != "STUDENT") { Nav.NavigateTo(Session.Role == "ADMIN" ? "/admin/dashboard" : "/", replace: true); return; }
+
+        await LoadAsync();
+        _ready = true;
+        StateHasChanged();
+    }
+
+    private async Task LoadAsync()
+    {
+        try
+        {
+            var client = HttpClientFactory.CreateClient("learnmate");
+            client.BaseAddress = new Uri(Nav.BaseUri);
+            client.DefaultRequestHeaders.Authorization =
+                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", Session.AccessToken);
+
+            var classTask = client.GetFromJsonAsync<ApiResponse<ClassDetailDto>>($"api/classes/{Id}");
+            var matTask   = client.GetFromJsonAsync<ApiResponse<List<ClassMaterialDto>>>($"api/classes/{Id}/materials");
+            await Task.WhenAll(classTask, matTask);
+
+            var cls = classTask.Result?.Data;
+            if (cls is not null)
+            {
+                _className   = cls.Name;
+                _subject     = cls.Subject;
+                _status      = cls.Status;
+                _description = cls.Description ?? "";
+            }
+
+            _materials = matTask.Result?.Data ?? [];
+            _materialFiles = _materials.Select((m, i) => new MaterialFile(
+                Id:        m.Id,
+                Name:      m.Title,
+                Type:      m.FileType.ToUpperInvariant(),
+                Date:      m.UploadedAtLocal.ToString("MMM d"),
+                Size:      "",
+                Icon:      ClassPageHelpers.FileIcon(m.FileType),
+                IconColor: ClassPageHelpers.IconColor(i),
+                IconBg:    ClassPageHelpers.IconBg(i)
+            )).ToList();
+        }
+        catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+        {
+            Session.Clear();
+            await JS.InvokeVoidAsync("sessionStorage.removeItem", "lm_email");
+            await JS.InvokeVoidAsync("sessionStorage.removeItem", "lm_role");
+            await JS.InvokeVoidAsync("sessionStorage.removeItem", "lm_token");
+            Nav.NavigateTo("/login", replace: true);
+        }
+        catch
+        {
+            // Keep defaults on error
+        }
+    }
+
 }

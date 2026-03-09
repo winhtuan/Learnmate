@@ -1,6 +1,6 @@
 namespace LearnmateSolution.Components.Pages.Dashboard.Models;
 
-public record NextSessionInfo(string Countdown, string ClassName, string Room);
+public record NextSessionInfo(DateTime? StartTimeLocal, string ClassName, string Room);
 public record WelcomeBannerStats(string ActiveClasses, string PendingTasks, string StudyStreak, NextSessionInfo NextSession);
 
 public record ScheduleClass(string Time, string Name, string Room, string Color);
