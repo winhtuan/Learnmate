@@ -116,9 +116,10 @@ public static class DataSeeder
                 Description = "Ôn luyện toàn bộ chương trình Toán lớp 12.",
                 Subject     = "Toán",
                 Status      = ClassStatus.ACTIVE,
-                MaxStudents = 20,
-                CreatedAt   = Now,
-                UpdatedAt   = Now,
+                MaxStudents  = 20,
+                ThumbnailUrl = "https://placehold.co/400?text=Course",
+                CreatedAt    = Now,
+                UpdatedAt    = Now,
             }
         );
     }

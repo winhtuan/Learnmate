@@ -261,14 +261,7 @@
                 {
                     await JS.InvokeVoidAsync("sessionStorage.removeItem", "lm_avatar");
                 }
-                var destination = userRole switch
-                {
-                    "STUDENT" => "/student-dashboard",
-                    "ADMIN"   => "/admin/dashboard",
-                    "TEACHER" => "/teacher/dashboard",
-                    _         => "/"
-                };
-                Nav.NavigateTo(destination);
+                Nav.NavigateTo(DashboardFor(userRole));
             }
             else
             {
