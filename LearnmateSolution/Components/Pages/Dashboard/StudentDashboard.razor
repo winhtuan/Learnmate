@@ -78,7 +78,7 @@
     // Data from API
     private string _fullName    = "Student";
     private string _currentTerm = "";
-    private WelcomeBannerStats _bannerStats = new("—", "—", "—", new("—", "No upcoming class", ""));
+    private WelcomeBannerStats _bannerStats = new("—", "—", "—", new(null, "No upcoming class", ""));
     private List<ScheduleDay>       _scheduleDays  = [];
     private List<CourseItem>        _courses       = [];
     private List<NotificationItem>  _notifications = [];
@@ -159,8 +159,8 @@
         PendingTasks:  s.PendingTasks  == 0 ? "—" : $"{s.PendingTasks} Items",
         StudyStreak:   s.StudyStreakDays == 0 ? "—" : $"{s.StudyStreakDays} days",
         NextSession:   s.NextSession is null
-            ? new("—", "No upcoming class", "")
-            : new(s.NextSession.StartTime.ToString("h:mm tt"),
+            ? new(null, "No upcoming class", "")
+            : new(s.NextSession.StartTimeLocal,
                   s.NextSession.ClassName,
                   s.NextSession.Room)
     );

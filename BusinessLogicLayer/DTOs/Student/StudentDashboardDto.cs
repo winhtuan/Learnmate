@@ -16,7 +16,7 @@ public record StudentStatsDto(
     NextSessionDto? NextSession
 );
 
-public record NextSessionDto(string ClassName, string Room, TimeOnly StartTime);
+public record NextSessionDto(string ClassName, string Room, DateTime StartTimeLocal);
 
 public record DayScheduleDto(
     DateOnly Date,

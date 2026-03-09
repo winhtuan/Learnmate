@@ -1,4 +1,5 @@
 @using LearnmateSolution.Components.Pages.Dashboard.Models
+@implements IDisposable
 
 <div class="bg-white rounded-xl border border-slate-200 shadow-sm mb-8">
     @* Header row *@
@@ -46,8 +47,14 @@
         <div class="flex-[1.2] p-6 flex flex-col items-center text-center hover:bg-slate-100 bg-slate-50 transition-colors">
             <span class="material-symbols-outlined text-3xl text-primary mb-3">timer</span>
             <span class="text-xs font-bold text-primary/70 uppercase tracking-widest mb-1">Next Session</span>
-            <span class="text-2xl font-bold text-slate-900">@Stats.NextSession.Countdown</span>
-            <span class="text-xs text-slate-500 mt-1">@Stats.NextSession.ClassName • @Stats.NextSession.Room</span>
+            <span class="text-2xl font-bold text-slate-900 tabular-nums font-mono">@_countdown</span>
+            <span class="text-xs text-slate-500 mt-1">
+                @Stats.NextSession.ClassName
+                @if (!string.IsNullOrEmpty(Stats.NextSession.Room))
+                {
+                    <span> • @Stats.NextSession.Room</span>
+                }
+            </span>
         </div>
     </div>
 </div>
@@ -58,5 +65,46 @@
     [Parameter] public string CurrentDay { get; set; } = "";
     [Parameter] public string CurrentDate { get; set; } = "";
     [Parameter] public string CurrentTerm { get; set; } = "Fall 2024";
-    [Parameter] public WelcomeBannerStats Stats { get; set; } = new("5 Active", "12 Items", "15 days", new("00:45:12", "Adv. Calculus", "Rm 302"));
+    [Parameter] public WelcomeBannerStats Stats { get; set; } = new("5 Active", "12 Items", "15 days", new(null, "No upcoming class", ""));
+
+    private string _countdown = "—";
+    private Timer? _timer;
+
+    protected override void OnParametersSet()
+    {
+        _timer?.Dispose();
+        _timer = null;
+
+        if (Stats.NextSession.StartTimeLocal is null)
+        {
+            _countdown = "—";
+            return;
+        }
+
+        UpdateCountdown();
+        _timer = new Timer(_ => InvokeAsync(() => { UpdateCountdown(); StateHasChanged(); }),
+                           null, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
+    }
+
+    private void UpdateCountdown()
+    {
+        if (Stats.NextSession.StartTimeLocal is not { } target)
+        {
+            _countdown = "—";
+            return;
+        }
+
+        var remaining = target - DateTime.Now;
+        if (remaining <= TimeSpan.Zero)
+        {
+            _countdown = "Now";
+            return;
+        }
+
+        _countdown = remaining.TotalHours >= 24
+            ? $"{(int)remaining.TotalDays}d {remaining.Hours:D2}h {remaining.Minutes:D2}m"
+            : $"{(int)remaining.TotalHours:D2}:{remaining.Minutes:D2}:{remaining.Seconds:D2}";
+    }
+
+    public void Dispose() => _timer?.Dispose();
 }

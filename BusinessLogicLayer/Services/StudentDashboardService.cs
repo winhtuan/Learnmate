@@ -40,9 +40,9 @@ public class StudentDashboardService(
                 PendingTasks:    0,  // TODO: COUNT submissions WHERE status = pending
                 StudyStreakDays: profile?.StudyStreakDays ?? 0,
                 NextSession:     nextSchedule is null ? null : new NextSessionDto(
-                    ClassName: nextSchedule.Class.Name,
-                    Room:      "",
-                    StartTime: TimeOnly.FromDateTime(nextSchedule.StartTime.ToLocalTime())
+                    ClassName:      nextSchedule.Class.Name,
+                    Room:           "",
+                    StartTimeLocal: nextSchedule.StartTime.ToLocalTime()
                 )
             ),
             WeekSchedule:  BuildWeekWithSchedules(monday, schedules),
