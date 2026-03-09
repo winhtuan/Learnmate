@@ -212,15 +212,15 @@
                         <div class="flex items-start justify-between mb-3">
                             <h4 class="font-bold text-slate-900 text-base leading-tight line-clamp-2">@a.Title</h4>
                             @{
-                                var (statusBg, statusText, statusLabel) = a.Status switch
+                                var (statusBg, statusLabel) = a.Status switch
                                 {
-                                    AssignmentStatus.DRAFT => ("bg-slate-100 text-slate-600", "text-slate-600", "Draft"),
-                                    AssignmentStatus.PUBLISHED => ("bg-green-100 text-green-700", "text-green-700", "Published"),
-                                    AssignmentStatus.CLOSED => ("bg-red-100 text-red-600", "text-red-600", "Closed"),
-                                    _ => ("bg-slate-100 text-slate-500", "text-slate-500", a.Status.ToString())
+                                    AssignmentStatus.DRAFT => ("bg-slate-100 text-slate-600", "Draft"),
+                                    AssignmentStatus.PUBLISHED => ("bg-green-100 text-green-700", "Published"),
+                                    AssignmentStatus.CLOSED => ("bg-red-100 text-red-600", "Closed"),
+                                    _ => ("bg-slate-100 text-slate-500", a.Status.ToString())
                                 };
                             }
-                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider @statusBg @statusText shrink-0 ml-2">
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider @statusBg shrink-0 ml-2">
                                 @statusLabel
                             </span>
                         </div>
@@ -310,7 +310,6 @@
         }
 
         IsSubmitting = true;
-        StateHasChanged();
 
         try
         {
