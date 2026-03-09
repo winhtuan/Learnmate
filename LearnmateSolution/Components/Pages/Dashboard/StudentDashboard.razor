@@ -146,10 +146,23 @@
             _courses      = MapCourses(data.Classes);
             _notifications = MapNotifications(data.Notifications);
         }
+        catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+        {
+            await InvalidateSessionAsync();
+        }
         catch
         {
             // Network/parse error — keep default values, dashboard still renders
         }
+    }
+
+    private async Task InvalidateSessionAsync()
+    {
+        Session.Clear();
+        await JS.InvokeVoidAsync("sessionStorage.removeItem", "lm_email");
+        await JS.InvokeVoidAsync("sessionStorage.removeItem", "lm_role");
+        await JS.InvokeVoidAsync("sessionStorage.removeItem", "lm_token");
+        Nav.NavigateTo("/login", replace: true);
     }
 
     // ── Mapping helpers ───────────────────────────────────────────────────────

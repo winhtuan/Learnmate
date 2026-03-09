@@ -1,8 +1,8 @@
 namespace LearnmateSolution.Components.Pages.Class.Models;
 
 public record ClassItem(
-    int Id, string Code, string Title, string Professor, string Description,
-    string? NextClass, string Image, string? ButtonText,
+    long Id, string Code, string Title, string Professor, string Description,
+    string? NextClass, string? Image, string? ButtonText,
     bool HasWarning = false, bool IsUpcoming = false);
 
 public record ClassInfo(
@@ -15,34 +15,34 @@ public record TaskItem(
     string Icon, string IconBg, string IconColor, bool Locked = false);
 
 public record AssignmentItem(
-    int Id, string Title, string Due, string Metadata, string Status,
+    long Id, string Title, string Due, string Metadata, string Status,
     string StatusColor, string StatusBg, string Icon, string IconBg, string IconColor,
     bool Locked = false, bool Highlighted = false, bool Completed = false,
     string DueLabel = "Due", string DueColor = "text-slate-900");
 
 public record AssignmentResource(
-    int Id, string Title, string Size, string Icon,
+    long Id, string Title, string Size, string Icon,
     string IconBg, string IconColor, string Href);
 
 public record AssignmentInstructions(string Text, List<string> Items);
 
 public record AssignmentDetail(
-    int Id, string Title, string Type, string DueDate, string Points,
+    long Id, string Title, string Type, string DueDate, string Points,
     AssignmentInstructions Instructions, List<AssignmentResource> Resources,
     string UploadText, string UploadSubtext);
 
 public record InstructorInfo(string Name, string Department, string Avatar);
 
 public record ResourceItem(
-    int Id, string Title, string Type, string Metadata,
+    long Id, string Title, string Type, string Metadata,
     string Icon, string IconBg, string IconColor, string Href);
 
 public record MaterialFolder(
-    int Id, string Name, int FileCount, string Size,
+    long Id, string Name, int FileCount, string Size,
     string Icon, string IconColor, string IconBg);
 
 public record MaterialFile(
-    int Id, string Name, string Type, string Date, string Size,
+    long Id, string Name, string Type, string Date, string Size,
     string Icon, string IconColor, string IconBg);
 
 public record CalendarEvent(string Type, string? Time, string Title);
