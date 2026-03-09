@@ -1,0 +1,187 @@
+@page "/classes/{Id:long}"
+@layout ClassLayout
+@rendermode InteractiveServer
+@using LearnmateSolution.Components.Layout
+@using LearnmateSolution.Components.Pages.Class.Components
+@using LearnmateSolution.Components.Pages.Class.Models
+@using BusinessLogicLayer.DTOs
+@using BusinessLogicLayer.DTOs.Class
+@inject NavigationManager Nav
+@inject UserSessionService Session
+@inject IJSRuntime JS
+@inject IHttpClientFactory HttpClientFactory
+
+<div class="space-y-6 max-w-screen-xl mx-auto">
+    <Breadcrumb Items="@([ new("Dashboard", "/student-dashboard"), new("My Classes", "/classes"), new(_className) ])" />
+
+    @if (!_ready)
+    {
+        <div class="flex items-center justify-center h-64 text-slate-400">
+            <svg class="animate-spin h-8 w-8 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+            </svg>
+            <span class="text-sm font-medium">Loading...</span>
+        </div>
+    }
+    else if (_classInfo is null)
+    {
+        <div class="flex flex-col items-center justify-center py-24 text-slate-400">
+            <span class="material-symbols-outlined text-5xl mb-3">error_outline</span>
+            <p class="text-base font-medium">Class not found or access denied.</p>
+        </div>
+    }
+    else
+    {
+        <HeroBanner
+            ClassCode="@_classInfo.Subject"
+            ClassStatus="@_classInfo.Status"
+            ClassName="@_classInfo.Name"
+            Description="@(_classInfo.Description ?? "")"
+            BackgroundImage="" />
+
+        <ClassTabNav ClassId="@Id" ActiveTab="overview" />
+
+        <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+            @* Left: Assignments + Upcoming sessions *@
+            <div class="xl:col-span-2 space-y-6">
+                <div class="bg-white rounded-[2rem] p-6 border border-slate-100 shadow-sm">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-bold text-slate-900">Active Assignments</h3>
+                        <a href="/classes/@Id/assignments" class="text-sm font-semibold text-primary hover:text-primary/80 transition-colors">View all</a>
+                    </div>
+                    @if (_classInfo.ActiveAssignments.Count == 0)
+                    {
+                        <p class="text-slate-400 text-sm text-center py-6">No active assignments.</p>
+                    }
+                    else
+                    {
+                        <div class="space-y-3">
+                            @foreach (var asg in _classInfo.ActiveAssignments.Take(3))
+                            {
+                                <AssignmentCard Assignment="@MapAssignment(asg)" />
+                            }
+                        </div>
+                    }
+                </div>
+
+                <div class="bg-white rounded-[2rem] p-6 border border-slate-100 shadow-sm">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-bold text-slate-900">Upcoming Sessions</h3>
+                        <a href="/classes/@Id/schedule" class="text-sm font-semibold text-primary hover:text-primary/80 transition-colors">View all</a>
+                    </div>
+                    @if (_classInfo.UpcomingSchedules.Count == 0)
+                    {
+                        <p class="text-slate-400 text-sm text-center py-6">No upcoming sessions scheduled.</p>
+                    }
+                    else
+                    {
+                        <div class="space-y-3">
+                            @foreach (var s in _classInfo.UpcomingSchedules.Take(3))
+                            {
+                                <div class="flex items-center gap-4 p-3 rounded-xl bg-slate-50 border border-slate-100">
+                                    <div class="flex-shrink-0 w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                                        <span class="material-symbols-outlined text-primary text-[20px]">event</span>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <p class="text-sm font-bold text-slate-900 truncate">@s.Title</p>
+                                        <p class="text-xs text-slate-500">@s.StartTimeLocal.ToString("ddd, MMM d • h:mm tt") – @s.EndTimeLocal.ToString("h:mm tt")</p>
+                                    </div>
+                                    <span class="text-xs font-semibold px-2 py-1 rounded-full bg-sky-100 text-sky-700">@s.Type</span>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+
+            @* Right: Instructor + Resources *@
+            <div class="space-y-6">
+                <InstructorCard Instructor="_instructor" />
+                @if (_resources.Count > 0)
+                {
+                    <ResourcesList Resources="_resources" />
+                }
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public long Id { get; set; }
+
+    private bool _ready;
+    private ClassDetailDto? _classInfo;
+    private string _className = "Class";
+    private InstructorInfo _instructor = new("—", "—", "");
+    private List<ResourceItem> _resources = [];
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+
+        if (!Session.IsAuthenticated)
+        {
+            var email = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_email");
+            var role  = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_role");
+            var token = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_token");
+            if (!string.IsNullOrEmpty(email) && !string.IsNullOrEmpty(role) && !string.IsNullOrEmpty(token))
+                Session.SetSession(email, role, token);
+        }
+
+        if (!Session.IsAuthenticated) { Nav.NavigateTo("/login", replace: true); return; }
+        if (Session.Role != "STUDENT") { Nav.NavigateTo(Session.Role == "ADMIN" ? "/admin/dashboard" : "/", replace: true); return; }
+
+        await LoadClassAsync();
+        _ready = true;
+        StateHasChanged();
+    }
+
+    private async Task LoadClassAsync()
+    {
+        try
+        {
+            var client = HttpClientFactory.CreateClient("learnmate");
+            client.BaseAddress = new Uri(Nav.BaseUri);
+            client.DefaultRequestHeaders.Authorization =
+                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", Session.AccessToken);
+
+            var resp = await client.GetFromJsonAsync<ApiResponse<ClassDetailDto>>($"api/classes/{Id}");
+            _classInfo = resp?.Data;
+            if (_classInfo is null) return;
+
+            _className  = _classInfo.Name;
+            _instructor = new InstructorInfo(
+                Name:       _classInfo.TeacherName,
+                Department: _classInfo.TeacherSubjects,
+                Avatar:     _classInfo.TeacherAvatarUrl
+                            ?? $"https://api.dicebear.com/7.x/notionists/svg?seed={Uri.EscapeDataString(_classInfo.TeacherName)}"
+            );
+            _resources = _classInfo.RecentMaterials.Select((m, i) => new ResourceItem(
+                Id:        m.Id,
+                Title:     m.Title,
+                Type:      m.FileType.ToUpperInvariant(),
+                Metadata:  m.UploadedAtLocal.ToString("MMM d"),
+                Icon:      ClassPageHelpers.FileIcon(m.FileType),
+                IconBg:    ClassPageHelpers.IconBg(i),
+                IconColor: ClassPageHelpers.IconColor(i),
+                Href:      m.FileUrl
+            )).ToList();
+        }
+        catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+        {
+            Session.Clear();
+            await JS.InvokeVoidAsync("sessionStorage.removeItem", "lm_email");
+            await JS.InvokeVoidAsync("sessionStorage.removeItem", "lm_role");
+            await JS.InvokeVoidAsync("sessionStorage.removeItem", "lm_token");
+            Nav.NavigateTo("/login", replace: true);
+        }
+        catch
+        {
+            // _classInfo stays null — error state shown in UI
+        }
+    }
+
+    private static AssignmentItem MapAssignment(ClassAssignmentDto a) =>
+        ClassPageHelpers.MapAssignment(a);
+}

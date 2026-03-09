@@ -12,6 +12,7 @@ namespace BusinessLogicLayer.Services;
 public class AuthService(
     IUserRepository userRepo,
     IOtpVerificationRepository otpRepo,
+    IStudentProfileRepository studentProfileRepo,
     IJwtService jwtService,
     IOtpService otpService,
     IEmailService emailService,
@@ -49,6 +50,17 @@ public class AuthService(
         };
 
         user = await userRepo.CreateAsync(user);
+
+        if (role == UserRole.STUDENT)
+        {
+            await studentProfileRepo.CreateAsync(new StudentProfile
+            {
+                UserId = user.Id,
+                FullName = request.FullName ?? request.Email,
+                DateOfBirth = request.DateOfBirth
+            });
+        }
+
         await SendOtpAsync(user);
 
         return ApiResponse<RegisterResponse>.Ok(
@@ -137,7 +149,8 @@ public class AuthService(
             TokenType: "Bearer",
             ExpiresIn: expiryMinutes * 60,
             Email: user.Email,
-            Role: user.Role.ToString()));
+            Role: user.Role.ToString(),
+            AvatarUrl: user.AvatarUrl));
     }
 
     public Task<ApiResponse<object?>> LogoutAsync(string token)

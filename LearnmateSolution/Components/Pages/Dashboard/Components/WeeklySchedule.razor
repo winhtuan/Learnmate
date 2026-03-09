@@ -1,0 +1,63 @@
+@using LearnmateSolution.Components.Pages.Dashboard.Models
+
+<div class="bg-white rounded-2xl border border-slate-200">
+    @* Header *@
+    <div class="flex justify-between items-center px-5 pt-5 pb-4 border-b border-slate-100">
+        <h2 class="text-xl font-bold text-slate-900 leading-none">Weekly Schedule</h2>
+        <a href="/schedule" class="text-base font-bold text-slate-500 hover:text-primary transition-colors no-underline leading-none">View Full</a>
+    </div>
+
+    @* Body *@
+    <div class="p-4 overflow-x-auto">
+        @if (Days.Count == 0)
+        {
+            <div class="flex flex-col items-center justify-center h-24 gap-2 text-slate-400">
+                <span class="material-symbols-outlined text-3xl">event_available</span>
+                <p class="text-sm">No classes scheduled this week.</p>
+            </div>
+        }
+        else
+        {
+        <div class="min-w-[480px] flex gap-2">
+            @foreach (var dayData in Days)
+            {
+                <div class="flex-1 min-w-[100px] rounded-xl p-2.5 transition-all
+                    @(dayData.IsToday ? "bg-primary/5 border border-primary/25" : "border border-slate-100 hover:border-slate-200 hover:bg-slate-50/60")">
+
+                    @* Day header *@
+                    <div class="text-center mb-2.5 pb-2 border-b @(dayData.IsToday ? "border-primary/15" : "border-slate-100")">
+                        <p class="text-[10px] font-bold uppercase tracking-widest @(dayData.IsToday ? "text-primary" : "text-slate-400")">
+                            @dayData.Day
+                        </p>
+                        <p class="text-xl font-bold mt-0.5 @(dayData.IsToday ? "text-primary" : "text-slate-700")">@dayData.Date</p>
+                    </div>
+
+                    @* Classes *@
+                    <div class="space-y-1.5">
+                        @foreach (var cls in dayData.Classes)
+                        {
+                            <div class="rounded-lg p-2 text-[11px] cursor-pointer transition-all
+                                @(dayData.IsToday
+                                    ? $"bg-white border-l-[3px] border-{cls.Color} shadow-sm hover:shadow-md hover:-translate-y-px"
+                                    : "bg-slate-50 border border-slate-100 opacity-60 hover:opacity-90")">
+                                <p class="font-bold text-slate-800 tabular-nums">@cls.Time</p>
+                                <p class="font-semibold text-slate-600 mt-0.5 leading-tight">@cls.Name</p>
+                                @if (!string.IsNullOrEmpty(cls.Room))
+                                {
+                                    <p class="text-slate-400 mt-0.5 flex items-center gap-0.5">
+                                        <span class="material-symbols-outlined text-[10px]">location_on</span>@cls.Room
+                                    </p>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter] public List<ScheduleDay> Days { get; set; } = [];
+}

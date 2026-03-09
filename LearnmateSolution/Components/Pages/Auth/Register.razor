@@ -2,8 +2,14 @@
 @layout AuthLayout
 @rendermode InteractiveServer
 @using LearnmateSolution.Components.Layout
+@using BusinessLogicLayer.DTOs
+@using BusinessLogicLayer.DTOs.Auth
+@inject NavigationManager Nav
+@inject IHttpClientFactory HttpClientFactory
+@inject UserSessionService Session
+@inject IJSRuntime JS
 
-<PageTitle>Create account – LearnMate</PageTitle>
+<PageTitle>Create account - LearnMate</PageTitle>
 
 <HeadContent>
     <link rel="stylesheet" href="css/auth/login.css" />
@@ -12,7 +18,7 @@
 
 <div class="lm-auth-container">
 
-    <!-- ══════════════ LEFT PANEL ══════════════ -->
+    @* ══════════════ LEFT PANEL ══════════════ *@
     <div class="lm-left-panel">
         <div>
             <div class="lm-logo-row">
@@ -27,13 +33,13 @@
         </div>
     </div>
 
-    <!-- ══════════════ RIGHT PANEL ══════════════ -->
+    @* ══════════════ RIGHT PANEL ══════════════ *@
     <div class="lm-right-panel">
         <div class="lm-form-container">
 
-            <!-- Mobile-only logo -->
+            @* Mobile-only logo *@
             <div class="lm-mobile-logo">
-                <AuthLogo Dark="false" />
+                <AuthLogo OnDarkBackground="false" />
             </div>
 
             <h2 class="lm-signin-heading">Create an account</h2>
@@ -46,15 +52,15 @@
                 <div class="lm-global-error" role="alert">@globalError</div>
             }
 
-            <!-- Stepper (always visible, all done when on step 4) -->
+            @* Stepper (always visible, all done when on step 4) *@
             <Stepper CurrentStep="@Math.Min(currentStep, 4)" />
 
-            <!-- Step content with slide animation -->
+            @* Step content with slide animation *@
             <div class="lm-step-content @(isGoingBack ? "lm-step-content--back" : "")" @key="currentStep">
 
                 @if (currentStep == 1)
                 {
-                    <!-- ── Step 1: Email ── -->
+                    @* ── Step 1: Email ── *@
                     <div class="lm-field">
                         <label class="lm-label" for="reg-email">What's your email?</label>
                         <div class="lm-input-wrapper">
@@ -71,7 +77,7 @@
 
                 @if (currentStep == 2)
                 {
-                    <!-- ── Step 2: Basic info ── -->
+                    @* ── Step 2: Basic info ── *@
                     <div class="lm-field">
                         <label class="lm-label" for="reg-name">Your name</label>
                         <div class="lm-input-wrapper">
@@ -130,7 +136,7 @@
 
                 @if (currentStep == 3)
                 {
-                    <!-- ── Step 3: Password ── -->
+                    @* ── Step 3: Password ── *@
                     <div class="lm-field">
                         <label class="lm-label" for="reg-password">Create a password</label>
                         <div class="lm-input-wrapper">
@@ -179,7 +185,7 @@
 
                 @if (currentStep == 4)
                 {
-                    <!-- ── Step 4: OTP ── -->
+                    @* ── Step 4: OTP ── *@
                     <div class="lm-field">
                         <label class="lm-label">Enter the verification code</label>
                         <div class="lm-otp-boxes">
@@ -219,7 +225,7 @@
 
             </div>
 
-            <!-- Divider + Google (steps 1–2 only) -->
+            @* Divider + Google (steps 1–2 only) *@
             @if (currentStep <= 2)
             {
                 <div class="lm-divider">
@@ -244,6 +250,29 @@
 </div>
 
 @code {
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        if (!Session.IsAuthenticated)
+        {
+            var email = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_email");
+            var role  = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_role");
+            var token = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_token");
+            if (!string.IsNullOrEmpty(email) && !string.IsNullOrEmpty(role) && !string.IsNullOrEmpty(token))
+                Session.SetSession(email, role, token);
+        }
+        if (Session.IsAuthenticated)
+        {
+            var dest = Session.Role switch
+            {
+                "ADMIN"   => "/admin/dashboard",
+                "STUDENT" => "/student-dashboard",
+                _         => "/"
+            };
+            Nav.NavigateTo(dest, replace: true);
+        }
+    }
+
     private int currentStep = 1;
     private bool isGoingBack;
     private bool isLoading;
@@ -272,9 +301,18 @@
     private IEnumerable<int> YearOptions =>
         Enumerable.Range(DateTime.Today.Year - 100, 88).Reverse();
 
-    private bool Step2Valid =>
-        !string.IsNullOrWhiteSpace(fullName) &&
-        dobDay.HasValue && dobMonth.HasValue && dobYear.HasValue;
+    private bool Step2Valid
+    {
+        get
+        {
+            if (string.IsNullOrWhiteSpace(fullName)) return false;
+            if (!dobDay.HasValue || !dobMonth.HasValue || !dobYear.HasValue) return false;
+            var today = DateOnly.FromDateTime(DateTime.Today);
+            var dob   = new DateOnly(dobYear.Value, dobMonth.Value, dobDay.Value);
+            var age   = today.Year - dob.Year - (today < dob.AddYears(today.Year - dob.Year) ? 1 : 0);
+            return age is >= 13 and <= 100;
+        }
+    }
 
     private void OnMonthChanged(ChangeEventArgs e)
     {
@@ -329,6 +367,16 @@
         }
     }
 
+    private static readonly System.Text.Json.JsonSerializerOptions _jsonOpts =
+        new() { PropertyNameCaseInsensitive = true };
+
+    private HttpClient CreateApiClient()
+    {
+        var client = HttpClientFactory.CreateClient("learnmate");
+        client.BaseAddress = new Uri(Nav.BaseUri);
+        return client;
+    }
+
     // Navigation
     private async Task NextStep()
     {
@@ -339,8 +387,29 @@
         {
             isLoading = true;
             StateHasChanged();
-            await Task.Delay(1000); // TODO: call registration API, send OTP
-            isLoading = false;
+            try
+            {
+                var dob = (dobDay.HasValue && dobMonth.HasValue && dobYear.HasValue)
+                    ? new DateOnly(dobYear.Value, dobMonth.Value, dobDay.Value)
+                    : (DateOnly?)null;
+                var resp = await CreateApiClient().PostAsJsonAsync("auth/register",
+                    new RegisterRequest(email, password, "STUDENT", fullName, dob));
+                var result = await resp.Content.ReadFromJsonAsync<ApiResponse<RegisterResponse>>(_jsonOpts);
+                if (!resp.IsSuccessStatusCode)
+                {
+                    globalError = result?.Message ?? "Registration failed. Please try again.";
+                    return;
+                }
+            }
+            catch
+            {
+                globalError = "Connection error. Please try again.";
+                return;
+            }
+            finally
+            {
+                isLoading = false;
+            }
         }
 
         currentStep++;
@@ -356,9 +425,27 @@
     private async Task ConfirmOtp()
     {
         isLoading = true;
+        globalError = null;
         StateHasChanged();
-        await Task.Delay(1000); // TODO: verify OTP via API
-        isLoading = false;
-        globalError = "Invalid verification code. Please try again.";
+        try
+        {
+            var resp = await CreateApiClient().PostAsJsonAsync("auth/verify-otp",
+                new VerifyOtpRequest(email, OtpCode));
+            var result = await resp.Content.ReadFromJsonAsync<ApiResponse<object?>>(_jsonOpts);
+            if (!resp.IsSuccessStatusCode)
+            {
+                globalError = result?.Message ?? "Invalid verification code. Please try again.";
+                return;
+            }
+            Nav.NavigateTo("/login");
+        }
+        catch
+        {
+            globalError = "Connection error. Please try again.";
+        }
+        finally
+        {
+            isLoading = false;
+        }
     }
 }

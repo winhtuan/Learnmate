@@ -1,0 +1,386 @@
+@page "/admin/reports"
+@using LearnmateSolution.Components.Layout.Admin
+@layout AdminLayout
+@rendermode InteractiveServer
+@inject NavigationManager Nav
+@inject UserSessionService Session
+@inject IJSRuntime JS
+
+
+<div class="reports-page">
+    <div class="reports-breadcrumb mb-4">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/admin/dashboard">Home</a></li>
+                <li class="breadcrumb-item @(isExportView ? "" : "active")" aria-current="page" @onclick="() => isExportView = false" style="cursor: pointer;">Reports</li>
+                @if (isExportView)
+                {
+                    <li class="breadcrumb-item active" aria-current="page">Export</li>
+                }
+            </ol>
+        </nav>
+    </div>
+
+    @if (!isExportView)
+    {
+        <!-- Dashboard View -->
+        <div class="d-flex justify-content-between align-items-end mb-4">
+            <div class="reports-header">
+                <h1 class="reports-title">Reports Dashboard</h1>
+                <p class="reports-subtitle">Overview of system data, generated exports, and analytics insight.</p>
+            </div>
+            <button class="btn btn-primary generate-btn px-4 d-flex align-items-center gap-2" @onclick="() => isExportView = true">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                New Export
+            </button>
+        </div>
+
+        <!-- stats Cards -->
+        <div class="row g-4 mb-4">
+            <div class="col-md-3">
+                <div class="card stat-card shadow-sm border-0">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between mb-3">
+                            <div class="stat-icon-box bg-primary-soft text-primary">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                            </div>
+                            <span class="text-success fw-bold small">+12%</span>
+                        </div>
+                        <h3 class="fw-bold mb-1">124</h3>
+                        <p class="text-muted small mb-0">Total Reports</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stat-card shadow-sm border-0">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between mb-3">
+                            <div class="stat-icon-box bg-success-soft text-success">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                            </div>
+                            <span class="text-success fw-bold small">Ready</span>
+                        </div>
+                        <h3 class="fw-bold mb-1">98</h3>
+                        <p class="text-muted small mb-0">Completed</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stat-card shadow-sm border-0">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between mb-3">
+                            <div class="stat-icon-box bg-warning-soft text-warning">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                            </div>
+                            <span class="text-warning fw-bold small">Pending</span>
+                        </div>
+                        <h3 class="fw-bold mb-1">14</h3>
+                        <p class="text-muted small mb-0">In Progress</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stat-card shadow-sm border-0">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between mb-3">
+                            <div class="stat-icon-box bg-danger-soft text-danger">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
+                            </div>
+                            <span class="text-danger fw-bold small">Alert</span>
+                        </div>
+                        <h3 class="fw-bold mb-1">2</h3>
+                        <p class="text-muted small mb-0">Failed Exports</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Search & Filters -->
+        <div class="card search-filter-card mb-4 border-0 shadow-sm">
+            <div class="card-body p-3">
+                <div class="row g-3 align-items-center">
+                    <div class="col-md-4">
+                        <div class="input-group">
+                            <span class="input-group-text border-end-0 bg-white">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-muted"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                            </span>
+                            <input type="text" class="form-control border-start-0 ps-0" placeholder="Search reports..." @bind="searchText" @bind:event="oninput">
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <select class="form-select border-0 bg-light-faint fw-semibold" @bind="filterCategory">
+                            <option value="All">All Categories</option>
+                            <option value="User">User Activity</option>
+                            <option value="Course">Course Performance</option>
+                            <option value="Finance">Financial</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <select class="form-select border-0 bg-light-faint fw-semibold" @bind="filterStatus">
+                            <option value="All">All Status</option>
+                            <option value="Ready">Ready</option>
+                            <option value="Processing">Processing</option>
+                            <option value="Failed">Failed</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <select class="form-select border-0 bg-light-faint fw-semibold" @bind="sortBy">
+                            <option value="Newest">Newest First</option>
+                            <option value="Oldest">Oldest First</option>
+                            <option value="Name">Name A-Z</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2 text-end">
+                        <button class="btn btn-outline-secondary w-100 fw-semibold" @onclick="ResetFilters">Reset</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reports Table -->
+        <div class="card border-0 shadow-sm">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="ps-4">REPORT NAME</th>
+                            <th>CATEGORY</th>
+                            <th>REQUESTED ON</th>
+                            <th>FORMAT</th>
+                            <th>STATUS</th>
+                            <th class="text-end pe-4">ACTION</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var report in FilteredReports)
+                        {
+                            <tr>
+                                <td class="ps-4">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <div class="report-icon-box">
+                                            @if (report.Category == "User")
+                                            {
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-primary"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                                            }
+                                            else if (report.Category == "Course")
+                                            {
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-success"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
+                                            }
+                                            else
+                                            {
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-warning"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+                                            }
+                                        </div>
+                                        <span class="fw-medium">@report.Name</span>
+                                    </div>
+                                </td>
+                                <td><span class="text-muted fw-semibold small">@report.Category</span></td>
+                                <td>@report.RequestedOn.ToString("MMM d, yyyy HH:mm")</td>
+                                <td><span class="badge bg-light text-muted border">@report.Format</span></td>
+                                <td>
+                                    <span class="status-badge @report.Status.ToLower()">@report.Status</span>
+                                </td>
+                                <td class="text-end pe-4">
+                                    <button class="btn btn-sm btn-light border p-2" title="Download">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            <div class="card-footer bg-white border-0 py-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="text-muted small">Showing <strong>@FilteredReports.Count()</strong> results</span>
+                    <nav>
+                        <ul class="pagination pagination-sm mb-0">
+                            <li class="page-item disabled"><a class="page-item link-secondary" href="#">Previous</a></li>
+                            <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                            <li class="page-item"><a class="page-link" href="#">Next</a></li>
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <!-- Export View (Original content with Back button) -->
+        <div class="d-flex align-items-center gap-3 mb-4">
+            <button class="btn btn-icon-only btn-light border rounded-circle" @onclick="() => isExportView = false">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+            </button>
+            <div class="reports-header">
+                <h1 class="reports-title">System Reports Export</h1>
+                <p class="reports-subtitle mb-0">Select criteria below to generate a comprehensive data export from the LearnMate database.</p>
+            </div>
+        </div>
+
+        @if (showSuccessAlert)
+        {
+            <div class="alert alert-success d-flex align-items-center mb-4" role="alert">
+                <div class="alert-icon me-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-success"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                </div>
+                <div class="alert-content flex-grow-1">
+                    <strong>Export Generated Successfully</strong>
+                    <p class="mb-0">Your "User Activity" report for Oct 1 - Oct 31 is ready.</p>
+                    <a href="#" class="alert-link text-decoration-underline">Download User_Activity_Oct2023.csv</a>
+                </div>
+                <button type="button" class="btn-close" @onclick="() => showSuccessAlert = false" aria-label="Close"></button>
+            </div>
+        }
+
+        <div class="card reports-config-card mb-5 shadow-sm">
+            <div class="card-header bg-white py-3">
+                <h5 class="mb-0 fw-bold">Export Configuration</h5>
+            </div>
+            <div class="card-body p-4">
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">Report Category</label>
+                        <select class="form-select custom-select py-2 border-faint">
+                            <option selected>Select report type...</option>
+                            <option value="1">User Activity</option>
+                            <option value="2">Course Performance</option>
+                            <option value="3">Financial Summary</option>
+                            <option value="4">System Logs</option>
+                        </select>
+                        <div class="form-text mt-2">Choose the specific dataset you wish to analyze.</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">Date Range</label>
+                        <div class="d-flex align-items-center gap-2">
+                            <input type="date" class="form-control border-faint">
+                            <span class="text-muted">–</span>
+                            <input type="date" class="form-control border-faint">
+                        </div>
+                        <div class="form-text mt-2">Select start and end dates. Max range: 1 year.</div>
+                    </div>
+                </div>
+
+                <div class="row mt-5 align-items-end">
+                    <div class="col-md-8">
+                        <label class="form-label fw-bold mb-3">Export Format</label>
+                        <div class="d-flex gap-4">
+                            <div class="format-option-wrapper @(selectedFormat == "CSV" ? "active" : "")" @onclick='() => selectedFormat = "CSV"'>
+                                <div class="format-card">
+                                    <div class="format-check">
+                                        <div class="check-dot"></div>
+                                    </div>
+                                    <div class="format-icon bg-light-faint">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="9" y1="15" x2="15" y2="15"></line></svg>
+                                    </div>
+                                    <div class="ms-3">
+                                        <div class="fw-bold">CSV</div>
+                                        <div class="text-muted small">Raw Data</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="format-option-wrapper @(selectedFormat == "PDF" ? "active" : "")" @onclick='() => selectedFormat = "PDF"'>
+                                <div class="format-card">
+                                    <div class="format-check">
+                                        <div class="check-dot"></div>
+                                    </div>
+                                    <div class="format-icon bg-light-faint">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><path d="M9 12h1M9 15h1M9 18h1"></path></svg>
+                                    </div>
+                                    <div class="ms-3">
+                                        <div class="fw-bold">PDF</div>
+                                        <div class="text-muted small">Visual Report</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <button class="btn btn-primary btn-lg w-100 generate-btn d-flex align-items-center justify-content-center gap-2 py-3">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                            Generate & Download
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        if (!Session.IsAuthenticated)
+        {
+            var email = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_email");
+            var role  = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_role");
+            var token = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_token");
+            if (!string.IsNullOrEmpty(email) && !string.IsNullOrEmpty(role) && !string.IsNullOrEmpty(token))
+                Session.SetSession(email, role, token);
+        }
+        if (!Session.IsAuthenticated) { Nav.NavigateTo("/login", replace: true); return; }
+        if (Session.Role != "ADMIN") { Nav.NavigateTo(Session.Role == "STUDENT" ? "/student-dashboard" : "/", replace: true); }
+    }
+
+    private bool isExportView = false;
+    private bool showSuccessAlert = true;
+    private string selectedFormat = "CSV";
+    
+    // Filters
+    private string searchText = "";
+    private string filterCategory = "All";
+    private string filterStatus = "All";
+    private string sortBy = "Newest";
+
+    private class ReportItem
+    {
+        public string Name { get; set; } = "";
+        public string Category { get; set; } = "";
+        public DateTime RequestedOn { get; set; }
+        public string Format { get; set; } = "";
+        public string Status { get; set; } = "";
+    }
+
+    private List<ReportItem> reports = new()
+    {
+        new ReportItem { Name = "User_Activity_Oct2023", Category = "User", RequestedOn = new DateTime(2023, 11, 1, 9, 42, 0), Format = "CSV", Status = "Ready" },
+        new ReportItem { Name = "Annual_Finance_2023", Category = "Finance", RequestedOn = new DateTime(2023, 11, 2, 14, 15, 0), Format = "PDF", Status = "Ready" },
+        new ReportItem { Name = "Course_Completion_Q3", Category = "Course", RequestedOn = new DateTime(2023, 11, 3, 11, 30, 0), Format = "CSV", Status = "Processing" },
+        new ReportItem { Name = "System_Diagnostic_Log", Category = "Logs", RequestedOn = new DateTime(2023, 11, 4, 16, 45, 0), Format = "CSV", Status = "Failed" },
+        new ReportItem { Name = "Student_Enrollment_Summary", Category = "User", RequestedOn = new DateTime(2023, 10, 25, 8, 0, 0), Format = "PDF", Status = "Ready" }
+    };
+
+    private IEnumerable<ReportItem> FilteredReports
+    {
+        get
+        {
+            var result = reports.AsEnumerable();
+
+            if (!string.IsNullOrWhiteSpace(searchText))
+                result = result.Where(r => r.Name.Contains(searchText, StringComparison.OrdinalIgnoreCase));
+
+            if (filterCategory != "All")
+                result = result.Where(r => r.Category == filterCategory);
+
+            if (filterStatus != "All")
+                result = result.Where(r => r.Status == filterStatus);
+
+            result = sortBy switch
+            {
+                "Oldest" => result.OrderBy(r => r.RequestedOn),
+                "Name" => result.OrderBy(r => r.Name),
+                _ => result.OrderByDescending(r => r.RequestedOn)
+            };
+
+            return result;
+        }
+    }
+
+    private void ResetFilters()
+    {
+        searchText = "";
+        filterCategory = "All";
+        filterStatus = "All";
+        sortBy = "Newest";
+    }
+}

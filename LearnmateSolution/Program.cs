@@ -1,7 +1,9 @@
 using System.Text;
 using BusinessLogicLayer;
+using BusinessLogicLayer.Settings;
 using DataAccessLayer;
 using LearnmateSolution.Components;
+using LearnmateSolution.AppState;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 
@@ -13,11 +15,36 @@ public class Program
     {
         var builder = WebApplication.CreateBuilder(args);
 
+        // ── .env ──────────────────────────────────────────────────────────────
+        var envFile = Path.Combine(Directory.GetCurrentDirectory(), ".env");
+        if (File.Exists(envFile))
+        {
+            foreach (var rawLine in File.ReadAllLines(envFile))
+            {
+                var line = rawLine.Trim();
+                if (string.IsNullOrEmpty(line) || line.StartsWith('#')) continue;
+                var eq = line.IndexOf('=');
+                if (eq < 0) continue;
+                Environment.SetEnvironmentVariable(line[..eq].Trim(), line[(eq + 1)..].Trim());
+            }
+        }
+
+        if (Environment.GetEnvironmentVariable("EMAIL_SENDER") is { } emailSender)
+            builder.Configuration["EmailSettings:SenderEmail"] = emailSender;
+        if (Environment.GetEnvironmentVariable("EMAIL_PASSWORD") is { } emailPassword)
+            builder.Configuration["EmailSettings:Password"] = emailPassword;
+
         // ── Database ──────────────────────────────────────────────────────────
         builder.Services.AddDataAccessLayer(builder.Configuration);
 
         // ── Business Logic + Repositories ────────────────────────────────────
         builder.Services.AddBusinessLogicLayer();
+
+        // ── JWT Settings (IOptions<JwtSettings>) ─────────────────────────────
+        builder.Services.AddOptions<JwtSettings>()
+            .BindConfiguration("Jwt")
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
 
         // ── JWT Authentication ────────────────────────────────────────────────
         var jwtSecret = builder.Configuration["Jwt:SecretKey"]
@@ -44,6 +71,15 @@ public class Program
 
         // ── Web API controllers ───────────────────────────────────────────────
         builder.Services.AddControllers();
+
+        // ── HttpClient (for Blazor components calling own API) ────────────────
+        builder.Services.AddHttpClient("learnmate", client =>
+        {
+            client.Timeout = TimeSpan.FromSeconds(30);
+        });
+
+        // ── Auth session (per Blazor circuit) ────────────────────────────────
+        builder.Services.AddScoped<UserSessionService>();
 
         // ── Blazor Server ─────────────────────────────────────────────────────
         builder.Services.AddRazorComponents()

@@ -82,6 +82,32 @@ namespace DataAccessLayer.Migrations
                         .HasDatabaseName("ix_assignments_teacher_id");
 
                     b.ToTable("assignments", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1L,
+                            ClassId = 2L,
+                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Xây dựng ứng dụng MAUI có ít nhất 3 màn hình với Shell Navigation và truyền dữ liệu giữa các trang.",
+                            DueDate = new DateTime(2026, 3, 16, 16, 59, 0, 0, DateTimeKind.Utc),
+                            Status = "PUBLISHED",
+                            TeacherId = 2L,
+                            Title = "Lab 1: MAUI Navigation",
+                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 2L,
+                            ClassId = 3L,
+                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Tạo một scene Unity có ánh sáng directional, mặt phẳng (Plane), và ít nhất 1 GameObject có Rigidbody và Collider.",
+                            DueDate = new DateTime(2026, 3, 15, 16, 59, 0, 0, DateTimeKind.Utc),
+                            Status = "PUBLISHED",
+                            TeacherId = 2L,
+                            Title = "Lab 1: Unity Scene",
+                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        });
                 });
 
             modelBuilder.Entity("BusinessObject.Models.AssignmentOption", b =>
@@ -254,6 +280,30 @@ namespace DataAccessLayer.Migrations
                             Subject = "Toán",
                             TeacherId = 2L,
                             UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 2L,
+                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Cross-Platform Mobile App Development With .NET MAUI",
+                            MaxStudents = 30,
+                            Name = "PRN222",
+                            Status = "ACTIVE",
+                            Subject = "PRN222",
+                            TeacherId = 2L,
+                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 3L,
+                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Unity Game Development — Scripting & Physics",
+                            MaxStudents = 30,
+                            Name = "PRU213",
+                            Status = "ACTIVE",
+                            Subject = "PRU213",
+                            TeacherId = 2L,
+                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         });
                 });
 
@@ -304,6 +354,22 @@ namespace DataAccessLayer.Migrations
                         {
                             Id = 1L,
                             ClassId = 1L,
+                            JoinedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Status = "ACTIVE",
+                            StudentId = 3L
+                        },
+                        new
+                        {
+                            Id = 2L,
+                            ClassId = 2L,
+                            JoinedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Status = "ACTIVE",
+                            StudentId = 3L
+                        },
+                        new
+                        {
+                            Id = 3L,
+                            ClassId = 3L,
                             JoinedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Status = "ACTIVE",
                             StudentId = 3L
@@ -489,6 +555,34 @@ namespace DataAccessLayer.Migrations
                         .HasDatabaseName("ix_materials_uploaded_by");
 
                     b.ToTable("materials", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1L,
+                            ClassId = 2L,
+                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Tổng quan về .NET MAUI, XAML cơ bản và cấu trúc project.",
+                            FileType = "PDF",
+                            FileUrl = "https://storage.learnmate.vn/materials/prn222-slide-01.pdf",
+                            Status = "ACTIVE",
+                            Title = "Slide Buổi 1 — .NET MAUI Introduction",
+                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            UploadedBy = 2L
+                        },
+                        new
+                        {
+                            Id = 2L,
+                            ClassId = 3L,
+                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Hướng dẫn cài đặt Unity Hub, tạo project và làm quen với Editor.",
+                            FileType = "PDF",
+                            FileUrl = "https://storage.learnmate.vn/materials/pru213-slide-01.pdf",
+                            Status = "ACTIVE",
+                            Title = "Slide Buổi 1 — Unity Editor Overview",
+                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            UploadedBy = 2L
+                        });
                 });
 
             modelBuilder.Entity("BusinessObject.Models.Notification", b =>
@@ -536,6 +630,58 @@ namespace DataAccessLayer.Migrations
                         .HasDatabaseName("ix_notifications_user_id_is_read");
 
                     b.ToTable("notifications", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1L,
+                            Content = "Bạn đã tham gia lớp Cross-Platform Mobile App Development thành công!",
+                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsRead = true,
+                            Title = "Chào mừng đến PRN222",
+                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            UserId = 3L
+                        },
+                        new
+                        {
+                            Id = 2L,
+                            Content = "Bạn đã tham gia lớp Unity Game Development thành công!",
+                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsRead = true,
+                            Title = "Chào mừng đến PRU213",
+                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            UserId = 3L
+                        },
+                        new
+                        {
+                            Id = 3L,
+                            Content = "Lab 1: MAUI Navigation đã được đăng. Hạn nộp: 16/03/2026.",
+                            CreatedAt = new DateTime(2026, 3, 7, 1, 0, 0, 0, DateTimeKind.Utc),
+                            IsRead = false,
+                            Title = "Bài tập mới — PRN222",
+                            UpdatedAt = new DateTime(2026, 3, 7, 1, 0, 0, 0, DateTimeKind.Utc),
+                            UserId = 3L
+                        },
+                        new
+                        {
+                            Id = 4L,
+                            Content = "Lab 1: Unity Scene đã được đăng. Hạn nộp: 15/03/2026.",
+                            CreatedAt = new DateTime(2026, 3, 7, 2, 0, 0, 0, DateTimeKind.Utc),
+                            IsRead = false,
+                            Title = "Bài tập mới — PRU213",
+                            UpdatedAt = new DateTime(2026, 3, 7, 2, 0, 0, 0, DateTimeKind.Utc),
+                            UserId = 3L
+                        },
+                        new
+                        {
+                            Id = 5L,
+                            Content = "PRN222: Thứ 2 & Thứ 4 lúc 07:30. PRU213: Thứ 3 & Thứ 5 lúc 13:00.",
+                            CreatedAt = new DateTime(2026, 3, 8, 3, 0, 0, 0, DateTimeKind.Utc),
+                            IsRead = false,
+                            Title = "Lịch học tuần này",
+                            UpdatedAt = new DateTime(2026, 3, 8, 3, 0, 0, 0, DateTimeKind.Utc),
+                            UserId = 3L
+                        });
                 });
 
             modelBuilder.Entity("BusinessObject.Models.OtpVerification", b =>
@@ -727,6 +873,60 @@ namespace DataAccessLayer.Migrations
                         {
                             t.HasCheckConstraint("ck_schedules_time", "end_time > start_time");
                         });
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1L,
+                            ClassId = 2L,
+                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EndTime = new DateTime(2026, 3, 9, 2, 30, 0, 0, DateTimeKind.Utc),
+                            IsTrial = false,
+                            StartTime = new DateTime(2026, 3, 9, 0, 30, 0, 0, DateTimeKind.Utc),
+                            Status = "SCHEDULED",
+                            Title = "PRN222 — Buổi 1: Giới thiệu .NET MAUI & XAML",
+                            Type = "REGULAR",
+                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 2L,
+                            ClassId = 2L,
+                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EndTime = new DateTime(2026, 3, 11, 2, 30, 0, 0, DateTimeKind.Utc),
+                            IsTrial = false,
+                            StartTime = new DateTime(2026, 3, 11, 0, 30, 0, 0, DateTimeKind.Utc),
+                            Status = "SCHEDULED",
+                            Title = "PRN222 — Buổi 2: Data Binding & MVVM",
+                            Type = "REGULAR",
+                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 3L,
+                            ClassId = 3L,
+                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EndTime = new DateTime(2026, 3, 10, 8, 0, 0, 0, DateTimeKind.Utc),
+                            IsTrial = false,
+                            StartTime = new DateTime(2026, 3, 10, 6, 0, 0, 0, DateTimeKind.Utc),
+                            Status = "SCHEDULED",
+                            Title = "PRU213 — Buổi 1: Unity Editor & Scene Setup",
+                            Type = "REGULAR",
+                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 4L,
+                            ClassId = 3L,
+                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EndTime = new DateTime(2026, 3, 12, 8, 0, 0, 0, DateTimeKind.Utc),
+                            IsTrial = false,
+                            StartTime = new DateTime(2026, 3, 12, 6, 0, 0, 0, DateTimeKind.Utc),
+                            Status = "SCHEDULED",
+                            Title = "PRU213 — Buổi 2: Rigidbody Physics & Colliders",
+                            Type = "REGULAR",
+                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        });
                 });
 
             modelBuilder.Entity("BusinessObject.Models.StudentProfile", b =>
@@ -737,11 +937,6 @@ namespace DataAccessLayer.Migrations
                         .HasColumnName("id");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
-
-                    b.Property<string>("AvatarUrl")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)")
-                        .HasColumnName("avatar_url");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp without time zone")
@@ -767,6 +962,10 @@ namespace DataAccessLayer.Migrations
                         .HasColumnType("character varying(20)")
                         .HasColumnName("parent_contact");
 
+                    b.Property<int>("StudyStreakDays")
+                        .HasColumnType("integer")
+                        .HasColumnName("study_streak_days");
+
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp without time zone")
                         .HasColumnName("updated_at");
@@ -789,8 +988,9 @@ namespace DataAccessLayer.Migrations
                         {
                             Id = 1L,
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            FullName = "Tran Thi B",
+                            FullName = "Nguyen Minh Tuan",
                             GradeLevel = "12",
+                            StudyStreakDays = 8,
                             UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             UserId = 3L
                         });
@@ -1088,6 +1288,11 @@ namespace DataAccessLayer.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
 
+                    b.Property<string>("AvatarUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("avatar_url");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp without time zone")
                         .HasColumnName("created_at");
@@ -1136,6 +1341,7 @@ namespace DataAccessLayer.Migrations
                         new
                         {
                             Id = 1L,
+                            AvatarUrl = "https://placehold.co/400?text=Admin",
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Email = "admin@learnmate.vn",
                             IsActive = true,
@@ -1146,6 +1352,7 @@ namespace DataAccessLayer.Migrations
                         new
                         {
                             Id = 2L,
+                            AvatarUrl = "https://placehold.co/400?text=Teacher",
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Email = "teacher@learnmate.vn",
                             IsActive = true,
@@ -1156,6 +1363,7 @@ namespace DataAccessLayer.Migrations
                         new
                         {
                             Id = 3L,
+                            AvatarUrl = "https://placehold.co/400?text=Student",
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Email = "student@learnmate.vn",
                             IsActive = true,

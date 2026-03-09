@@ -1,0 +1,75 @@
+@inject UserSessionService Session
+@inject IJSRuntime JS
+@rendermode InteractiveServer
+
+<header class="admin-header">
+    <div class="admin-header-left">
+        @* Logo moved to Sidebar *@
+    </div>
+
+    <div class="admin-header-right">
+        <button class="notification-btn" title="Notifications">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" /><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
+            </svg>
+            <span class="notification-dot"></span>
+        </button>
+
+        <div class="admin-user-profile">
+            <div class="admin-info text-end">
+                <span class="admin-name">@Session.Email</span>
+                <span class="admin-role">@RoleLabel</span>
+            </div>
+            <img src="@AvatarUrl" alt="Admin Avatar" class="admin-avatar" />
+        </div>
+    </div>
+</header>
+
+@code {
+    // ── Computed display values ────────────────────────────────────────────
+
+    /// <summary>Phần trước '@' trong email, viết hoa chữ cái đầu mỗi từ.</summary>
+    private string DisplayName =>
+        Session.Email is { Length: > 0 } email
+            ? System.Globalization.CultureInfo.CurrentCulture.TextInfo
+                  .ToTitleCase(email.Split('@')[0].Replace('.', ' ').Replace('_', ' '))
+            : "Admin";
+
+    /// <summary>Nhãn hiển thị cho role của admin.</summary>
+    private string RoleLabel => Session.Role switch
+    {
+        "ADMIN"   => "System Administrator",
+        "TEACHER" => "Teacher",
+        "STUDENT" => "Student",
+        _         => Session.Role ?? "Administrator"
+    };
+
+    /// <summary>Avatar động dùng thẻ ảnh từ backend hoặc fallback tới ui-avatars.com.</summary>
+    private string AvatarUrl => 
+        !string.IsNullOrEmpty(Session.AvatarUrl) 
+            ? Session.AvatarUrl 
+            : $"https://ui-avatars.com/api/?name={Uri.EscapeDataString(DisplayName)}&background=2563eb&color=fff";
+
+    // ── Lifecycle ──────────────────────────────────────────────────────────
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+
+        // Restore session từ sessionStorage nếu circuit mới (F5 / direct navigation)
+        if (!Session.IsAuthenticated)
+        {
+            var email  = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_email");
+            var role   = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_role");
+            var token  = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_token");
+            var avatar = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_avatar");
+            
+            if (!string.IsNullOrEmpty(email) && !string.IsNullOrEmpty(role))
+            {
+                Session.SetSession(email, role, token ?? string.Empty, avatar);
+                StateHasChanged();
+            }
+        }
+    }
+}
+

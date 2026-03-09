@@ -1,0 +1,33 @@
+@inject NavigationManager Nav
+
+<div class="flex items-center gap-1 mb-8 overflow-x-auto pb-2 scrollbar-hide border-b border-slate-200">
+    @foreach (var tab in Tabs)
+    {
+        var isActive = ActiveTab == tab.Key;
+        <a href="@tab.Path"
+           class="px-5 py-3 text-sm whitespace-nowrap transition-colors @(isActive ? "text-primary border-b-2 border-primary font-bold" : "text-slate-500 hover:text-slate-900 font-medium")">
+            @tab.Label
+            @if (tab.Badge is not null)
+            {
+                <span class="ml-1.5 px-2 py-0.5 rounded-full bg-slate-100 text-xs font-bold text-slate-600">
+                    @tab.Badge
+                </span>
+            }
+        </a>
+    }
+</div>
+
+@code {
+    [Parameter] public long ClassId { get; set; }
+    [Parameter] public string ActiveTab { get; set; } = "overview";
+
+    private record TabEntry(string Key, string Label, string Path, string? Badge = null);
+
+    private IEnumerable<TabEntry> Tabs => [
+        new("overview",    "Overview",       $"/classes/{ClassId}"),
+        new("assignments", "Assignments",    $"/classes/{ClassId}/assignments", "2"),
+        new("materials",   "Materials",      $"/classes/{ClassId}/materials"),
+        new("schedule",    "Schedule",       $"/classes/{ClassId}/schedule"),
+        new("videos",      "Video Sessions", $"/classes/{ClassId}/videos"),
+    ];
+}

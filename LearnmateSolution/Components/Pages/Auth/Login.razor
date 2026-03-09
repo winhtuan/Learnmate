@@ -6,6 +6,8 @@
 @using BusinessLogicLayer.DTOs.Auth
 @inject IAuthService AuthService
 @inject NavigationManager Nav
+@inject UserSessionService Session
+@inject IJSRuntime JS
 
 <PageTitle>Sign in - LearnMate</PageTitle>
 
@@ -15,7 +17,7 @@
 
 <div class="lm-auth-container">
 
-    <!-- ══════════════ LEFT PANEL ══════════════ -->
+    @* ══════════════ LEFT PANEL ══════════════ *@
     <div class="lm-left-panel">
         <div>
             <div class="lm-logo-row">
@@ -48,12 +50,12 @@
         </div>
     </div>
 
-    <!-- ══════════════ RIGHT PANEL ══════════════ -->
+    @* ══════════════ RIGHT PANEL ══════════════ *@
     <div class="lm-right-panel">
         <div class="lm-form-container">
 
             <div class="lm-mobile-logo">
-                <AuthLogo Dark="false" />
+                <AuthLogo OnDarkBackground="false" />
             </div>
 
             <h2 class="lm-signin-heading">Sign in</h2>
@@ -66,7 +68,7 @@
 
             <div class="lm-form">
 
-                <!-- Email -->
+                @* Email *@
                 <div class="lm-field">
                     <label class="lm-label" for="email">
                         Email address <span class="lm-required">*</span>
@@ -84,7 +86,7 @@
                     }
                 </div>
 
-                <!-- Password -->
+                @* Password *@
                 <div class="lm-field">
                     <div class="lm-label-row">
                         <label class="lm-label" for="password">
@@ -124,7 +126,7 @@
                     }
                 </div>
 
-                <!-- Sign in button -->
+                @* Sign in button *@
                 <button class="lm-btn-primary" @onclick="HandleLogin" disabled="@isLoading">
                     @if (isLoading)
                     {
@@ -136,14 +138,14 @@
                     }
                 </button>
 
-                <!-- Divider -->
+                @* Divider *@
                 <div class="lm-divider">
                     <div class="lm-divider-line"></div>
                     <span class="lm-divider-label">Or continue with</span>
                     <div class="lm-divider-line"></div>
                 </div>
 
-                <!-- Google -->
+                @* Google *@
                 <button class="lm-btn-google" type="button">
                     <svg width="20" height="20" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                         <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
@@ -167,6 +169,9 @@
 <AccountModal Account="selectedAccount" OnClose="CloseModal" />
 
 @code {
+    private static readonly System.Text.RegularExpressions.Regex _emailRegex =
+        new(@"^[^\s@]+@[^\s@]+\.[^\s@]+$", System.Text.RegularExpressions.RegexOptions.Compiled);
+
     private string email = "";
     private string password = "";
     private bool showPassword;
@@ -187,6 +192,32 @@
     private void CloseModal() => selectedAccount = null;
     private void TogglePassword() => showPassword = !showPassword;
 
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        await LoadSessionAsync();
+        if (Session.IsAuthenticated)
+            Nav.NavigateTo(DashboardFor(Session.Role), replace: true);
+    }
+
+    private async Task LoadSessionAsync()
+    {
+        if (Session.IsAuthenticated) return;
+        var email = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_email");
+        var role  = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_role");
+        var token  = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_token");
+        var avatar = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_avatar");
+        if (!string.IsNullOrEmpty(email) && !string.IsNullOrEmpty(role) && !string.IsNullOrEmpty(token))
+            Session.SetSession(email, role, token, avatar);
+    }
+
+    private static string DashboardFor(string? role) => role switch
+    {
+        "ADMIN"   => "/admin/dashboard",
+        "STUDENT" => "/student-dashboard",
+        _         => "/"
+    };
+
     private async Task HandleLogin()
     {
         emailError = null;
@@ -195,7 +226,7 @@
 
         if (string.IsNullOrWhiteSpace(email))
             emailError = "Email is required.";
-        else if (!email.Contains('@'))
+        else if (!_emailRegex.IsMatch(email))
             emailError = "Please enter a valid email address.";
 
         if (string.IsNullOrWhiteSpace(password))
@@ -207,17 +238,48 @@
         isLoading = true;
         StateHasChanged();
 
-        var result = await AuthService.LoginAsync(new LoginRequest(email, password));
-
-        isLoading = false;
-
-        if (result.Success)
+        try
         {
-            Nav.NavigateTo("/");
+            var result = await AuthService.LoginAsync(new LoginRequest(email, password));
+
+            if (result.Success)
+            {
+                var userEmail  = result.Data!.Email;
+                var userRole   = result.Data!.Role;
+                var userToken  = result.Data!.AccessToken;
+                var userAvatar = result.Data!.AvatarUrl;
+                Session.SetSession(userEmail, userRole, userToken, userAvatar);
+                await JS.InvokeVoidAsync("sessionStorage.setItem", "lm_email", userEmail);
+                await JS.InvokeVoidAsync("sessionStorage.setItem", "lm_role",  userRole);
+                await JS.InvokeVoidAsync("sessionStorage.setItem", "lm_token", userToken);
+                if (!string.IsNullOrEmpty(userAvatar))
+                {
+                    await JS.InvokeVoidAsync("sessionStorage.setItem", "lm_avatar", userAvatar);
+                }
+                else
+                {
+                    await JS.InvokeVoidAsync("sessionStorage.removeItem", "lm_avatar");
+                }
+                var destination = userRole switch
+                {
+                    "STUDENT" => "/student-dashboard",
+                    "ADMIN"   => "/admin/dashboard",
+                    _         => "/"
+                };
+                Nav.NavigateTo(destination);
+            }
+            else
+            {
+                globalError = result.Message;
+            }
         }
-        else
+        catch
         {
-            globalError = result.Message;
+            globalError = "Connection error. Please try again.";
+        }
+        finally
+        {
+            isLoading = false;
         }
     }
 }

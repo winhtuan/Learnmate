@@ -1,0 +1,85 @@
+@using LearnmateSolution.Components.Pages.Class.Models
+
+<div class="sticky top-6 bg-white rounded-[2.5rem] overflow-hidden border border-slate-100 shadow-xl shadow-slate-200/50 flex flex-col">
+
+    @* Header *@
+    <div class="p-8 pb-0">
+        <div class="flex items-center justify-between mb-6">
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 text-primary text-xs font-bold uppercase tracking-wider border border-blue-100">
+                <span class="material-symbols-outlined text-[16px]">assignment</span>
+                @Assignment.Type
+            </div>
+            <div class="flex gap-2">
+                <button class="p-2 rounded-full hover:bg-slate-100 text-slate-400 hover:text-primary transition-colors">
+                    <span class="material-symbols-outlined">share</span>
+                </button>
+                <button class="p-2 rounded-full hover:bg-slate-100 text-slate-400 hover:text-primary transition-colors">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+        </div>
+
+        <h2 class="text-2xl font-extrabold text-slate-900 leading-tight mb-2">@Assignment.Title</h2>
+        <div class="flex flex-wrap gap-4 text-sm text-slate-500 mb-6">
+            <span class="flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-[18px]">calendar_today</span>
+                @Assignment.DueDate
+            </span>
+            <span class="flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-[18px]">trophy</span>
+                @Assignment.Points
+            </span>
+        </div>
+        <div class="h-px bg-slate-100 w-full"></div>
+    </div>
+
+    @* Body *@
+    <div class="p-8 overflow-y-auto max-h-[calc(100vh-350px)]">
+        <h3 class="font-bold text-slate-900 mb-3">Instructions</h3>
+        <div class="text-sm text-slate-600 mb-8 space-y-2">
+            <p>@Assignment.Instructions.Text</p>
+            <ul class="list-disc pl-4 space-y-1 mt-2">
+                @foreach (var item in Assignment.Instructions.Items)
+                {
+                    <li>@item</li>
+                }
+            </ul>
+        </div>
+
+        <h3 class="font-bold text-slate-900 mb-3">Resources</h3>
+        @foreach (var resource in Assignment.Resources)
+        {
+            <a href="@resource.Href"
+               class="flex items-center gap-3 p-3 rounded-xl bg-slate-50 border border-slate-100 hover:border-primary/50 transition-colors group mb-3">
+                <div class="size-10 @resource.IconBg @resource.IconColor rounded-lg flex items-center justify-center shrink-0 shadow-sm">
+                    <span class="material-symbols-outlined text-[20px]">@resource.Icon</span>
+                </div>
+                <div class="overflow-hidden">
+                    <p class="text-sm font-bold text-slate-900 truncate group-hover:text-primary transition-colors">@resource.Title</p>
+                    <p class="text-xs text-slate-500">@resource.Size</p>
+                </div>
+                <span class="material-symbols-outlined text-slate-400 ml-auto">download</span>
+            </a>
+        }
+
+        <h3 class="font-bold text-slate-900 mb-3 mt-5">Your Work</h3>
+        <div class="border-2 border-dashed border-slate-300 rounded-2xl p-6 flex flex-col items-center justify-center text-center hover:bg-slate-50 hover:border-primary transition-all cursor-pointer group">
+            <div class="size-12 rounded-full bg-slate-100 text-slate-400 group-hover:text-primary group-hover:bg-primary/10 flex items-center justify-center mb-3 transition-colors">
+                <span class="material-symbols-outlined">cloud_upload</span>
+            </div>
+            <p class="text-sm font-medium text-slate-900">@Assignment.UploadText</p>
+            <p class="text-xs text-slate-500 mt-1">@Assignment.UploadSubtext</p>
+        </div>
+    </div>
+
+    @* Footer *@
+    <div class="p-6 bg-slate-50 border-t border-slate-100 flex gap-3">
+        <button class="flex-1 py-3 bg-primary hover:bg-primary/90 text-white rounded-xl font-bold shadow-lg shadow-primary/20 transition-all active:scale-95">
+            Mark as Done
+        </button>
+    </div>
+</div>
+
+@code {
+    [Parameter] public AssignmentDetail Assignment { get; set; } = null!;
+}

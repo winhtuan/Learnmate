@@ -1,0 +1,104 @@
+@page "/classes/{Id:long}/videos"
+@layout ClassLayout
+@rendermode InteractiveServer
+@using LearnmateSolution.Components.Layout
+@using LearnmateSolution.Components.Pages.Class.Components
+@using LearnmateSolution.Components.Pages.Class.Models
+@using BusinessLogicLayer.DTOs
+@using BusinessLogicLayer.DTOs.Class
+@inject NavigationManager Nav
+@inject UserSessionService Session
+@inject IJSRuntime JS
+@inject IHttpClientFactory HttpClientFactory
+
+<div class="space-y-6 max-w-screen-xl mx-auto">
+    <Breadcrumb Items="@([ new("Dashboard", "/student-dashboard"), new("My Classes", "/classes"), new(_className, $"/classes/{Id}"), new("Videos") ])" />
+
+    @if (!_ready)
+    {
+        <div class="flex items-center justify-center h-64 text-slate-400">
+            <svg class="animate-spin h-8 w-8 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+            </svg>
+            <span class="text-sm font-medium">Loading...</span>
+        </div>
+    }
+    else
+    {
+        <HeroBanner ClassCode="@_subject" ClassStatus="@_status" ClassName="@_className"
+                    Description="@_description" BackgroundImage="" />
+
+        <ClassTabNav ClassId="@Id" ActiveTab="videos" />
+
+        @* Video sessions not yet implemented — placeholder *@
+        <div class="flex flex-col items-center justify-center py-20 bg-white rounded-[2rem] border border-slate-100 shadow-sm text-slate-400">
+            <span class="material-symbols-outlined text-5xl mb-3">videocam_off</span>
+            <p class="text-base font-medium">No recorded lectures available yet.</p>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public long Id { get; set; }
+
+    private bool _ready;
+    private string _className   = "Class";
+    private string _subject     = "";
+    private string _status      = "ACTIVE";
+    private string _description = "";
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+
+        if (!Session.IsAuthenticated)
+        {
+            var email = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_email");
+            var role  = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_role");
+            var token = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_token");
+            if (!string.IsNullOrEmpty(email) && !string.IsNullOrEmpty(role) && !string.IsNullOrEmpty(token))
+                Session.SetSession(email, role, token);
+        }
+
+        if (!Session.IsAuthenticated) { Nav.NavigateTo("/login", replace: true); return; }
+        if (Session.Role != "STUDENT") { Nav.NavigateTo(Session.Role == "ADMIN" ? "/admin/dashboard" : "/", replace: true); return; }
+
+        await LoadAsync();
+        _ready = true;
+        StateHasChanged();
+    }
+
+    private async Task LoadAsync()
+    {
+        try
+        {
+            var client = HttpClientFactory.CreateClient("learnmate");
+            client.BaseAddress = new Uri(Nav.BaseUri);
+            client.DefaultRequestHeaders.Authorization =
+                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", Session.AccessToken);
+
+            var resp = await client.GetFromJsonAsync<ApiResponse<ClassDetailDto>>($"api/classes/{Id}");
+            var cls  = resp?.Data;
+            if (cls is not null)
+            {
+                _className   = cls.Name;
+                _subject     = cls.Subject;
+                _status      = cls.Status;
+                _description = cls.Description ?? "";
+            }
+        }
+        catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+        {
+            Session.Clear();
+            await JS.InvokeVoidAsync("sessionStorage.removeItem", "lm_email");
+            await JS.InvokeVoidAsync("sessionStorage.removeItem", "lm_role");
+            await JS.InvokeVoidAsync("sessionStorage.removeItem", "lm_token");
+            Nav.NavigateTo("/login", replace: true);
+        }
+        catch
+        {
+            // Keep defaults on error
+        }
+    }
+}
