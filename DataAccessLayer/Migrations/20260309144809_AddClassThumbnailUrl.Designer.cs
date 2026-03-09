@@ -3,6 +3,7 @@ using System;
 using DataAccessLayer.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace DataAccessLayer.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260309144809_AddClassThumbnailUrl")]
+    partial class AddClassThumbnailUrl
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -284,7 +287,6 @@ namespace DataAccessLayer.Migrations
                             Status = "ACTIVE",
                             Subject = "Toán",
                             TeacherId = 2L,
-                            ThumbnailUrl = "https://placehold.co/400?text=Course",
                             UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
@@ -297,7 +299,6 @@ namespace DataAccessLayer.Migrations
                             Status = "ACTIVE",
                             Subject = "PRN222",
                             TeacherId = 2L,
-                            ThumbnailUrl = "https://placehold.co/400?text=Course",
                             UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
@@ -310,7 +311,6 @@ namespace DataAccessLayer.Migrations
                             Status = "ACTIVE",
                             Subject = "PRU213",
                             TeacherId = 2L,
-                            ThumbnailUrl = "https://placehold.co/400?text=Course",
                             UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         });
                 });
