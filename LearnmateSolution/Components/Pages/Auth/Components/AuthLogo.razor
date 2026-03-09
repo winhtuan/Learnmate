@@ -1,8 +1,9 @@
 <a href="/" class="lm-logo-link">
     <img src="images/logo.svg" class="lm-logo-img" alt="LearnMate" />
-    <span class="lm-logo-brand @(Dark ? "" : "lm-logo-brand--dark")">LearnMate</span>
+    <span class="lm-logo-brand @(OnDarkBackground ? "" : "lm-logo-brand--dark")">LearnMate</span>
 </a>
 
 @code {
-    [Parameter] public bool Dark { get; set; } = true;
+    /// <summary>True when the logo is placed on a dark background (text stays light). False on a light background (text turns dark).</summary>
+    [Parameter] public bool OnDarkBackground { get; set; } = true;
 }

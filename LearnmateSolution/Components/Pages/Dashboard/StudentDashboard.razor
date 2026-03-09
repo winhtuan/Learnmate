@@ -4,34 +4,93 @@
 @using LearnmateSolution.Components.Layout
 @using LearnmateSolution.Components.Pages.Dashboard.Components
 @using LearnmateSolution.Components.Pages.Dashboard.Models
+@using BusinessLogicLayer.DTOs
+@using BusinessLogicLayer.DTOs.Student
+@inject NavigationManager Nav
+@inject UserSessionService Session
+@inject IJSRuntime JS
+@inject IHttpClientFactory HttpClientFactory
 
 <PageTitle>Dashboard - LearnMate</PageTitle>
+
+@if (!_ready)
+{
+    <div class="flex items-center justify-center h-64">
+        <div class="flex flex-col items-center gap-3 text-slate-400">
+            <svg class="animate-spin h-8 w-8" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+            </svg>
+            <span class="text-sm font-medium">Loading dashboard...</span>
+        </div>
+    </div>
+    return;
+}
 
 @* Welcome Banner *@
 <WelcomeBanner
     Greeting="@Greeting"
-    UserName="Alex"
+    UserName="@_fullName"
     CurrentDay="@DateTime.Now.DayOfWeek.ToString()"
-    CurrentDate="@FormattedDate"
-    CurrentTerm="Fall 2024-2025"
-    Stats="@bannerStats" />
+    CurrentDate="@DateTime.Now.ToString("MMM d")"
+    CurrentTerm="@_currentTerm"
+    Stats="@_bannerStats" />
 
 @* Main grid *@
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
     @* Left col *@
     <div class="lg:col-span-2 space-y-8">
-        <WeeklySchedule Days="scheduleDays" />
-        <CurrentCourses Courses="courses" />
+        <WeeklySchedule Days="@_scheduleDays" />
+        @if (_courses.Count > 0)
+        {
+            <CurrentCourses Courses="@_courses" />
+        }
+        else
+        {
+            <div class="bg-white rounded-2xl border border-slate-200 p-8 text-center">
+                <span class="material-symbols-outlined text-4xl text-slate-300 mb-3 block">school</span>
+                <p class="text-slate-500 font-medium">You haven't joined any classes yet.</p>
+                <p class="text-slate-400 text-sm mt-1">Browse available classes to get started.</p>
+            </div>
+        }
     </div>
 
     @* Right col *@
     <div class="space-y-8">
-        <QuickActions Actions="quickActions" />
-        <RecentNotifications Notifications="notifications" />
+        <QuickActions Actions="@_quickActions" />
+        @if (_notifications.Count > 0)
+        {
+            <RecentNotifications Notifications="@_notifications" />
+        }
+        else
+        {
+            <div class="bg-white rounded-2xl border border-slate-200 p-6 text-center">
+                <span class="material-symbols-outlined text-3xl text-slate-300 mb-2 block">notifications_none</span>
+                <p class="text-slate-400 text-sm">No new notifications.</p>
+            </div>
+        }
     </div>
 </div>
 
 @code {
+    private bool _ready;
+
+    // Data from API
+    private string _fullName    = "Student";
+    private string _currentTerm = "";
+    private WelcomeBannerStats _bannerStats = new("—", "—", "—", new("—", "No upcoming class", ""));
+    private List<ScheduleDay>       _scheduleDays  = [];
+    private List<CourseItem>        _courses       = [];
+    private List<NotificationItem>  _notifications = [];
+
+    private static readonly List<QuickAction> _quickActions =
+    [
+        new("video_call",        "Join Class"),
+        new("school",            "Find Tutor"),
+        new("upload_file",       "Upload"),
+        new("calendar_add_on",   "Schedule"),
+    ];
+
     private string Greeting
     {
         get
@@ -43,78 +102,126 @@
         }
     }
 
-    private string FormattedDate => DateTime.Now.ToString("MMM d");
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
 
-    private WelcomeBannerStats bannerStats = new(
-        ActiveClasses: "5 Active",
-        PendingTasks: "12 Items",
-        StudyStreak: "15 days",
-        NextSession: new NextSessionInfo("00:45:12", "Adv. Calculus", "Rm 302")
+        // ── Restore session ───────────────────────────────────────────────────
+        if (!Session.IsAuthenticated)
+        {
+            var email = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_email");
+            var role  = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_role");
+            var token = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_token");
+            if (!string.IsNullOrEmpty(email) && !string.IsNullOrEmpty(role) && !string.IsNullOrEmpty(token))
+                Session.SetSession(email, role, token);
+        }
+
+        // ── Auth guards ───────────────────────────────────────────────────────
+        if (!Session.IsAuthenticated) { Nav.NavigateTo("/login", replace: true); return; }
+        if (Session.Role != "STUDENT") { Nav.NavigateTo(Session.Role == "ADMIN" ? "/admin/dashboard" : "/", replace: true); return; }
+
+        // ── Load dashboard data from API ──────────────────────────────────────
+        await LoadDashboardAsync();
+        _ready = true;
+        StateHasChanged();
+    }
+
+    private async Task LoadDashboardAsync()
+    {
+        try
+        {
+            var client = HttpClientFactory.CreateClient("learnmate");
+            client.BaseAddress = new Uri(Nav.BaseUri);
+            client.DefaultRequestHeaders.Authorization =
+                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", Session.AccessToken);
+
+            var resp   = await client.GetFromJsonAsync<ApiResponse<StudentDashboardDto>>("api/student/dashboard");
+            var data   = resp?.Data;
+            if (data is null) return;
+
+            _fullName    = data.FullName;
+            _currentTerm = data.CurrentTerm;
+            _bannerStats = MapStats(data.Stats);
+            _scheduleDays = MapSchedule(data.WeekSchedule);
+            _courses      = MapCourses(data.Classes);
+            _notifications = MapNotifications(data.Notifications);
+        }
+        catch
+        {
+            // Network/parse error — keep default values, dashboard still renders
+        }
+    }
+
+    // ── Mapping helpers ───────────────────────────────────────────────────────
+
+    private static WelcomeBannerStats MapStats(StudentStatsDto s) => new(
+        ActiveClasses: s.ActiveClasses == 0 ? "—" : $"{s.ActiveClasses} Active",
+        PendingTasks:  s.PendingTasks  == 0 ? "—" : $"{s.PendingTasks} Items",
+        StudyStreak:   s.StudyStreakDays == 0 ? "—" : $"{s.StudyStreakDays} days",
+        NextSession:   s.NextSession is null
+            ? new("—", "No upcoming class", "")
+            : new(s.NextSession.StartTime.ToString("h:mm tt"),
+                  s.NextSession.ClassName,
+                  s.NextSession.Room)
     );
 
-    private List<ScheduleDay> scheduleDays =
-    [
-        new ScheduleDay("Today", DateTime.Now.Day.ToString(), true,
-        [
-            new ScheduleClass("10:00 AM", "Calculus II", "Rm 304", "primary"),
-            new ScheduleClass("02:00 PM", "History 101", "Lecture Hall B", "purple-500"),
-        ]),
-        new ScheduleDay("Thu", (DateTime.Now.Day + 1).ToString(), false,
-        [
-            new ScheduleClass("09:00 AM", "Physics Lab", "", "sky-500"),
-            new ScheduleClass("11:30 AM", "Study Group", "", "emerald-500"),
-        ]),
-        new ScheduleDay("Fri", (DateTime.Now.Day + 2).ToString(), false, []),
-        new ScheduleDay("Sat", (DateTime.Now.Day + 3).ToString(), false, []),
-        new ScheduleDay("Sun", (DateTime.Now.Day + 4).ToString(), false, []),
-    ];
+    private static List<ScheduleDay> MapSchedule(IReadOnlyList<DayScheduleDto> week)
+    {
+        var today = DateOnly.FromDateTime(DateTime.Today);
+        return week.Select(d => new ScheduleDay(
+            Day:     d.Date == today ? "Today" : d.Date.DayOfWeek.ToString()[..3],
+            Date:    d.Date.Day.ToString(),
+            IsToday: d.Date == today,
+            Classes: d.Classes.Select((c, i) => new ScheduleClass(
+                Time: c.StartTime.ToString("h:mm tt"),
+                Name: c.ClassName,
+                Room: c.Room,
+                Color: ClassColor(i)
+            )).ToList()
+        )).ToList();
+    }
 
-    private List<CourseItem> courses =
-    [
-        new CourseItem(
-            Icon: "functions",
-            IconBg: "bg-blue-100",
-            IconColor: "text-blue-600",
-            Title: "CS101 - Intro to Algorithms",
-            Progress: 80,
-            ProgressColor: "bg-primary",
-            NextTask: "Next: Binary Trees Quiz",
-            DueDate: "Due Tomorrow"
-        ),
-        new CourseItem(
-            Icon: "history_edu",
-            IconBg: "bg-emerald-100",
-            IconColor: "text-emerald-600",
-            Title: "ENG202 - Creative Writing",
-            Progress: 45,
-            ProgressColor: "bg-emerald-500",
-            NextTask: "Next: Peer Review Session",
-            DueDate: null
-        ),
-        new CourseItem(
-            Icon: "calculate",
-            IconBg: "bg-purple-100",
-            IconColor: "text-purple-600",
-            Title: "MATH201 - Advanced Calculus",
-            Progress: 62,
-            ProgressColor: "bg-purple-500",
-            NextTask: "Next: Problem Set 7",
-            DueDate: "Due in 3 days"
-        ),
-    ];
+    private static List<CourseItem> MapCourses(IReadOnlyList<EnrolledClassDto> classes)
+    {
+        var icons = new[] { "functions", "history_edu", "calculate", "science", "language" };
+        var bgs   = new[] { "bg-blue-100", "bg-emerald-100", "bg-purple-100", "bg-orange-100", "bg-sky-100" };
+        var fgs   = new[] { "text-blue-600", "text-emerald-600", "text-purple-600", "text-orange-600", "text-sky-600" };
+        var bars  = new[] { "bg-primary", "bg-emerald-500", "bg-purple-500", "bg-orange-500", "bg-sky-500" };
 
-    private List<QuickAction> quickActions =
-    [
-        new QuickAction("video_call", "Join Class"),
-        new QuickAction("school", "Find Tutor"),
-        new QuickAction("upload_file", "Upload"),
-        new QuickAction("calendar_add_on", "Schedule"),
-    ];
+        return classes.Take(4).Select((c, i) => new CourseItem(
+            Icon:          icons[i % icons.Length],
+            IconBg:        bgs[i % bgs.Length],
+            IconColor:     fgs[i % fgs.Length],
+            Title:         c.ClassName,
+            Progress:      c.ProgressPercent,
+            ProgressColor: c.SubjectColor.StartsWith("bg-") ? c.SubjectColor : bars[i % bars.Length],
+            NextTask:      c.NextTaskTitle ?? "No upcoming tasks",
+            DueDate:       c.NextTaskDue?.ToString("MMM d")
+        )).ToList();
+    }
 
-    private List<NotificationItem> notifications =
-    [
-        new NotificationItem("bg-primary", "Assignment grade posted: Calculus I", "2 hours ago"),
-        new NotificationItem("bg-emerald-500", "Tutor session confirmed for 3 PM", "5 hours ago"),
-        new NotificationItem("bg-orange-500", "Reminder: Math test tomorrow", "1 day ago"),
-    ];
+    private static List<NotificationItem> MapNotifications(IReadOnlyList<NotificationDto> notifs) =>
+        notifs.Take(4).Select(n => new NotificationItem(
+            Color: n.IsRead ? "bg-slate-300" : "bg-primary",
+            Text:  n.Message,
+            Time:  FormatTimeAgo(n.CreatedAt)
+        )).ToList();
+
+    private static string FormatTimeAgo(DateTime utc)
+    {
+        var span = DateTime.UtcNow - utc;
+        if (span.TotalSeconds < 60) return "Just now";
+        if (span.TotalMinutes < 60) return $"{(int)span.TotalMinutes} min ago";
+        if (span.TotalHours < 24)   return $"{(int)span.TotalHours} hours ago";
+        if (span.TotalDays < 7)     return $"{(int)span.TotalDays} days ago";
+        return utc.ToLocalTime().ToString("MMM d");
+    }
+
+    private static string ClassColor(int index) => (index % 4) switch
+    {
+        0 => "primary",
+        1 => "purple-500",
+        2 => "sky-500",
+        _ => "emerald-500"
+    };
 }

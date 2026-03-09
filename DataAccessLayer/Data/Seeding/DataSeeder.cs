@@ -28,6 +28,7 @@ public static class DataSeeder
         SeedProfiles(modelBuilder);
         SeedClasses(modelBuilder);
         SeedClassMembers(modelBuilder);
+        ClassSeed.Seed(modelBuilder);
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -41,6 +42,7 @@ public static class DataSeeder
                 PasswordHash = Hash123,
                 Role         = UserRole.ADMIN,
                 IsActive     = true,
+                AvatarUrl    = "https://placehold.co/400?text=Admin",
                 CreatedAt    = Now,
                 UpdatedAt    = Now,
             },
@@ -51,6 +53,7 @@ public static class DataSeeder
                 PasswordHash = Hash123,
                 Role         = UserRole.TEACHER,
                 IsActive     = true,
+                AvatarUrl    = "https://placehold.co/400?text=Teacher",
                 CreatedAt    = Now,
                 UpdatedAt    = Now,
             },
@@ -61,6 +64,7 @@ public static class DataSeeder
                 PasswordHash = Hash123,
                 Role         = UserRole.STUDENT,
                 IsActive     = true,
+                AvatarUrl    = "https://placehold.co/400?text=Student",
                 CreatedAt    = Now,
                 UpdatedAt    = Now,
             }
@@ -89,12 +93,13 @@ public static class DataSeeder
         m.Entity<StudentProfile>().HasData(
             new StudentProfile
             {
-                Id         = 1,
-                UserId     = 3,
-                FullName   = "Tran Thi B",
-                GradeLevel = "12",
-                CreatedAt  = Now,
-                UpdatedAt  = Now,
+                Id               = 1,
+                UserId           = 3,
+                FullName         = "Nguyen Minh Tuan",
+                GradeLevel       = "12",
+                StudyStreakDays   = 8,
+                CreatedAt        = Now,
+                UpdatedAt        = Now,
             }
         );
     }

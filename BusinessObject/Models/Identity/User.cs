@@ -21,6 +21,9 @@ public class User : SoftDeletableEntity
 
     public bool IsActive { get; set; } = true;
 
+    [MaxLength(500)]
+    public string? AvatarUrl { get; set; }
+
     // Navigation properties
     public TeacherProfile? TeacherProfile { get; set; }
     public StudentProfile? StudentProfile { get; set; }

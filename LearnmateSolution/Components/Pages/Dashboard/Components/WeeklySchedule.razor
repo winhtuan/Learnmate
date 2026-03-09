@@ -9,6 +9,15 @@
 
     @* Body *@
     <div class="p-4 overflow-x-auto">
+        @if (Days.Count == 0)
+        {
+            <div class="flex flex-col items-center justify-center h-24 gap-2 text-slate-400">
+                <span class="material-symbols-outlined text-3xl">event_available</span>
+                <p class="text-sm">No classes scheduled this week.</p>
+            </div>
+        }
+        else
+        {
         <div class="min-w-[480px] flex gap-2">
             @foreach (var dayData in Days)
             {
@@ -24,37 +33,28 @@
                     </div>
 
                     @* Classes *@
-                    @if (dayData.Classes.Count == 0)
-                    {
-                        <div class="flex flex-col items-center justify-center h-16 gap-1">
-                            <span class="material-symbols-outlined text-[16px] text-slate-300">event_busy</span>
-                            <p class="text-[10px] text-slate-300 italic">Free</p>
-                        </div>
-                    }
-                    else
-                    {
-                        <div class="space-y-1.5">
-                            @foreach (var cls in dayData.Classes)
-                            {
-                                <div class="rounded-lg p-2 text-[11px] cursor-pointer transition-all
-                                    @(dayData.IsToday
-                                        ? $"bg-white border-l-[3px] border-{cls.Color} shadow-sm hover:shadow-md hover:-translate-y-px"
-                                        : "bg-slate-50 border border-slate-100 opacity-60 hover:opacity-90")">
-                                    <p class="font-bold text-slate-800 tabular-nums">@cls.Time</p>
-                                    <p class="font-semibold text-slate-600 mt-0.5 leading-tight">@cls.Name</p>
-                                    @if (!string.IsNullOrEmpty(cls.Room))
-                                    {
-                                        <p class="text-slate-400 mt-0.5 flex items-center gap-0.5">
-                                            <span class="material-symbols-outlined text-[10px]">location_on</span>@cls.Room
-                                        </p>
-                                    }
-                                </div>
-                            }
-                        </div>
-                    }
+                    <div class="space-y-1.5">
+                        @foreach (var cls in dayData.Classes)
+                        {
+                            <div class="rounded-lg p-2 text-[11px] cursor-pointer transition-all
+                                @(dayData.IsToday
+                                    ? $"bg-white border-l-[3px] border-{cls.Color} shadow-sm hover:shadow-md hover:-translate-y-px"
+                                    : "bg-slate-50 border border-slate-100 opacity-60 hover:opacity-90")">
+                                <p class="font-bold text-slate-800 tabular-nums">@cls.Time</p>
+                                <p class="font-semibold text-slate-600 mt-0.5 leading-tight">@cls.Name</p>
+                                @if (!string.IsNullOrEmpty(cls.Room))
+                                {
+                                    <p class="text-slate-400 mt-0.5 flex items-center gap-0.5">
+                                        <span class="material-symbols-outlined text-[10px]">location_on</span>@cls.Room
+                                    </p>
+                                }
+                            </div>
+                        }
+                    </div>
                 </div>
             }
         </div>
+        }
     </div>
 </div>
 

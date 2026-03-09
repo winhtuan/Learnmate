@@ -2,6 +2,9 @@
 @using LearnmateSolution.Components.Layout.Admin
 @layout AdminLayout
 @rendermode InteractiveServer
+@inject NavigationManager Nav
+@inject UserSessionService Session
+@inject IJSRuntime JS
 
 <PageTitle>Admin User Management - LearnMate</PageTitle>
 
@@ -451,6 +454,21 @@
 }
 
 @code {
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        if (!Session.IsAuthenticated)
+        {
+            var email = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_email");
+            var role  = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_role");
+            var token = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_token");
+            if (!string.IsNullOrEmpty(email) && !string.IsNullOrEmpty(role) && !string.IsNullOrEmpty(token))
+                Session.SetSession(email, role, token);
+        }
+        if (!Session.IsAuthenticated) { Nav.NavigateTo("/login", replace: true); return; }
+        if (Session.Role != "ADMIN") { Nav.NavigateTo(Session.Role == "STUDENT" ? "/student-dashboard" : "/", replace: true); }
+    }
+
     // ── State ─────────────────────────────────────────────
     private string filterRole   = "";
     private string filterStatus = "";

@@ -13,9 +13,6 @@ public class StudentProfile : AuditableEntity
     [MaxLength(200)]
     public string FullName { get; set; } = null!;
 
-    [MaxLength(500)]
-    public string? AvatarUrl { get; set; }
-
     public DateOnly? DateOfBirth { get; set; }
 
     [MaxLength(20)]
@@ -23,6 +20,8 @@ public class StudentProfile : AuditableEntity
 
     [MaxLength(20)]
     public string? ParentContact { get; set; }
+
+    public int StudyStreakDays { get; set; }
 
     // Navigation properties
     [ForeignKey("UserId")]

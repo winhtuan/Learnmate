@@ -6,6 +6,8 @@
 @using BusinessLogicLayer.DTOs.Auth
 @inject IAuthService AuthService
 @inject NavigationManager Nav
+@inject UserSessionService Session
+@inject IJSRuntime JS
 
 <PageTitle>Sign in - LearnMate</PageTitle>
 
@@ -53,7 +55,7 @@
         <div class="lm-form-container">
 
             <div class="lm-mobile-logo">
-                <AuthLogo Dark="false" />
+                <AuthLogo OnDarkBackground="false" />
             </div>
 
             <h2 class="lm-signin-heading">Sign in</h2>
@@ -167,6 +169,9 @@
 <AccountModal Account="selectedAccount" OnClose="CloseModal" />
 
 @code {
+    private static readonly System.Text.RegularExpressions.Regex _emailRegex =
+        new(@"^[^\s@]+@[^\s@]+\.[^\s@]+$", System.Text.RegularExpressions.RegexOptions.Compiled);
+
     private string email = "";
     private string password = "";
     private bool showPassword;
@@ -187,6 +192,32 @@
     private void CloseModal() => selectedAccount = null;
     private void TogglePassword() => showPassword = !showPassword;
 
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        await LoadSessionAsync();
+        if (Session.IsAuthenticated)
+            Nav.NavigateTo(DashboardFor(Session.Role), replace: true);
+    }
+
+    private async Task LoadSessionAsync()
+    {
+        if (Session.IsAuthenticated) return;
+        var email = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_email");
+        var role  = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_role");
+        var token  = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_token");
+        var avatar = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_avatar");
+        if (!string.IsNullOrEmpty(email) && !string.IsNullOrEmpty(role) && !string.IsNullOrEmpty(token))
+            Session.SetSession(email, role, token, avatar);
+    }
+
+    private static string DashboardFor(string? role) => role switch
+    {
+        "ADMIN"   => "/admin/dashboard",
+        "STUDENT" => "/student-dashboard",
+        _         => "/"
+    };
+
     private async Task HandleLogin()
     {
         emailError = null;
@@ -195,7 +226,7 @@
 
         if (string.IsNullOrWhiteSpace(email))
             emailError = "Email is required.";
-        else if (!email.Contains('@'))
+        else if (!_emailRegex.IsMatch(email))
             emailError = "Please enter a valid email address.";
 
         if (string.IsNullOrWhiteSpace(password))
@@ -207,19 +238,48 @@
         isLoading = true;
         StateHasChanged();
 
-        var result = await AuthService.LoginAsync(new LoginRequest(email, password));
-
-        isLoading = false;
-
-        if (result.Success)
+        try
         {
-            var role = result.Data?.Role;
-            var destination = role == "STUDENT" ? "/student-dashboard" : "/";
-            Nav.NavigateTo(destination);
+            var result = await AuthService.LoginAsync(new LoginRequest(email, password));
+
+            if (result.Success)
+            {
+                var userEmail  = result.Data!.Email;
+                var userRole   = result.Data!.Role;
+                var userToken  = result.Data!.AccessToken;
+                var userAvatar = result.Data!.AvatarUrl;
+                Session.SetSession(userEmail, userRole, userToken, userAvatar);
+                await JS.InvokeVoidAsync("sessionStorage.setItem", "lm_email", userEmail);
+                await JS.InvokeVoidAsync("sessionStorage.setItem", "lm_role",  userRole);
+                await JS.InvokeVoidAsync("sessionStorage.setItem", "lm_token", userToken);
+                if (!string.IsNullOrEmpty(userAvatar))
+                {
+                    await JS.InvokeVoidAsync("sessionStorage.setItem", "lm_avatar", userAvatar);
+                }
+                else
+                {
+                    await JS.InvokeVoidAsync("sessionStorage.removeItem", "lm_avatar");
+                }
+                var destination = userRole switch
+                {
+                    "STUDENT" => "/student-dashboard",
+                    "ADMIN"   => "/admin/dashboard",
+                    _         => "/"
+                };
+                Nav.NavigateTo(destination);
+            }
+            else
+            {
+                globalError = result.Message;
+            }
         }
-        else
+        catch
         {
-            globalError = result.Message;
+            globalError = "Connection error. Please try again.";
+        }
+        finally
+        {
+            isLoading = false;
         }
     }
 }
