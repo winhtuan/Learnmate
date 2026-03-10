@@ -45,6 +45,8 @@ public static class ServiceCollectionExtensions
                 services.AddScoped<IDashboardService, DashboardService>();
                 services.AddScoped<IStudentDashboardService, StudentDashboardService>();
                 services.AddScoped<IClassService, ClassService>();
+                services.AddScoped<IUserManagementService, UserManagementService>();
+                services.AddScoped<IClassManagementService, ClassManagementService>();
 
                 // Token blacklist cache
                 services.AddMemoryCache();
