@@ -47,6 +47,7 @@ public class DashboardService(AppDbContext db) : IDashboardService
             .Select(u => new
             {
                 u.Email,
+                u.AvatarUrl,
                 u.IsActive,
                 u.CreatedAt,
                 u.Role
@@ -55,7 +56,7 @@ public class DashboardService(AppDbContext db) : IDashboardService
 
         return recentUsers.Select(u => new RecentActivityDto(
             Action: $"New {u.Role.ToString().ToLower()} registered",
-            UserAvatarUrl: null,
+            UserAvatarUrl: u.AvatarUrl,
             UserName: u.Email,
             Time: u.CreatedAt,
             StatusType: u.IsActive ? "success" : "warning",
