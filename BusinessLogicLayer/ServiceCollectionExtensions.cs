@@ -33,6 +33,7 @@ public static class ServiceCollectionExtensions
                 services.AddScoped<ITeacherAssignmentRepository, TeacherAssignmentRepository>();
                 services.AddScoped<ITeacherCourseRepository, TeacherCourseRepository>();
                 services.AddScoped<ITeacherProfileRepository, TeacherProfileRepository>();
+                services.AddScoped<IReportRepository, ReportRepository>();
 
                 // Services
                 services.AddScoped<IAuthService, AuthService>();
@@ -45,6 +46,9 @@ public static class ServiceCollectionExtensions
                 services.AddScoped<IDashboardService, DashboardService>();
                 services.AddScoped<IStudentDashboardService, StudentDashboardService>();
                 services.AddScoped<IClassService, ClassService>();
+                services.AddScoped<IUserManagementService, UserManagementService>();
+                services.AddScoped<IClassManagementService, ClassManagementService>();
+                services.AddScoped<IReportService, ReportService>();
 
                 // Token blacklist cache
                 services.AddMemoryCache();
