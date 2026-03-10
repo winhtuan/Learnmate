@@ -33,4 +33,32 @@ public interface IClassService
         long studentId,
         CancellationToken ct = default
     );
+
+    Task<ApiResponse<bool>> LeaveClassAsync(long classId, long studentId, CancellationToken ct = default);
+
+    Task<ApiResponse<bool>> SubmitAssignmentAsync(
+        long classId,
+        long assignmentId,
+        long studentId,
+        Stream? fileStream,
+        string? fileName,
+        string? contentType,
+        CancellationToken ct = default
+    );
+
+    Task<ApiResponse<ClassMaterialDto>> UploadMaterialAsync(
+        long classId,
+        long userId,
+        string title,
+        Stream fileStream,
+        string fileName,
+        string contentType,
+        CancellationToken ct = default
+    );
+
+    Task<ApiResponse<ClassVideosDto>> GetClassVideosAsync(
+        long classId,
+        long studentId,
+        CancellationToken ct = default
+    );
 }

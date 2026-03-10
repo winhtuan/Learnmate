@@ -62,4 +62,76 @@ public class ClassController(IClassService classService) : ControllerBase
         var result = await classService.GetClassMaterialsAsync(id, userId, ct);
         return result.Success ? Ok(result) : NotFound(result);
     }
+
+    /// <summary>DELETE /api/classes/{id}/members/me — Student leaves the class.</summary>
+    [HttpDelete("{id:long}/members/me")]
+    public async Task<IActionResult> LeaveClass(long id, CancellationToken ct)
+    {
+        if (UserId is not { } userId)
+            return Unauthorized();
+        var result = await classService.LeaveClassAsync(id, userId, ct);
+        return result.Success ? Ok(result) : BadRequest(result);
+    }
+
+    /// <summary>POST /api/classes/{id}/assignments/{asgId}/submit — Submit an assignment (optional file).</summary>
+    [HttpPost("{id:long}/assignments/{asgId:long}/submit")]
+    public async Task<IActionResult> SubmitAssignment(
+        long id,
+        long asgId,
+        IFormFile? file,
+        CancellationToken ct
+    )
+    {
+        if (UserId is not { } userId)
+            return Unauthorized();
+
+        Stream? stream = file?.OpenReadStream();
+        var result = await classService.SubmitAssignmentAsync(
+            id,
+            asgId,
+            userId,
+            stream,
+            file?.FileName,
+            file?.ContentType,
+            ct
+        );
+        return result.Success ? Ok(result) : BadRequest(result);
+    }
+
+    /// <summary>POST /api/classes/{id}/materials — Upload a material file.</summary>
+    [HttpPost("{id:long}/materials")]
+    public async Task<IActionResult> UploadMaterial(
+        long id,
+        [FromForm] string title,
+        IFormFile file,
+        CancellationToken ct
+    )
+    {
+        if (UserId is not { } userId)
+            return Unauthorized();
+        if (string.IsNullOrWhiteSpace(title))
+            return BadRequest("Title is required.");
+
+        await using var stream = file.OpenReadStream();
+        var result = await classService.UploadMaterialAsync(
+            id,
+            userId,
+            title,
+            stream,
+            file.FileName,
+            file.ContentType,
+            ct
+        );
+        return result.Success ? Ok(result) : BadRequest(result);
+    }
+
+    /// <summary>GET /api/classes/{id}/videos — Returns live and recorded video sessions.</summary>
+    [HttpGet("{id:long}/videos")]
+    public async Task<IActionResult> GetVideos(long id, CancellationToken ct)
+    {
+        if (UserId is not { } userId)
+            return Unauthorized();
+        var result = await classService.GetClassVideosAsync(id, userId, ct);
+        return result.Success ? Ok(result) : NotFound(result);
+    }
 }

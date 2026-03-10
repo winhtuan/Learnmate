@@ -31,7 +31,9 @@
 
         <ClassTabNav ClassId="@Id" ActiveTab="schedule" />
 
-        <ScheduleHeader Month="@_currentMonthName" Year="@_currentYear" />
+        <ScheduleHeader Month="@_currentMonthName" Year="@_currentYear"
+                        OnPrevMonth="@NavPrevMonth" OnNextMonth="@NavNextMonth"
+                        OnSync="@ExportIcs" />
 
         <EventTypeLegend EventTypes="@_eventTypes" />
 
@@ -49,7 +51,9 @@
     private string _description = "";
     private string _currentMonthName = "";
     private int    _currentYear;
+    private DateTime _displayDate;
     private List<CalendarDay> _calendarDays = [];
+    private List<ClassScheduleItemDto> _schedules = [];
 
     private static readonly List<EventTypeItem> _eventTypes =
     [
@@ -100,18 +104,15 @@
                 _description = cls.Description ?? "";
             }
 
-            var schedules = schTask.Result?.Data ?? [];
+            _schedules = schTask.Result?.Data ?? [];
 
-            // Determine which month to display: prefer the one with the most upcoming schedules
             var today = DateTime.Today;
-            var displayDate = schedules.Where(s => s.StartTimeLocal >= today)
-                                       .Select(s => s.StartTimeLocal)
-                                       .FirstOrDefault();
-            if (displayDate == default) displayDate = today;
+            _displayDate = _schedules.Where(s => s.StartTimeLocal >= today)
+                                     .Select(s => s.StartTimeLocal)
+                                     .FirstOrDefault();
+            if (_displayDate == default) _displayDate = today;
 
-            _currentMonthName = displayDate.ToString("MMMM");
-            _currentYear      = displayDate.Year;
-            _calendarDays     = BuildCalendar(displayDate.Year, displayDate.Month, schedules, today);
+            RefreshCalendar();
         }
         catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.Unauthorized)
         {
@@ -124,10 +125,53 @@
         catch
         {
             var today = DateTime.Today;
-            _currentMonthName = today.ToString("MMMM");
-            _currentYear      = today.Year;
-            _calendarDays     = BuildCalendar(today.Year, today.Month, [], today);
+            _displayDate = today;
+            RefreshCalendar();
         }
+    }
+
+    private void RefreshCalendar()
+    {
+        _currentMonthName = _displayDate.ToString("MMMM");
+        _currentYear      = _displayDate.Year;
+        _calendarDays     = BuildCalendar(_displayDate.Year, _displayDate.Month, _schedules, DateTime.Today);
+    }
+
+    private void NavPrevMonth()
+    {
+        _displayDate = _displayDate.AddMonths(-1);
+        RefreshCalendar();
+    }
+
+    private void NavNextMonth()
+    {
+        _displayDate = _displayDate.AddMonths(1);
+        RefreshCalendar();
+    }
+
+    private async Task ExportIcs()
+    {
+        var sb = new System.Text.StringBuilder();
+        sb.AppendLine("BEGIN:VCALENDAR");
+        sb.AppendLine("VERSION:2.0");
+        sb.AppendLine("PRODID:-//LearnMate//EN");
+
+        foreach (var s in _schedules)
+        {
+            sb.AppendLine("BEGIN:VEVENT");
+            sb.AppendLine($"UID:{s.Id}@learnmate");
+            sb.AppendLine($"DTSTART:{s.StartTimeLocal.ToUniversalTime():yyyyMMdd'T'HHmmss'Z'}");
+            sb.AppendLine($"DTEND:{s.EndTimeLocal.ToUniversalTime():yyyyMMdd'T'HHmmss'Z'}");
+            sb.AppendLine($"SUMMARY:{s.Title}");
+            sb.AppendLine("END:VEVENT");
+        }
+
+        sb.AppendLine("END:VCALENDAR");
+
+        await JS.InvokeVoidAsync("downloadFile",
+            $"{_className}-schedule.ics",
+            sb.ToString(),
+            "text/calendar");
     }
 
     private static List<CalendarDay> BuildCalendar(
@@ -135,20 +179,17 @@
     {
         var days = new List<CalendarDay>();
 
-        // Group schedules by day within this month
         var byDay = schedules
             .Where(s => s.StartTimeLocal.Year == year && s.StartTimeLocal.Month == month)
             .GroupBy(s => s.StartTimeLocal.Day)
             .ToDictionary(g => g.Key, g => g.ToList());
 
-        // Leading days from previous month
         var firstDay  = new DateTime(year, month, 1);
-        var leadingDays = ((int)firstDay.DayOfWeek + 6) % 7; // Mon = 0
+        var leadingDays = ((int)firstDay.DayOfWeek + 6) % 7;
         var prevMonth = firstDay.AddDays(-1);
         for (int i = leadingDays - 1; i >= 0; i--)
             days.Add(new CalendarDay(prevMonth.AddDays(-i).Day, IsPrevMonth: true));
 
-        // Days in month
         var daysInMonth = DateTime.DaysInMonth(year, month);
         for (int d = 1; d <= daysInMonth; d++)
         {
@@ -163,7 +204,6 @@
             days.Add(new CalendarDay(d, IsToday: isToday, Events: events));
         }
 
-        // Trailing days from next month
         int nextDay = 1;
         while (days.Count % 7 != 0)
             days.Add(new CalendarDay(nextDay++, IsNextMonth: true));

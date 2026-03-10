@@ -92,7 +92,9 @@
             <div class="xl:col-span-2">
                 @if (selectedAssignment is not null)
                 {
-                    <AssignmentDetailPanel Assignment="@MapToDetail(selectedAssignment)" />
+                    <AssignmentDetailPanel Assignment="@MapToDetail(selectedAssignment)"
+                                          OnSubmitted="@HandleSubmitted"
+                                          OnClose="@(() => { selectedAssignment = null; })" />
                 }
                 else
                 {
@@ -187,23 +189,37 @@
     private static AssignmentItem MapToCard(ClassAssignmentDto a) =>
         ClassPageHelpers.MapAssignment(a);
 
-    private static AssignmentDetail MapToDetail(ClassAssignmentDto a)
+    private AssignmentDetail MapToDetail(ClassAssignmentDto a)
     {
         var dueLabel = a.DueDateLocal is { } d ? d.ToString("MMMM d, yyyy 'at' h:mm tt") : "No due date";
 
         return new AssignmentDetail(
-            Id:           a.Id,
-            Title:        a.Title,
-            Type:         "Assignment",
-            DueDate:      dueLabel,
-            Points:       "",
-            Instructions: new AssignmentInstructions(
+            Id:               a.Id,
+            ClassId:          Id,
+            Title:            a.Title,
+            Type:             "Assignment",
+            DueDate:          dueLabel,
+            Points:           "",
+            SubmissionStatus: a.SubmissionStatus,
+            Instructions:     new AssignmentInstructions(
                 Text:  a.Description ?? "No description provided.",
                 Items: []
             ),
-            Resources:     [],
-            UploadText:    "Upload your submission",
-            UploadSubtext: "PDF, DOCX, or ZIP up to 50 MB"
+            Resources:        [],
+            UploadText:       "Upload your submission",
+            UploadSubtext:    "PDF, DOCX, or ZIP up to 50 MB"
         );
+    }
+
+    private async Task HandleSubmitted()
+    {
+        // Move selected assignment from upcoming/missing → completed
+        if (selectedAssignment is null) return;
+        var updated = selectedAssignment with { SubmissionStatus = "submitted" };
+        _upcoming.RemoveAll(a => a.Id == updated.Id);
+        _missing.RemoveAll(a => a.Id == updated.Id);
+        _completed.Add(updated);
+        selectedAssignment = updated;
+        StateHasChanged();
     }
 }

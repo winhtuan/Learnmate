@@ -1,5 +1,7 @@
 @using LearnmateSolution.Components.Pages.Class.Models
 @inject NavigationManager Nav
+@inject IHttpClientFactory HttpClientFactory
+@inject UserSessionService Session
 
 <article class="group relative flex flex-col bg-white rounded-2xl p-4 shadow-sm hover:shadow-md transition-all duration-300 border border-slate-200 @(Class.IsUpcoming ? "opacity-60 hover:opacity-100 grayscale hover:grayscale-0" : "")">
 
@@ -111,13 +113,15 @@
 <LeaveClassModal IsOpen="isLeaveModalOpen"
                  ClassName="@Class.Title"
                  OnClose="EventCallback.Factory.Create(this, CloseLeaveModal)"
-                 OnConfirm="EventCallback.Factory.Create(this, ConfirmLeave)" />
+                 OnConfirm="EventCallback.Factory.Create(this, ConfirmLeaveAsync)" />
 
 @code {
     [Parameter] public ClassItem Class { get; set; } = null!;
+    [Parameter] public EventCallback<long> OnLeaved { get; set; }
 
     private bool isMenuOpen;
     private bool isLeaveModalOpen;
+    private bool _leaving;
 
     private void ToggleMenu() => isMenuOpen = !isMenuOpen;
     private void CloseMenu() => isMenuOpen = false;
@@ -136,9 +140,25 @@
 
     private void CloseLeaveModal() => isLeaveModalOpen = false;
 
-    private void ConfirmLeave()
+    private async Task ConfirmLeaveAsync()
     {
         isLeaveModalOpen = false;
-        // TODO: call API to leave class
+        _leaving = true;
+        try
+        {
+            var client = HttpClientFactory.CreateClient("learnmate");
+            client.BaseAddress = new Uri(Nav.BaseUri);
+            client.DefaultRequestHeaders.Authorization =
+                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", Session.AccessToken);
+
+            var resp = await client.DeleteAsync($"api/classes/{Class.Id}/members/me");
+            if (resp.IsSuccessStatusCode)
+                await OnLeaved.InvokeAsync(Class.Id);
+        }
+        catch { }
+        finally
+        {
+            _leaving = false;
+        }
     }
 }

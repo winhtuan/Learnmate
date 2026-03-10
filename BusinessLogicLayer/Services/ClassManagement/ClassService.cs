@@ -7,7 +7,11 @@ using DataAccessLayer.Repositories.Interfaces;
 
 namespace BusinessLogicLayer.Services;
 
-public class ClassService(IClassRepository classRepo) : IClassService
+public class ClassService(
+    IClassRepository classRepo,
+    IClassMemberRepository classMemberRepo,
+    IFileStorageService fileStorage
+) : IClassService
 {
     public async Task<ApiResponse<IReadOnlyList<ClassListItemDto>>> GetEnrolledClassesAsync(
         long studentId,
@@ -115,6 +119,137 @@ public class ClassService(IClassRepository classRepo) : IClassService
         var materials = await classRepo.GetMaterialsAsync(classId, ct);
         var dtos = materials.Select(MapMaterial).ToList();
         return ApiResponse<IReadOnlyList<ClassMaterialDto>>.Ok(dtos);
+    }
+
+    // ── Student Actions ───────────────────────────────────────────────────────
+
+    public async Task<ApiResponse<bool>> LeaveClassAsync(
+        long classId,
+        long studentId,
+        CancellationToken ct = default
+    )
+    {
+        var left = await classMemberRepo.LeaveClassAsync(classId, studentId, ct);
+        return left
+            ? ApiResponse<bool>.Ok(true, "Left class successfully.")
+            : ApiResponse<bool>.Fail("Not enrolled or already left this class.");
+    }
+
+    public async Task<ApiResponse<bool>> SubmitAssignmentAsync(
+        long classId,
+        long assignmentId,
+        long studentId,
+        Stream? fileStream,
+        string? fileName,
+        string? contentType,
+        CancellationToken ct = default
+    )
+    {
+        if (!await classRepo.IsEnrolledAsync(classId, studentId, ct))
+            return ApiResponse<bool>.Fail("Class not found or access denied.");
+
+        var existing = await classRepo.GetSubmissionAsync(assignmentId, studentId, ct);
+
+        if (existing?.Status is SubmissionStatus.SUBMITTED or SubmissionStatus.GRADED)
+            return ApiResponse<bool>.Fail("Assignment already submitted.");
+
+        string? fileUrl = null;
+        if (fileStream is not null && fileName is not null && contentType is not null)
+        {
+            var objectPath =
+                $"submissions/{assignmentId}/{studentId}/{DateTimeOffset.UtcNow.ToUnixTimeSeconds()}_{fileName}";
+            fileUrl = await fileStorage.UploadAsync(objectPath, fileStream, contentType, ct);
+        }
+
+        if (existing is null)
+        {
+            var submission = new Submission
+            {
+                AssignmentId = assignmentId,
+                StudentId = studentId,
+                Status = SubmissionStatus.SUBMITTED,
+                SubmittedAt = DateTime.UtcNow,
+                FileUrl = fileUrl,
+            };
+            await classRepo.UpsertSubmissionAsync(submission, ct);
+        }
+        else
+        {
+            existing.Status = SubmissionStatus.SUBMITTED;
+            existing.SubmittedAt = DateTime.UtcNow;
+            if (fileUrl is not null)
+                existing.FileUrl = fileUrl;
+            await classRepo.UpsertSubmissionAsync(existing, ct);
+        }
+
+        return ApiResponse<bool>.Ok(true, "Assignment submitted successfully.");
+    }
+
+    public async Task<ApiResponse<ClassMaterialDto>> UploadMaterialAsync(
+        long classId,
+        long userId,
+        string title,
+        Stream fileStream,
+        string fileName,
+        string contentType,
+        CancellationToken ct = default
+    )
+    {
+        if (!await classRepo.IsEnrolledAsync(classId, userId, ct))
+            return ApiResponse<ClassMaterialDto>.Fail("Class not found or access denied.");
+
+        var objectPath =
+            $"materials/{classId}/{DateTimeOffset.UtcNow.ToUnixTimeSeconds()}_{fileName}";
+        var fileUrl = await fileStorage.UploadAsync(objectPath, fileStream, contentType, ct);
+
+        var ext = Path.GetExtension(fileName).TrimStart('.').ToUpperInvariant();
+        var material = new Material
+        {
+            ClassId = classId,
+            UploadedBy = userId,
+            Title = title,
+            FileUrl = fileUrl,
+            FileType = string.IsNullOrEmpty(ext) ? "FILE" : ext,
+            Status = MaterialStatus.ACTIVE,
+        };
+
+        var saved = await classRepo.CreateMaterialAsync(material, ct);
+        return ApiResponse<ClassMaterialDto>.Ok(MapMaterial(saved), "Material uploaded successfully.");
+    }
+
+    public async Task<ApiResponse<ClassVideosDto>> GetClassVideosAsync(
+        long classId,
+        long studentId,
+        CancellationToken ct = default
+    )
+    {
+        if (!await classRepo.IsEnrolledAsync(classId, studentId, ct))
+            return ApiResponse<ClassVideosDto>.Fail("Class not found or access denied.");
+
+        var schedules = await classRepo.GetSchedulesWithVideosAsync(classId, ct);
+
+        var items = schedules
+            .Where(s => s.VideoSession is not null)
+            .Select(s => new VideoSessionItemDto(
+                Id: s.VideoSession!.Id,
+                ScheduleId: s.Id,
+                Title: s.Title,
+                MeetingUrl: s.VideoSession.MeetingUrl,
+                Provider: s.VideoSession.Provider.ToString(),
+                SessionStatus: s.VideoSession.Status.ToString(),
+                StartTimeLocal: s.StartTime.ToLocalTime(),
+                EndTimeLocal: s.EndTime.ToLocalTime()
+            ))
+            .ToList();
+
+        var live = items.FirstOrDefault(v =>
+            v.SessionStatus == VideoSessionStatus.LIVE.ToString()
+        );
+        var recorded = items
+            .Where(v => v.SessionStatus == VideoSessionStatus.ENDED.ToString())
+            .ToList();
+
+        return ApiResponse<ClassVideosDto>.Ok(new ClassVideosDto(live, recorded));
     }
 
     // ── Mapping ───────────────────────────────────────────────────────────────

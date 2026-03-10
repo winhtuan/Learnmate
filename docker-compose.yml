@@ -36,7 +36,7 @@ services:
 
   # ── PostgreSQL ────────────────────────────────────────────────────────────────
   db:
-    image: postgres:16-alpine
+    image: postgres:17.6-alpine
     environment:
       POSTGRES_DB: learnmate
       POSTGRES_USER: postgres

@@ -35,7 +35,7 @@
         {
             @foreach (var cls in _filtered)
             {
-                <ClassCard Class="cls" />
+                <ClassCard Class="cls" OnLeaved="@HandleLeaved" />
             }
             @if (_filtered.Count == 0)
             {
@@ -132,6 +132,12 @@
             ButtonText:  isUpcoming ? null : "Open Class",
             IsUpcoming:  isUpcoming
         );
+    }
+
+    private void HandleLeaved(long classId)
+    {
+        _classes.RemoveAll(c => c.Id == classId);
+        RebuildFiltered();
     }
 
     private static string FormatNextSession(DateTime local)

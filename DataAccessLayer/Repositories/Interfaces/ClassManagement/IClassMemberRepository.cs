@@ -12,4 +12,7 @@ public interface IClassMemberRepository
         long studentId,
         CancellationToken ct = default
     );
+
+    /// <summary>Sets the member status to DROPPED. Returns false if not found or already inactive.</summary>
+    Task<bool> LeaveClassAsync(long classId, long studentId, CancellationToken ct = default);
 }

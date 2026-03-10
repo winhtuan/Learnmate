@@ -34,4 +34,16 @@ public interface IClassRepository
 
     /// <summary>Returns true if the student is an ACTIVE member of the class.</summary>
     Task<bool> IsEnrolledAsync(long classId, long studentId, CancellationToken ct = default);
+
+    /// <summary>Returns an existing submission for a student on an assignment, or null.</summary>
+    Task<Submission?> GetSubmissionAsync(long assignmentId, long studentId, CancellationToken ct = default);
+
+    /// <summary>Creates a new submission or updates an existing one.</summary>
+    Task<Submission> UpsertSubmissionAsync(Submission submission, CancellationToken ct = default);
+
+    /// <summary>Inserts a new material record.</summary>
+    Task<Material> CreateMaterialAsync(Material material, CancellationToken ct = default);
+
+    /// <summary>Returns all non-cancelled schedules with their VideoSession for a class.</summary>
+    Task<IReadOnlyList<Schedule>> GetSchedulesWithVideosAsync(long classId, CancellationToken ct = default);
 }

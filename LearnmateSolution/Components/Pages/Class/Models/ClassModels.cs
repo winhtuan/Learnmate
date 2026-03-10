@@ -27,7 +27,8 @@ public record AssignmentResource(
 public record AssignmentInstructions(string Text, List<string> Items);
 
 public record AssignmentDetail(
-    long Id, string Title, string Type, string DueDate, string Points,
+    long Id, long ClassId, string Title, string Type, string DueDate, string Points,
+    string SubmissionStatus,
     AssignmentInstructions Instructions, List<AssignmentResource> Resources,
     string UploadText, string UploadSubtext);
 
@@ -42,7 +43,7 @@ public record MaterialFolder(
     string Icon, string IconColor, string IconBg);
 
 public record MaterialFile(
-    long Id, string Name, string Type, string Date, string Size,
+    long Id, string Name, string Type, string Date, string Size, string FileUrl,
     string Icon, string IconColor, string IconBg);
 
 public record CalendarEvent(string Type, string? Time, string Title);
@@ -57,8 +58,9 @@ public record LiveSessionHost(string Name, string Avatar);
 
 public record LiveSession(
     string Status, string Date, string Title, string Description,
-    LiveSessionHost Host, int StudentsWaiting);
+    LiveSessionHost Host, int StudentsWaiting, string MeetingUrl = "#");
 
 public record VideoLecture(
-    int Id, string Title, string Duration, string Date, string Unit,
+    long Id, string Title, string Duration, string Date, string Unit,
+    string MeetingUrl,
     string GradientFrom, string GradientTo, string AccentGradient);

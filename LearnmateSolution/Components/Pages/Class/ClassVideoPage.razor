@@ -31,11 +31,33 @@
 
         <ClassTabNav ClassId="@Id" ActiveTab="videos" />
 
-        @* Video sessions not yet implemented — placeholder *@
-        <div class="flex flex-col items-center justify-center py-20 bg-white rounded-[2rem] border border-slate-100 shadow-sm text-slate-400">
-            <span class="material-symbols-outlined text-5xl mb-3">videocam_off</span>
-            <p class="text-base font-medium">No recorded lectures available yet.</p>
-        </div>
+        @* Live Session *@
+        @if (_liveSession is not null)
+        {
+            <LiveSessionCard Session="@_liveSession" />
+        }
+
+        @* Recorded Videos *@
+        @if (_recorded.Count > 0)
+        {
+            <div>
+                <h3 class="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4">Recorded Lectures</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                    @foreach (var lecture in _recorded)
+                    {
+                        <VideoLectureCard Lecture="@lecture" />
+                    }
+                </div>
+            </div>
+        }
+
+        @if (_liveSession is null && _recorded.Count == 0)
+        {
+            <div class="flex flex-col items-center justify-center py-20 bg-white rounded-[2rem] border border-slate-100 shadow-sm text-slate-400">
+                <span class="material-symbols-outlined text-5xl mb-3">videocam_off</span>
+                <p class="text-base font-medium">No recorded lectures available yet.</p>
+            </div>
+        }
     }
 </div>
 
@@ -47,6 +69,18 @@
     private string _subject     = "";
     private string _status      = "ACTIVE";
     private string _description = "";
+
+    private LiveSession? _liveSession;
+    private List<VideoLecture> _recorded = [];
+
+    private static readonly string[][] _gradients =
+    [
+        ["from-blue-900",    "to-blue-700",    "from-blue-400"],
+        ["from-purple-900",  "to-purple-700",  "from-purple-400"],
+        ["from-emerald-900", "to-emerald-700", "from-emerald-400"],
+        ["from-rose-900",    "to-rose-700",    "from-rose-400"],
+        ["from-amber-900",   "to-amber-700",   "from-amber-400"],
+    ];
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -78,14 +112,55 @@
             client.DefaultRequestHeaders.Authorization =
                 new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", Session.AccessToken);
 
-            var resp = await client.GetFromJsonAsync<ApiResponse<ClassDetailDto>>($"api/classes/{Id}");
-            var cls  = resp?.Data;
+            var classTask = client.GetFromJsonAsync<ApiResponse<ClassDetailDto>>($"api/classes/{Id}");
+            var vidTask   = client.GetFromJsonAsync<ApiResponse<ClassVideosDto>>($"api/classes/{Id}/videos");
+            await Task.WhenAll(classTask, vidTask);
+
+            var cls = classTask.Result?.Data;
             if (cls is not null)
             {
                 _className   = cls.Name;
                 _subject     = cls.Subject;
                 _status      = cls.Status;
                 _description = cls.Description ?? "";
+            }
+
+            var videos = vidTask.Result?.Data;
+            if (videos is not null)
+            {
+                if (videos.LiveSession is { } live)
+                {
+                    _liveSession = new LiveSession(
+                        Status:         "LIVE",
+                        Date:           live.StartTimeLocal.ToString("ddd, MMM d · h:mm tt"),
+                        Title:          live.Title,
+                        Description:    $"Join via {live.Provider}",
+                        Host:           new LiveSessionHost("", ""),
+                        StudentsWaiting: 0,
+                        MeetingUrl:     live.MeetingUrl
+                    );
+                }
+
+                _recorded = videos.RecordedSessions
+                    .Select((v, i) =>
+                    {
+                        var g = _gradients[i % _gradients.Length];
+                        var dur = v.EndTimeLocal is { } end
+                            ? $"{(end - v.StartTimeLocal).TotalMinutes:F0} min"
+                            : "—";
+                        return new VideoLecture(
+                            Id:            v.Id,
+                            Title:         v.Title,
+                            Duration:      dur,
+                            Date:          v.StartTimeLocal.ToString("MMM d, yyyy"),
+                            Unit:          v.Provider,
+                            MeetingUrl:    v.MeetingUrl,
+                            GradientFrom:  g[0],
+                            GradientTo:    g[1],
+                            AccentGradient: g[2]
+                        );
+                    })
+                    .ToList();
             }
         }
         catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.Unauthorized)
@@ -96,9 +171,6 @@
             await JS.InvokeVoidAsync("sessionStorage.removeItem", "lm_token");
             Nav.NavigateTo("/login", replace: true);
         }
-        catch
-        {
-            // Keep defaults on error
-        }
+        catch { }
     }
 }

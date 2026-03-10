@@ -35,4 +35,18 @@ public class ClassMemberRepository(AppDbContext db) : IClassMemberRepository
             ) // chỉ cần assignment gần nhất — không load toàn bộ
             .ToListAsync(ct);
     }
+
+    public async Task<bool> LeaveClassAsync(long classId, long studentId, CancellationToken ct = default)
+    {
+        var member = await db.ClassMembers.FirstOrDefaultAsync(
+            m => m.ClassId == classId && m.StudentId == studentId && m.Status == ClassMemberStatus.ACTIVE,
+            ct
+        );
+        if (member is null)
+            return false;
+
+        member.Status = ClassMemberStatus.DROPPED;
+        await db.SaveChangesAsync(ct);
+        return true;
+    }
 }

@@ -132,4 +132,49 @@ public class ClassRepository(AppDbContext db) : IClassRepository
                 && m.Status == ClassMemberStatus.ACTIVE,
             ct
         );
+
+    public async Task<Submission?> GetSubmissionAsync(
+        long assignmentId,
+        long studentId,
+        CancellationToken ct = default
+    ) =>
+        await db.Submissions.FirstOrDefaultAsync(
+            s => s.AssignmentId == assignmentId && s.StudentId == studentId && s.DeletedAt == null,
+            ct
+        );
+
+    public async Task<Submission> UpsertSubmissionAsync(
+        Submission submission,
+        CancellationToken ct = default
+    )
+    {
+        if (submission.Id == 0)
+            db.Submissions.Add(submission);
+        else
+            db.Submissions.Update(submission);
+
+        await db.SaveChangesAsync(ct);
+        return submission;
+    }
+
+    public async Task<Material> CreateMaterialAsync(
+        Material material,
+        CancellationToken ct = default
+    )
+    {
+        db.Materials.Add(material);
+        await db.SaveChangesAsync(ct);
+        return material;
+    }
+
+    public async Task<IReadOnlyList<Schedule>> GetSchedulesWithVideosAsync(
+        long classId,
+        CancellationToken ct = default
+    ) =>
+        await db
+            .Schedules.AsNoTracking()
+            .Where(s => s.ClassId == classId && s.Status != ScheduleStatus.CANCELLED)
+            .Include(s => s.VideoSession)
+            .OrderByDescending(s => s.StartTime)
+            .ToListAsync(ct);
 }

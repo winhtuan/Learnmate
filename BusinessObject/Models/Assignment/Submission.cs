@@ -19,6 +19,9 @@ public class Submission : SoftDeletableEntity
 
     public DateTime? SubmittedAt { get; set; }
 
+    [MaxLength(1000)]
+    public string? FileUrl { get; set; }
+
     // Navigation properties
     [ForeignKey("AssignmentId")]
     public Assignment Assignment { get; set; } = null!;
