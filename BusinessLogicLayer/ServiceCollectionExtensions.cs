@@ -50,6 +50,7 @@ public static class ServiceCollectionExtensions
                 services.AddScoped<IClassManagementService, ClassManagementService>();
                 services.AddScoped<IReportService, ReportService>();
 
+
                 // Token blacklist cache
                 services.AddMemoryCache();
 
