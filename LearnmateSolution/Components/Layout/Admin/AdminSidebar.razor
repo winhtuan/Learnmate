@@ -1,3 +1,11 @@
+@using LearnmateSolution.AppState
+@using BusinessLogicLayer.Services.Interfaces
+@inject UserSessionService Session
+@inject IAuthService AuthService
+@inject NavigationManager Nav
+@inject IJSRuntime JS
+@rendermode InteractiveServer
+
 <aside class="admin-sidebar">
     <div class="admin-sidebar-brand">
         <a href="/admin/dashboard" class="d-flex align-items-center text-decoration-none">
@@ -54,7 +62,7 @@
             <span>Settings</span>
         </NavLink>
 
-        <button class="nav-item w-100 border-0 bg-transparent" title="Sign out" @onclick="HandleLogout">
+        <button class="nav-item w-100 border-0 bg-transparent text-start" title="Sign out" @onclick="HandleLogout">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
             </svg>
@@ -64,8 +72,36 @@
 </aside>
 
 @code {
-    private void HandleLogout()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        // Logout logic placeholder
+        if (!firstRender) return;
+        if (!Session.IsAuthenticated)
+        {
+            var email = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_email");
+            var role  = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_role");
+            var token = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_token");
+            if (!string.IsNullOrEmpty(email) && !string.IsNullOrEmpty(role) && !string.IsNullOrEmpty(token))
+            {
+                Session.SetSession(email, role, token);
+                StateHasChanged();
+            }
+        }
+    }
+
+    private async Task HandleLogout()
+    {
+        if (!string.IsNullOrEmpty(Session.AccessToken))
+        {
+            await AuthService.LogoutAsync(Session.AccessToken);
+        }
+
+        Session.Clear();
+
+        await JS.InvokeVoidAsync("sessionStorage.removeItem", "lm_email");
+        await JS.InvokeVoidAsync("sessionStorage.removeItem", "lm_role");
+        await JS.InvokeVoidAsync("sessionStorage.removeItem", "lm_token");
+        await JS.InvokeVoidAsync("sessionStorage.removeItem", "lm_avatar");
+
+        Nav.NavigateTo("/login", replace: true);
     }
 }
