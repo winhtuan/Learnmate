@@ -15,21 +15,24 @@ namespace DataAccessLayer.Migrations
                 keyColumn: "id",
                 keyValue: 1L,
                 column: "thumbnail_url",
-                value: "https://placehold.co/400?text=Course");
+                value: "https://placehold.co/400?text=Course"
+            );
 
             migrationBuilder.UpdateData(
                 table: "classes",
                 keyColumn: "id",
                 keyValue: 2L,
                 column: "thumbnail_url",
-                value: "https://placehold.co/400?text=Course");
+                value: "https://placehold.co/400?text=Course"
+            );
 
             migrationBuilder.UpdateData(
                 table: "classes",
                 keyColumn: "id",
                 keyValue: 3L,
                 column: "thumbnail_url",
-                value: "https://placehold.co/400?text=Course");
+                value: "https://placehold.co/400?text=Course"
+            );
         }
 
         /// <inheritdoc />
@@ -40,21 +43,24 @@ namespace DataAccessLayer.Migrations
                 keyColumn: "id",
                 keyValue: 1L,
                 column: "thumbnail_url",
-                value: null);
+                value: null
+            );
 
             migrationBuilder.UpdateData(
                 table: "classes",
                 keyColumn: "id",
                 keyValue: 2L,
                 column: "thumbnail_url",
-                value: null);
+                value: null
+            );
 
             migrationBuilder.UpdateData(
                 table: "classes",
                 keyColumn: "id",
                 keyValue: 3L,
                 column: "thumbnail_url",
-                value: null);
+                value: null
+            );
         }
     }
 }

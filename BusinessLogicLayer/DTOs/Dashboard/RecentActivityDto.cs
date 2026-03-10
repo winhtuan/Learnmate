@@ -5,6 +5,6 @@ public record RecentActivityDto(
     string? UserAvatarUrl,
     string UserName,
     DateTime Time,
-    string StatusType,  // Bootstrap color: "success" | "warning" | "danger"
-    string Status       // Display label
+    string StatusType, // Bootstrap color: "success" | "warning" | "danger"
+    string Status // Display label
 );

@@ -1,0 +1,48 @@
+# ── Build outputs ─────────────────────────────────────────────────────────────
+**/bin/
+**/obj/
+
+# ── Visual Studio ─────────────────────────────────────────────────────────────
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.rsuser
+
+# ── Git ───────────────────────────────────────────────────────────────────────
+.git/
+.gitignore
+
+# ── Secrets & environment ─────────────────────────────────────────────────────
+.env
+.env.*
+!.env.example
+appsettings.Development.json
+appsettings.Local.json
+
+# ── Docker files (no need to copy into image) ─────────────────────────────────
+Dockerfile
+docker-compose*.yml
+.dockerignore
+
+# ── Claude / AI tools ─────────────────────────────────────────────────────────
+.claude/
+.agents/
+CLAUDE.md
+
+# ── Docs ──────────────────────────────────────────────────────────────────────
+docs/
+*.md
+!LearnmateSolution/wwwroot/**/*.md
+
+# ── Test results ──────────────────────────────────────────────────────────────
+TestResults/
+coverage*/
+*.trx
+*.coveragexml
+
+# ── OS ────────────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini

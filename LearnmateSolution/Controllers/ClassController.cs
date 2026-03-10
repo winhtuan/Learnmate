@@ -10,13 +10,15 @@ namespace LearnmateSolution.Controllers;
 [Authorize]
 public class ClassController(IClassService classService) : ControllerBase
 {
-    private long? UserId => long.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var id) ? id : null;
+    private long? UserId =>
+        long.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var id) ? id : null;
 
     /// <summary>GET /api/classes — Returns all enrolled classes for the current student.</summary>
     [HttpGet]
     public async Task<IActionResult> GetEnrolled(CancellationToken ct)
     {
-        if (UserId is not { } userId) return Unauthorized();
+        if (UserId is not { } userId)
+            return Unauthorized();
         var result = await classService.GetEnrolledClassesAsync(userId, ct);
         return result.Success ? Ok(result) : BadRequest(result);
     }
@@ -25,7 +27,8 @@ public class ClassController(IClassService classService) : ControllerBase
     [HttpGet("{id:long}")]
     public async Task<IActionResult> GetDetail(long id, CancellationToken ct)
     {
-        if (UserId is not { } userId) return Unauthorized();
+        if (UserId is not { } userId)
+            return Unauthorized();
         var result = await classService.GetClassDetailAsync(id, userId, ct);
         return result.Success ? Ok(result) : NotFound(result);
     }
@@ -34,7 +37,8 @@ public class ClassController(IClassService classService) : ControllerBase
     [HttpGet("{id:long}/assignments")]
     public async Task<IActionResult> GetAssignments(long id, CancellationToken ct)
     {
-        if (UserId is not { } userId) return Unauthorized();
+        if (UserId is not { } userId)
+            return Unauthorized();
         var result = await classService.GetClassAssignmentsAsync(id, userId, ct);
         return result.Success ? Ok(result) : NotFound(result);
     }
@@ -43,7 +47,8 @@ public class ClassController(IClassService classService) : ControllerBase
     [HttpGet("{id:long}/schedules")]
     public async Task<IActionResult> GetSchedules(long id, CancellationToken ct)
     {
-        if (UserId is not { } userId) return Unauthorized();
+        if (UserId is not { } userId)
+            return Unauthorized();
         var result = await classService.GetClassSchedulesAsync(id, userId, ct);
         return result.Success ? Ok(result) : NotFound(result);
     }
@@ -52,7 +57,8 @@ public class ClassController(IClassService classService) : ControllerBase
     [HttpGet("{id:long}/materials")]
     public async Task<IActionResult> GetMaterials(long id, CancellationToken ct)
     {
-        if (UserId is not { } userId) return Unauthorized();
+        if (UserId is not { } userId)
+            return Unauthorized();
         var result = await classService.GetClassMaterialsAsync(id, userId, ct);
         return result.Success ? Ok(result) : NotFound(result);
     }

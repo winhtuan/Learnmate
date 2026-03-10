@@ -15,7 +15,8 @@ namespace DataAccessLayer.Migrations
                 keyColumn: "id",
                 keyValue: 1L,
                 column: "avatar_url",
-                value: "https://placehold.co/400?text=avatar");
+                value: "https://placehold.co/400?text=avatar"
+            );
         }
 
         /// <inheritdoc />
@@ -26,7 +27,8 @@ namespace DataAccessLayer.Migrations
                 keyColumn: "id",
                 keyValue: 1L,
                 column: "avatar_url",
-                value: "https://api.dicebear.com/9.x/avataaars/svg?seed=NguyenMinhTuan&backgroundColor=b6e3f4&clothesColor=3c4f5c&hairColor=2c1b18&facialHairType=Blank&accessories=prescription02&clothesType=hoodie&eyeType=Happy&eyebrowType=Default&mouthType=Smile&skinColor=Light");
+                value: "https://api.dicebear.com/9.x/avataaars/svg?seed=NguyenMinhTuan&backgroundColor=b6e3f4&clothesColor=3c4f5c&hairColor=2c1b18&facialHairType=Blank&accessories=prescription02&clothesType=hoodie&eyeType=Happy&eyebrowType=Default&mouthType=Smile&skinColor=Light"
+            );
         }
     }
 }

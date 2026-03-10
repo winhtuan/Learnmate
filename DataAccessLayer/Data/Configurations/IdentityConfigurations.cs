@@ -33,10 +33,11 @@ internal sealed class TeacherProfileConfiguration : IEntityTypeConfiguration<Tea
             t.HasCheckConstraint("ck_teacher_profiles_rating_avg", "rating_avg BETWEEN 0 AND 5");
         });
 
-        builder.HasOne(p => p.User)
-               .WithOne(u => u.TeacherProfile)
-               .HasForeignKey<TeacherProfile>(p => p.UserId)
-               .OnDelete(DeleteBehavior.Cascade);
+        builder
+            .HasOne(p => p.User)
+            .WithOne(u => u.TeacherProfile)
+            .HasForeignKey<TeacherProfile>(p => p.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }
 
@@ -47,9 +48,10 @@ internal sealed class StudentProfileConfiguration : IEntityTypeConfiguration<Stu
     {
         builder.HasIndex(p => p.UserId).IsUnique();
 
-        builder.HasOne(p => p.User)
-               .WithOne(u => u.StudentProfile)
-               .HasForeignKey<StudentProfile>(p => p.UserId)
-               .OnDelete(DeleteBehavior.Cascade);
+        builder
+            .HasOne(p => p.User)
+            .WithOne(u => u.StudentProfile)
+            .HasForeignKey<StudentProfile>(p => p.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

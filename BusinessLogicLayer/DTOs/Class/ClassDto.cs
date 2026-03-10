@@ -7,7 +7,8 @@ public record ClassListItemDto(
     string? Description,
     string TeacherName,
     string Status,
-    DateTime? NextSessionLocal);
+    DateTime? NextSessionLocal
+);
 
 public record ClassDetailDto(
     long Id,
@@ -21,16 +22,18 @@ public record ClassDetailDto(
     string TeacherSubjects,
     IReadOnlyList<ClassAssignmentDto> ActiveAssignments,
     IReadOnlyList<ClassScheduleItemDto> UpcomingSchedules,
-    IReadOnlyList<ClassMaterialDto> RecentMaterials);
+    IReadOnlyList<ClassMaterialDto> RecentMaterials
+);
 
 public record ClassAssignmentDto(
     long Id,
     string Title,
     string? Description,
     DateTime? DueDateLocal,
-    string SubmissionStatus,    // "not_started" | "in_progress" | "submitted" | "graded" | "missing"
+    string SubmissionStatus, // "not_started" | "in_progress" | "submitted" | "graded" | "missing"
     decimal? Score,
-    int? TotalQuestions);
+    int? TotalQuestions
+);
 
 public record ClassScheduleItemDto(
     long Id,
@@ -38,7 +41,8 @@ public record ClassScheduleItemDto(
     DateTime StartTimeLocal,
     DateTime EndTimeLocal,
     string Type,
-    string Status);
+    string Status
+);
 
 public record ClassMaterialDto(
     long Id,
@@ -46,4 +50,5 @@ public record ClassMaterialDto(
     string? Description,
     string FileType,
     string FileUrl,
-    DateTime UploadedAtLocal);
+    DateTime UploadedAtLocal
+);

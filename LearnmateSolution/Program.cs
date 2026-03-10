@@ -1,9 +1,11 @@
 using System.Text;
 using BusinessLogicLayer;
+using BusinessLogicLayer.Services.Interfaces;
 using BusinessLogicLayer.Settings;
 using DataAccessLayer;
 using LearnmateSolution.Components;
 using LearnmateSolution.AppState;
+using LearnmateSolution.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 
@@ -33,6 +35,17 @@ public class Program
             builder.Configuration["EmailSettings:SenderEmail"] = emailSender;
         if (Environment.GetEnvironmentVariable("EMAIL_PASSWORD") is { } emailPassword)
             builder.Configuration["EmailSettings:Password"] = emailPassword;
+
+        if (Environment.GetEnvironmentVariable("MINIO_ENDPOINT") is { } minioEndpoint)
+            builder.Configuration["MinIO:Endpoint"] = minioEndpoint;
+        if (Environment.GetEnvironmentVariable("MINIO_ACCESS_KEY") is { } minioAccessKey)
+            builder.Configuration["MinIO:AccessKey"] = minioAccessKey;
+        if (Environment.GetEnvironmentVariable("MINIO_SECRET_KEY") is { } minioSecretKey)
+            builder.Configuration["MinIO:SecretKey"] = minioSecretKey;
+        if (Environment.GetEnvironmentVariable("MINIO_BUCKET_NAME") is { } minioBucket)
+            builder.Configuration["MinIO:BucketName"] = minioBucket;
+        if (Environment.GetEnvironmentVariable("MINIO_USE_SSL") is { } minioSsl)
+            builder.Configuration["MinIO:UseSSL"] = minioSsl;
 
         // ── Database ──────────────────────────────────────────────────────────
         builder.Services.AddDataAccessLayer(builder.Configuration);
@@ -77,6 +90,13 @@ public class Program
         {
             client.Timeout = TimeSpan.FromSeconds(30);
         });
+
+        // ── MinIO file storage ────────────────────────────────────────────────
+        builder.Services.AddOptions<MinioSettings>()
+            .BindConfiguration("MinIO")
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+        builder.Services.AddSingleton<IFileStorageService, MinioFileStorageService>();
 
         // ── Auth session (per Blazor circuit) ────────────────────────────────
         builder.Services.AddScoped<UserSessionService>();

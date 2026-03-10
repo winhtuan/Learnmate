@@ -13,9 +13,10 @@ internal sealed class NotificationConfiguration : IEntityTypeConfiguration<Notif
 
         builder.Property(n => n.IsRead).HasDefaultValue(false);
 
-        builder.HasOne(n => n.User)
-               .WithMany(u => u.Notifications)
-               .HasForeignKey(n => n.UserId)
-               .OnDelete(DeleteBehavior.Cascade);
+        builder
+            .HasOne(n => n.User)
+            .WithMany(u => u.Notifications)
+            .HasForeignKey(n => n.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

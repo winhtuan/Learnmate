@@ -18,10 +18,7 @@ public record StudentStatsDto(
 
 public record NextSessionDto(string ClassName, string Room, DateTime StartTimeLocal);
 
-public record DayScheduleDto(
-    DateOnly Date,
-    IReadOnlyList<ScheduledClassDto> Classes
-);
+public record DayScheduleDto(DateOnly Date, IReadOnlyList<ScheduledClassDto> Classes);
 
 public record ScheduledClassDto(
     string ClassName,
@@ -39,15 +36,6 @@ public record EnrolledClassDto(
     DateOnly? NextTaskDue
 );
 
-public record NotificationDto(
-    long Id,
-    string Message,
-    DateTime CreatedAt,
-    bool IsRead
-);
+public record NotificationDto(long Id, string Message, DateTime CreatedAt, bool IsRead);
 
-public record StudentProfileHeaderDto(
-    string FullName,
-    string? AvatarUrl,
-    string? GradeLevel
-);
+public record StudentProfileHeaderDto(string FullName, string? AvatarUrl, string? GradeLevel);

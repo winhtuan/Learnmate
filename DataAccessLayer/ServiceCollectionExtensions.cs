@@ -9,18 +9,21 @@ public static class ServiceCollectionExtensions
 {
     public static IServiceCollection AddDataAccessLayer(
         this IServiceCollection services,
-        IConfiguration configuration)
+        IConfiguration configuration
+    )
     {
         // Allow DateTime without strict UTC — simplifies development
         AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 
-        var connectionString = configuration.GetConnectionString("DefaultConnection")
+        var connectionString =
+            configuration.GetConnectionString("DefaultConnection")
             ?? throw new InvalidOperationException(
-                "Connection string 'DefaultConnection' is not configured.");
+                "Connection string 'DefaultConnection' is not configured."
+            );
 
         services.AddDbContext<AppDbContext>(options =>
-            options.UseNpgsql(connectionString)
-                   .UseSnakeCaseNamingConvention());
+            options.UseNpgsql(connectionString).UseSnakeCaseNamingConvention()
+        );
 
         return services;
     }

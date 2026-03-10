@@ -10,9 +10,7 @@ namespace DataAccessLayer.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropColumn(
-                name: "avatar_url",
-                table: "student_profiles");
+            migrationBuilder.DropColumn(name: "avatar_url", table: "student_profiles");
         }
 
         /// <inheritdoc />
@@ -23,14 +21,16 @@ namespace DataAccessLayer.Migrations
                 table: "student_profiles",
                 type: "character varying(500)",
                 maxLength: 500,
-                nullable: true);
+                nullable: true
+            );
 
             migrationBuilder.UpdateData(
                 table: "student_profiles",
                 keyColumn: "id",
                 keyValue: 1L,
                 column: "avatar_url",
-                value: "https://placehold.co/400?text=avatar");
+                value: "https://placehold.co/400?text=avatar"
+            );
         }
     }
 }

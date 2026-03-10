@@ -4,5 +4,5 @@ public enum AssignmentStatus
 {
     DRAFT,
     PUBLISHED,
-    CLOSED
+    CLOSED,
 }
