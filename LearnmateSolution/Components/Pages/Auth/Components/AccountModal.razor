@@ -1,4 +1,10 @@
 @using LearnmateSolution.Components.Pages.Auth.Models
+@using BusinessLogicLayer.Services.Interfaces
+@using BusinessLogicLayer.DTOs.Auth
+@inject IAuthService AuthService
+@inject NavigationManager Nav
+@inject UserSessionService Session
+@inject IJSRuntime JS
 
 @if (Account != null)
 {
@@ -16,10 +22,11 @@
 
             <div class="lm-modal-input-wrapper">
                 <input type="@(showPassword ? "text" : "password")"
-                       class="lm-modal-input"
+                       class="lm-modal-input @(error != null ? "lm-modal-input--error" : "")"
                        placeholder="Enter password"
                        @bind="password"
                        @bind:event="oninput"
+                       disabled="@isLoading"
                        autocomplete="current-password" />
                 <button type="button" class="lm-eye-btn" @onclick="() => showPassword = !showPassword" tabindex="-1">
                     @if (showPassword)
@@ -46,8 +53,15 @@
                 <span class="lm-error-text">@error</span>
             }
 
-            <button class="lm-modal-continue-btn" @onclick="HandleLogin">
-                Continue as @Account.Name
+            <button class="lm-modal-continue-btn" @onclick="HandleLogin" disabled="@isLoading">
+                @if (isLoading)
+                {
+                    <span class="lm-spinner" aria-label="Signing in..."></span>
+                }
+                else
+                {
+                    <text>Continue as @Account.Name</text>
+                }
             </button>
             <button class="lm-modal-notyou-btn" @onclick="OnClose">Not you?</button>
             <a href="#" class="lm-modal-other-link" @onclick="OnClose" @onclick:preventDefault>Use another account</a>
@@ -61,6 +75,7 @@
 
     private string password = "";
     private bool showPassword;
+    private bool isLoading;
     private string? error;
 
     protected override void OnParametersSet()
@@ -68,7 +83,16 @@
         password = "";
         error = null;
         showPassword = false;
+        isLoading = false;
     }
+
+    private static string DashboardFor(string? role) => role switch
+    {
+        "ADMIN"   => "/admin/dashboard",
+        "STUDENT" => "/student-dashboard",
+        "TEACHER" => "/teacher/dashboard",
+        _         => "/"
+    };
 
     private async Task HandleLogin()
     {
@@ -79,9 +103,42 @@
         }
 
         error = null;
-        // TODO: authenticate Account with password
-        await Task.CompletedTask;
-        await OnClose.InvokeAsync();
+        isLoading = true;
+
+        try
+        {
+            var result = await AuthService.LoginAsync(new LoginRequest(Account!.Email, password));
+
+            if (result.Success)
+            {
+                var userEmail  = result.Data!.Email;
+                var userRole   = result.Data!.Role;
+                var userToken  = result.Data!.AccessToken;
+                var userAvatar = result.Data!.AvatarUrl;
+                Session.SetSession(userEmail, userRole, userToken, userAvatar);
+                await JS.InvokeVoidAsync("sessionStorage.setItem", "lm_email", userEmail);
+                await JS.InvokeVoidAsync("sessionStorage.setItem", "lm_role",  userRole);
+                await JS.InvokeVoidAsync("sessionStorage.setItem", "lm_token", userToken);
+                if (!string.IsNullOrEmpty(userAvatar))
+                    await JS.InvokeVoidAsync("sessionStorage.setItem", "lm_avatar", userAvatar);
+                else
+                    await JS.InvokeVoidAsync("sessionStorage.removeItem", "lm_avatar");
+
+                Nav.NavigateTo(DashboardFor(userRole));
+            }
+            else
+            {
+                error = result.Message ?? "Incorrect password.";
+            }
+        }
+        catch
+        {
+            error = "Connection error. Please try again.";
+        }
+        finally
+        {
+            isLoading = false;
+        }
     }
 
     private static string MaskEmail(string email)

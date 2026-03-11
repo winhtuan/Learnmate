@@ -1,0 +1,298 @@
+@page "/classes/{Id:long}/materials"
+@layout ClassLayout
+@rendermode InteractiveServer
+@using LearnmateSolution.Components.Layout
+@using LearnmateSolution.Components.Pages.Student.Class.Components
+@using LearnmateSolution.Components.Pages.Student.Class.Models
+@using BusinessLogicLayer.DTOs
+@using BusinessLogicLayer.DTOs.Class
+@inject NavigationManager Nav
+@inject UserSessionService Session
+@inject IJSRuntime JS
+@inject IHttpClientFactory HttpClientFactory
+
+<div class="space-y-6 max-w-screen-xl mx-auto">
+    <Breadcrumb Items="@([ new("Dashboard", "/student-dashboard"), new("My Classes", "/classes"), new(_className, $"/classes/{Id}"), new("Materials") ])" />
+
+    @if (!_ready)
+    {
+        <div class="flex items-center justify-center h-64 text-slate-400">
+            <svg class="animate-spin h-8 w-8 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+            </svg>
+            <span class="text-sm font-medium">Loading...</span>
+        </div>
+    }
+    else
+    {
+        <HeroBanner ClassCode="@_subject" ClassStatus="@_status" ClassName="@_className"
+                    Description="@_description" BackgroundImage="" />
+
+        <ClassTabNav ClassId="@Id" ActiveTab="materials" />
+
+        <MaterialsToolbar OnUpload="@OpenUploadModal" OnSearchChange="@HandleSearch" />
+
+        @* Materials *@
+        @if (_filtered.Count == 0)
+        {
+            <div class="flex flex-col items-center justify-center py-16 text-slate-400">
+                <span class="material-symbols-outlined text-5xl mb-3">folder_open</span>
+                <p class="text-base font-medium">No materials found.</p>
+            </div>
+        }
+        else
+        {
+            <div class="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden">
+                <div class="px-6 py-4 border-b border-slate-100">
+                    <h3 class="text-base font-bold text-slate-900">All Materials</h3>
+                </div>
+                <table class="w-full">
+                    <thead class="bg-slate-50 border-b border-slate-100">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Name</th>
+                            <th class="px-6 py-3 text-left text-xs font-bold text-slate-400 uppercase tracking-wider hidden md:table-cell">Type</th>
+                            <th class="px-6 py-3 text-left text-xs font-bold text-slate-400 uppercase tracking-wider hidden lg:table-cell">Size</th>
+                            <th class="px-6 py-3 text-left text-xs font-bold text-slate-400 uppercase tracking-wider hidden lg:table-cell">Uploaded</th>
+                            <th class="px-6 py-3"></th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-50">
+                        @foreach (var file in _filtered)
+                        {
+                            <MaterialFileRow File="file" />
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    }
+</div>
+
+@* Upload Modal *@
+@if (_showUpload)
+{
+    <div class="fixed inset-0 z-[100] flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-slate-900/30 backdrop-blur-md" @onclick="CloseUploadModal"></div>
+        <div class="relative w-full max-w-md bg-white rounded-[2rem] p-8 shadow-2xl flex flex-col gap-5"
+             @onclick:stopPropagation="true">
+            <h3 class="text-xl font-extrabold text-slate-900">Upload Material</h3>
+
+            <div>
+                <label class="block text-sm font-bold text-slate-700 mb-1">Title</label>
+                <input @bind="_uploadTitle" type="text" placeholder="e.g. Week 3 Lecture Slides"
+                       class="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" />
+            </div>
+
+            <label class="border-2 border-dashed border-slate-300 rounded-2xl p-6 flex flex-col items-center text-center cursor-pointer hover:border-primary hover:bg-slate-50 transition-all">
+                <span class="material-symbols-outlined text-slate-400 text-3xl mb-2">cloud_upload</span>
+                @if (_uploadFile is null)
+                {
+                    <p class="text-sm font-medium text-slate-700">Choose a file to upload</p>
+                    <p class="text-xs text-slate-400 mt-1">PDF, DOCX, PPT, ZIP up to 100 MB</p>
+                }
+                else
+                {
+                    <p class="text-sm font-bold text-primary">@_uploadFile.Name</p>
+                    <p class="text-xs text-slate-400 mt-1">Click to change</p>
+                }
+                <InputFile OnChange="@(e => _uploadFile = e.File)" class="hidden" />
+            </label>
+
+            @if (!string.IsNullOrEmpty(_uploadError))
+            {
+                <p class="text-xs text-rose-500 text-center">@_uploadError</p>
+            }
+
+            <div class="flex gap-3">
+                <button @onclick="CloseUploadModal"
+                        class="flex-1 py-3 rounded-xl text-slate-500 font-bold hover:bg-slate-100 transition-colors">
+                    Cancel
+                </button>
+                <button @onclick="UploadAsync"
+                        disabled="@_uploading"
+                        class="flex-1 py-3 rounded-xl bg-primary text-white font-bold hover:bg-primary/90 transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+                    @if (_uploading)
+                    {
+                        <svg class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                        </svg>
+                        <span>Uploading...</span>
+                    }
+                    else
+                    {
+                        <span>Upload</span>
+                    }
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public long Id { get; set; }
+
+    private bool _ready;
+    private string _className   = "Class";
+    private string _subject     = "";
+    private string _status      = "ACTIVE";
+    private string _description = "";
+    private string _searchQuery = "";
+
+    private List<ClassMaterialDto> _materials     = [];
+    private List<MaterialFile>     _materialFiles = [];
+    private List<MaterialFile>     _filtered      = [];
+
+    // Upload state
+    private bool _showUpload;
+    private string _uploadTitle = "";
+    private IBrowserFile? _uploadFile;
+    private bool _uploading;
+    private string _uploadError = "";
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+
+        if (!Session.IsAuthenticated)
+        {
+            var email = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_email");
+            var role  = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_role");
+            var token = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_token");
+            if (!string.IsNullOrEmpty(email) && !string.IsNullOrEmpty(role) && !string.IsNullOrEmpty(token))
+                Session.SetSession(email, role, token);
+        }
+
+        if (!Session.IsAuthenticated) { Nav.NavigateTo("/login", replace: true); return; }
+        if (Session.Role != "STUDENT") { Nav.NavigateTo(Session.Role == "ADMIN" ? "/admin/dashboard" : "/", replace: true); return; }
+
+        await LoadAsync();
+        _ready = true;
+        StateHasChanged();
+    }
+
+    private async Task LoadAsync()
+    {
+        try
+        {
+            var client = HttpClientFactory.CreateClient("learnmate");
+            client.BaseAddress = new Uri(Nav.BaseUri);
+            client.DefaultRequestHeaders.Authorization =
+                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", Session.AccessToken);
+
+            var classTask = client.GetFromJsonAsync<ApiResponse<ClassDetailDto>>($"api/classes/{Id}");
+            var matTask   = client.GetFromJsonAsync<ApiResponse<List<ClassMaterialDto>>>($"api/classes/{Id}/materials");
+            await Task.WhenAll(classTask, matTask);
+
+            var cls = classTask.Result?.Data;
+            if (cls is not null)
+            {
+                _className   = cls.Name;
+                _subject     = cls.Subject;
+                _status      = cls.Status;
+                _description = cls.Description ?? "";
+            }
+
+            _materials = matTask.Result?.Data ?? [];
+            RebuildFiles();
+        }
+        catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+        {
+            Session.Clear();
+            await JS.InvokeVoidAsync("sessionStorage.removeItem", "lm_email");
+            await JS.InvokeVoidAsync("sessionStorage.removeItem", "lm_role");
+            await JS.InvokeVoidAsync("sessionStorage.removeItem", "lm_token");
+            Nav.NavigateTo("/login", replace: true);
+        }
+        catch { }
+    }
+
+    private void RebuildFiles()
+    {
+        _materialFiles = _materials.Select((m, i) => new MaterialFile(
+            Id:        m.Id,
+            Name:      m.Title,
+            Type:      m.FileType.ToUpperInvariant(),
+            Date:      m.UploadedAtLocal.ToString("MMM d"),
+            Size:      ClassPageHelpers.FormatFileSize(m.FileSizeBytes),
+            FileUrl:   m.FileUrl,
+            Icon:      ClassPageHelpers.FileIcon(m.FileType),
+            IconColor: ClassPageHelpers.IconColor(i),
+            IconBg:    ClassPageHelpers.IconBg(i)
+        )).ToList();
+        ApplySearch();
+    }
+
+    private void HandleSearch(string q)
+    {
+        _searchQuery = q;
+        ApplySearch();
+    }
+
+    private void ApplySearch()
+    {
+        _filtered = string.IsNullOrWhiteSpace(_searchQuery)
+            ? _materialFiles
+            : _materialFiles.Where(f => f.Name.Contains(_searchQuery, StringComparison.OrdinalIgnoreCase)).ToList();
+    }
+
+    private void OpenUploadModal()
+    {
+        _uploadTitle = "";
+        _uploadFile = null;
+        _uploadError = "";
+        _showUpload = true;
+    }
+
+    private void CloseUploadModal() => _showUpload = false;
+
+    private async Task UploadAsync()
+    {
+        _uploadError = "";
+        if (string.IsNullOrWhiteSpace(_uploadTitle))
+        {
+            _uploadError = "Please enter a title.";
+            return;
+        }
+        if (_uploadFile is null)
+        {
+            _uploadError = "Please select a file.";
+            return;
+        }
+
+        _uploading = true;
+        try
+        {
+            var client = HttpClientFactory.CreateClient("learnmate");
+            client.BaseAddress = new Uri(Nav.BaseUri);
+            client.DefaultRequestHeaders.Authorization =
+                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", Session.AccessToken);
+
+            using var form = new MultipartFormDataContent();
+            form.Add(new StringContent(_uploadTitle), "title");
+            var stream = _uploadFile.OpenReadStream(maxAllowedSize: 104_857_600); // 100 MB
+            form.Add(new StreamContent(stream), "file", _uploadFile.Name);
+
+            var resp = await client.PostAsync($"api/classes/{Id}/materials", form);
+            if (resp.IsSuccessStatusCode)
+            {
+                _showUpload = false;
+                await LoadAsync();
+                StateHasChanged();
+            }
+            else
+            {
+                _uploadError = "Upload failed. Please try again.";
+            }
+        }
+        catch
+        {
+            _uploadError = "Upload failed. Please check your connection.";
+        }
+        finally
+        {
+            _uploading = false;
+        }
+    }
+}

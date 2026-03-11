@@ -1,0 +1,27 @@
+@using LearnmateSolution.Components.Pages.Student.Class.Models
+
+<div class="bg-white rounded-[2.5rem] p-6 border border-slate-100 shadow-sm">
+    <h3 class="text-lg font-bold text-slate-900 mb-4">Recent Resources</h3>
+    <ul class="space-y-3">
+        @foreach (var resource in Resources)
+        {
+            <li>
+                <a href="@resource.Href" class="flex items-center gap-3 p-3 rounded-2xl hover:bg-slate-50 transition-colors group/file">
+                    <div class="size-10 @resource.IconBg @resource.IconColor rounded-xl flex items-center justify-center shrink-0">
+                        <span class="material-symbols-outlined text-[20px]">@resource.Icon</span>
+                    </div>
+                    <div class="overflow-hidden">
+                        <p class="text-sm font-medium text-slate-900 truncate group-hover/file:text-primary transition-colors">
+                            @resource.Title
+                        </p>
+                        <p class="text-xs text-slate-500">@resource.Metadata</p>
+                    </div>
+                </a>
+            </li>
+        }
+    </ul>
+</div>
+
+@code {
+    [Parameter] public List<ResourceItem> Resources { get; set; } = [];
+}

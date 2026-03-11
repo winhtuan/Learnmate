@@ -1,0 +1,450 @@
+@page "/student/find-tutor"
+@layout ClassLayout
+@rendermode InteractiveServer
+@using LearnmateSolution.Components.Layout
+@using LearnmateSolution.Components.Pages.Student.Class.Components.Shared
+@using LearnmateSolution.Components.Pages.Student.FindTutor.Components
+@using LearnmateSolution.Components.Pages.Student.FindTutor.Models
+@inject NavigationManager Nav
+@inject UserSessionService Session
+@inject IJSRuntime JS
+
+<PageTitle>Find a Tutor - LearnMate</PageTitle>
+
+<div class="space-y-6 max-w-screen-xl mx-auto">
+    <Breadcrumb Items="@([new("Dashboard", "/student-dashboard"), new("Find a Tutor")])" />
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+
+        <!-- Left Column -->
+        <div class="lg:col-span-8 flex flex-col gap-5">
+
+            <!-- Title row -->
+            <div class="flex items-center justify-between">
+                <h1 class="text-2xl font-bold text-[#37352F]">Find your perfect tutor</h1>
+                @if (!_loading)
+                {
+                    <span class="text-sm text-[#787774] font-medium">@_filtered.Count available</span>
+                }
+            </div>
+
+            <!-- Search bar -->
+            <div class="flex w-full items-center rounded-xl h-10 bg-white border border-[#E9E9E7] focus-within:border-[#37352F]/40 transition-colors">
+                <span class="material-symbols-outlined text-[#787774] text-[18px] pl-4 shrink-0">search</span>
+                <input class="flex-1 bg-transparent text-[#37352F] focus:outline-none border-none text-sm px-3 placeholder:text-[#787774]"
+                       placeholder="Search by tutor name..."
+                       @bind="_searchQuery" @bind:event="oninput" @bind:after="ApplyFilter" />
+                @if (!string.IsNullOrEmpty(_searchQuery))
+                {
+                    <button class="pr-3 text-[#787774] hover:text-[#37352F] transition-colors" @onclick="ClearSearch">
+                        <span class="material-symbols-outlined text-[18px]">close</span>
+                    </button>
+                }
+            </div>
+
+            <!-- Subject chips + filter toggle -->
+            <div class="flex items-center gap-3">
+                <div class="flex gap-2 overflow-x-auto pb-1 flex-1 min-w-0">
+                    @foreach (var chip in _subjectChips)
+                    {
+                        <button class="flex h-8 shrink-0 items-center rounded-md px-3 text-sm font-medium transition-all @(chip == _activeSubject ? "bg-[#37352F] text-white" : "bg-white border border-[#E9E9E7] text-[#37352F] hover:bg-[#F1F1EF]")"
+                                @onclick="() => SetSubject(chip)">
+                            @chip
+                        </button>
+                    }
+                </div>
+                <button class="flex items-center gap-1.5 h-8 shrink-0 px-3 rounded-md border text-sm font-medium transition-all @(_showFilters ? "bg-[#37352F] text-white border-[#37352F]" : "bg-white border-[#E9E9E7] text-[#37352F] hover:bg-[#F1F1EF]")"
+                        @onclick="() => _showFilters = !_showFilters">
+                    <span class="material-symbols-outlined text-[16px]">tune</span>
+                    Filters
+                    @if (ActiveFilterCount > 0)
+                    {
+                        <span class="size-4 rounded-full bg-[#787774] text-white text-[10px] font-bold flex items-center justify-center leading-none">@ActiveFilterCount</span>
+                    }
+                </button>
+            </div>
+
+            <!-- Advanced filter panel -->
+            @if (_showFilters)
+            {
+                <div class="bg-white border border-[#E9E9E7] rounded-xl p-5 flex flex-col gap-5">
+
+                    <!-- Price -->
+                    <div class="flex flex-col gap-2">
+                        <p class="text-xs font-semibold uppercase tracking-wide text-[#787774]">Price per hour</p>
+                        <div class="flex flex-wrap gap-2">
+                            @foreach (var opt in _priceOptions)
+                            {
+                                <button class="h-8 px-3 rounded-md text-sm font-medium border transition-all @(opt == _priceFilter ? "bg-[#ECECEC] border-[#D6D6D4] text-[#37352F] font-semibold" : "bg-white border-[#E9E9E7] text-[#787774] hover:bg-[#F1F1EF] hover:text-[#37352F]")"
+                                        @onclick="() => { _priceFilter = opt; ApplyFilter(); }">
+                                    @opt
+                                </button>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Availability -->
+                    <div class="flex flex-col gap-2">
+                        <p class="text-xs font-semibold uppercase tracking-wide text-[#787774]">Availability</p>
+                        <div class="flex flex-wrap gap-2">
+                            @foreach (var opt in _availOptions)
+                            {
+                                <button class="h-8 px-3 rounded-md text-sm font-medium border transition-all @(opt == _availFilter ? "bg-[#ECECEC] border-[#D6D6D4] text-[#37352F] font-semibold" : "bg-white border-[#E9E9E7] text-[#787774] hover:bg-[#F1F1EF] hover:text-[#37352F]")"
+                                        @onclick="() => { _availFilter = opt; ApplyFilter(); }">
+                                    @opt
+                                </button>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Time range -->
+                    <div class="flex flex-col gap-3">
+                        <p class="text-xs font-semibold uppercase tracking-wide text-[#787774]">Preferred Teaching Time</p>
+
+                        <!-- Inputs grouped card -->
+                        <div class="bg-[#F7F7F5] border border-[#E9E9E7] rounded-xl p-3 flex items-center gap-3">
+                            <!-- Start time -->
+                            <div class="flex-1 flex items-center gap-2 bg-white border border-[#E9E9E7] rounded-md px-3 h-9 hover:bg-[#F7F7F5] transition-colors cursor-pointer">
+                                <span class="material-symbols-outlined text-[#787774] text-[16px] shrink-0">schedule</span>
+                                <input type="time"
+                                       class="flex-1 bg-transparent text-sm text-[#37352F] focus:outline-none border-none cursor-pointer"
+                                       value="@_timeFrom"
+                                       @oninput="OnTimeFromChanged" />
+                            </div>
+
+                            <span class="material-symbols-outlined text-[#787774] text-[16px] shrink-0">arrow_forward</span>
+
+                            <!-- End time -->
+                            <div class="flex-1 flex items-center gap-2 bg-white border border-[#E9E9E7] rounded-md px-3 h-9 hover:bg-[#F7F7F5] transition-colors cursor-pointer">
+                                <span class="material-symbols-outlined text-[#787774] text-[16px] shrink-0">schedule</span>
+                                <input type="time"
+                                       class="flex-1 bg-transparent text-sm text-[#37352F] focus:outline-none border-none cursor-pointer"
+                                       value="@_timeTo"
+                                       @oninput="OnTimeToChanged" />
+                            </div>
+                        </div>
+
+                        <!-- Quick presets -->
+                        <div class="flex flex-wrap gap-2">
+                            @foreach (var (label, from, to) in _timePresets)
+                            {
+                                var isActive = _timePreset == label;
+                                <button class="px-3 py-1 text-sm rounded-md border transition-all @(isActive ? "bg-[#ECECEC] border-[#D6D6D4] text-[#37352F] font-semibold" : "bg-white border-[#E9E9E7] text-[#787774] hover:bg-[#F1F1EF] hover:text-[#37352F]")"
+                                        @onclick="() => SetTimePreset(label, from, to)">
+                                    @label
+                                </button>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Verified only -->
+                    <label class="flex items-center gap-2 cursor-pointer w-fit">
+                        <input type="checkbox" class="size-4 rounded cursor-pointer accent-[#37352F]"
+                               @bind="_verifiedOnly" @bind:after="ApplyFilter" />
+                        <span class="text-sm font-medium text-[#37352F]">Verified tutors only</span>
+                    </label>
+
+                    <!-- Reset -->
+                    @if (ActiveFilterCount > 0)
+                    {
+                        <button class="self-start text-sm font-medium text-[#787774] hover:text-[#37352F] transition-colors underline underline-offset-2"
+                                @onclick="ResetFilters">
+                            Reset all filters
+                        </button>
+                    }
+                </div>
+            }
+
+            <!-- Tutor Cards -->
+            <div class="flex flex-col gap-4">
+                @if (_loading)
+                {
+                    @for (int i = 0; i < 3; i++)
+                    {
+                        <div class="animate-pulse flex gap-5 bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+                            <div class="flex flex-col items-center gap-2 shrink-0 w-16">
+                                <div class="size-16 rounded-full bg-slate-200"></div>
+                                <div class="h-3 w-10 bg-slate-200 rounded"></div>
+                            </div>
+                            <div class="flex flex-col flex-1 gap-3">
+                                <div class="h-4 w-36 bg-slate-200 rounded"></div>
+                                <div class="flex gap-2">
+                                    <div class="h-5 w-16 bg-slate-200 rounded-md"></div>
+                                    <div class="h-5 w-16 bg-slate-200 rounded-md"></div>
+                                </div>
+                                <div class="h-3 w-full bg-slate-200 rounded"></div>
+                                <div class="h-3 w-3/4 bg-slate-200 rounded"></div>
+                            </div>
+                            <div class="flex flex-col items-end gap-3 shrink-0 w-24">
+                                <div class="h-6 w-16 bg-slate-200 rounded"></div>
+                                <div class="h-8 w-full bg-slate-200 rounded-lg"></div>
+                                <div class="h-8 w-full bg-slate-200 rounded-lg"></div>
+                            </div>
+                        </div>
+                    }
+                }
+                else if (_filtered.Count == 0)
+                {
+                    <div class="flex flex-col items-center justify-center py-20 text-slate-400">
+                        <span class="material-symbols-outlined text-5xl mb-3">search_off</span>
+                        <p class="text-base font-medium">No tutors match your filters</p>
+                        <button class="mt-3 text-sm text-[#787774] hover:text-[#37352F] underline underline-offset-2 transition-colors" @onclick="ResetAll">Clear all</button>
+                    </div>
+                }
+                else
+                {
+                    @foreach (var tutor in _filtered)
+                    {
+                        <TutorListCard Tutor="tutor"
+                                       IsSelected="@(_selected?.Id == tutor.Id)"
+                                       OnSelected="SelectTutor" />
+                    }
+                }
+            </div>
+        </div>
+
+        <!-- Right Column: Quick View -->
+        <div class="hidden lg:block lg:col-span-4">
+            <div class="sticky top-8 flex flex-col gap-6 rounded-xl bg-white border border-[#E9E9E7] p-6 max-h-[calc(100vh-6rem)] overflow-y-auto">
+                <TutorQuickView Tutor="_selected" />
+            </div>
+        </div>
+
+    </div>
+</div>
+
+@code {
+    private static readonly string[] _subjectChips =
+        ["All Subjects", "Mathematics", "Science", "English", "Coding", "Languages"];
+    private static readonly string[] _priceOptions =
+        ["Any Price", "Under $30", "$30 – $50", "Over $50"];
+    private static readonly string[] _availOptions =
+        ["Any", "Available Today", "Has Slots"];
+
+    private string _activeSubject = "All Subjects";
+    private string _priceFilter   = "Any Price";
+    private string _availFilter   = "Any";
+    private bool   _verifiedOnly;
+    private bool   _showFilters;
+    private string _searchQuery = "";
+    private string _timeFrom   = "";
+    private string _timeTo     = "";
+    private string _timePreset = "";
+    private bool   _loading    = true;
+
+    private static readonly (string Label, string From, string To)[] _timePresets =
+    [
+        ("Any Time",  "",      ""),
+        ("Morning",   "06:00", "12:00"),
+        ("Afternoon", "12:00", "17:00"),
+        ("Evening",   "17:00", "21:00"),
+    ];
+    private TutorListItem? _selected;
+
+    private int ActiveFilterCount =>
+        (_priceFilter   != "Any Price" ? 1 : 0) +
+        (_availFilter   != "Any"       ? 1 : 0) +
+        (_verifiedOnly                 ? 1 : 0) +
+        (!string.IsNullOrEmpty(_timeFrom) || !string.IsNullOrEmpty(_timeTo) ? 1 : 0);
+
+    private readonly List<TutorListItem> _tutors =
+    [
+        new(
+            Id: 1,
+            Name: "Sarah Jenkins",
+            AvatarUrl: "https://placehold.co/200/e0e7ff/4f46e5?text=SJ",
+            IsVerified: true,
+            IsSuperTutor: true,
+            Rating: 5.0,
+            ReviewCount: 128,
+            StudentCount: 2300,
+            Bio: "MIT Graduate with 6 years of experience teaching Calculus, Algebra, and Physics. I make complex topics simple and fun!",
+            Subjects: ["Calculus", "Algebra", "SAT Math"],
+            HourlyRate: 45,
+            Availability: AvailabilityStatus.AvailableToday,
+            AvailabilityLabel: null,
+            Location: "Boston, MA",
+            ResponseTime: "< 1 hr",
+            TotalLessons: 1405,
+            FullBio: "Certified math teacher with 10+ years helping students ace their SATs and AP Calculus exams. My teaching style focuses on building confidence and understanding core concepts rather than memorization.",
+            AvailableSlots: ["3:00 PM", "4:30 PM"]
+        ),
+        new(
+            Id: 2,
+            Name: "David Chen",
+            AvatarUrl: "https://placehold.co/200/dcfce7/16a34a?text=DC",
+            IsVerified: false,
+            IsSuperTutor: false,
+            Rating: 4.8,
+            ReviewCount: 86,
+            StudentCount: 0,
+            Bio: "Passionate Physics tutor helping students understand the 'Why' behind formulas. Specialized in mechanics.",
+            Subjects: ["Physics", "Mechanics"],
+            HourlyRate: 35,
+            Availability: AvailabilityStatus.NextSlot,
+            AvailabilityLabel: "Next: Tomorrow 2PM",
+            Location: "New York, NY",
+            ResponseTime: "< 3 hrs",
+            TotalLessons: 520,
+            FullBio: "Physics PhD candidate at Columbia. I specialize in making mechanics and electrodynamics intuitive. Great fit for AP Physics and university-level students.",
+            AvailableSlots: ["2:00 PM", "5:00 PM"]
+        ),
+        new(
+            Id: 3,
+            Name: "Elena Rodriguez",
+            AvatarUrl: "https://placehold.co/200/fef9c3/ca8a04?text=ER",
+            IsVerified: true,
+            IsSuperTutor: false,
+            Rating: 4.9,
+            ReviewCount: 210,
+            StudentCount: 0,
+            Bio: "Native Spanish speaker. I focus on conversation and practical usage for travelers and business professionals.",
+            Subjects: ["Spanish", "Conversation"],
+            HourlyRate: 30,
+            Availability: AvailabilityStatus.NextSlot,
+            AvailabilityLabel: "Next: Today 5PM",
+            Location: "Miami, FL",
+            ResponseTime: "< 2 hrs",
+            TotalLessons: 870,
+            FullBio: "Born and raised in Madrid, I now teach Spanish at all levels. My lessons are immersive and conversational — perfect for travelers, professionals, and language enthusiasts.",
+            AvailableSlots: ["5:00 PM", "6:30 PM"]
+        ),
+        new(
+            Id: 4,
+            Name: "Marcus Johnson",
+            AvatarUrl: "https://placehold.co/200/f1f5f9/64748b?text=MJ",
+            IsVerified: false,
+            IsSuperTutor: false,
+            Rating: 4.7,
+            ReviewCount: 45,
+            StudentCount: 0,
+            Bio: "Learn Python and JavaScript from scratch. Boot camp instructor with patience for beginners.",
+            Subjects: ["Coding", "Python"],
+            HourlyRate: 60,
+            Availability: AvailabilityStatus.FullyBooked,
+            AvailabilityLabel: null,
+            Location: "San Francisco, CA",
+            ResponseTime: "< 6 hrs",
+            TotalLessons: 310,
+            FullBio: "Former software engineer at a major tech firm turned educator. I specialize in practical, project-based learning for Python, JavaScript, and web development fundamentals.",
+            AvailableSlots: []
+        ),
+    ];
+
+    private List<TutorListItem> _filtered = [];
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        await LoadSessionAsync();
+        if (!Session.IsAuthenticated || Session.Role != "STUDENT")
+            Nav.NavigateTo("/login", replace: true);
+        ApplyFilter();
+        _selected = _filtered.FirstOrDefault();
+        _loading = false;
+        StateHasChanged();
+    }
+
+    private async Task LoadSessionAsync()
+    {
+        if (Session.IsAuthenticated) return;
+        var email  = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_email");
+        var role   = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_role");
+        var token  = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_token");
+        var avatar = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_avatar");
+        if (!string.IsNullOrEmpty(email) && !string.IsNullOrEmpty(role) && !string.IsNullOrEmpty(token))
+            Session.SetSession(email, role, token, avatar);
+    }
+
+    private void SetSubject(string chip) { _activeSubject = chip; ApplyFilter(); }
+    private void ClearSearch() { _searchQuery = ""; ApplyFilter(); }
+
+    private void OnTimeFromChanged(ChangeEventArgs e) { _timeFrom = e.Value?.ToString() ?? ""; _timePreset = ""; ApplyFilter(); }
+    private void OnTimeToChanged(ChangeEventArgs e)   { _timeTo   = e.Value?.ToString() ?? ""; _timePreset = ""; ApplyFilter(); }
+
+    private void SetTimePreset(string label, string from, string to)
+    {
+        _timePreset = label;
+        _timeFrom   = from;
+        _timeTo     = to;
+        ApplyFilter();
+    }
+
+    private void ResetFilters()
+    {
+        _priceFilter  = "Any Price";
+        _availFilter  = "Any";
+        _verifiedOnly = false;
+        _timeFrom     = "";
+        _timeTo       = "";
+        _timePreset   = "";
+        ApplyFilter();
+    }
+
+    private void ResetAll()
+    {
+        _searchQuery   = "";
+        _activeSubject = "All Subjects";
+        ResetFilters();
+    }
+
+    private void ApplyFilter()
+    {
+        var q = _searchQuery.Trim().ToLowerInvariant();
+        _filtered = _tutors
+            .Where(t =>
+            {
+                // Name search
+                if (!string.IsNullOrEmpty(q) &&
+                    !t.Name.Contains(q, StringComparison.OrdinalIgnoreCase))
+                    return false;
+
+                // Subject chip
+                if (_activeSubject != "All Subjects" &&
+                    !t.Subjects.Any(s => s.Contains(_activeSubject, StringComparison.OrdinalIgnoreCase)))
+                    return false;
+
+                // Price
+                var pass = _priceFilter switch
+                {
+                    "Under $30"  => t.HourlyRate < 30,
+                    "$30 – $50"  => t.HourlyRate is >= 30 and <= 50,
+                    "Over $50"   => t.HourlyRate > 50,
+                    _            => true
+                };
+                if (!pass) return false;
+
+                // Availability
+                var availPass = _availFilter switch
+                {
+                    "Available Today" => t.Availability == AvailabilityStatus.AvailableToday,
+                    "Has Slots"       => t.Availability != AvailabilityStatus.FullyBooked,
+                    _                 => true
+                };
+                if (!availPass) return false;
+
+                // Verified
+                if (_verifiedOnly && !t.IsVerified) return false;
+
+                // Time range
+                var hasFrom = TimeOnly.TryParse(_timeFrom, out var from);
+                var hasTo   = TimeOnly.TryParse(_timeTo,   out var to);
+                if (hasFrom || hasTo)
+                {
+                    var match = t.AvailableSlots.Any(slot =>
+                    {
+                        if (!TimeOnly.TryParse(slot, out var s)) return false;
+                        if (hasFrom && s < from) return false;
+                        if (hasTo   && s > to)   return false;
+                        return true;
+                    });
+                    if (!match) return false;
+                }
+
+                return true;
+            })
+            .ToList();
+    }
+
+    private void SelectTutor(TutorListItem tutor) => _selected = tutor;
+}

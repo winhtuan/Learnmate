@@ -1,0 +1,46 @@
+@using LearnmateSolution.Components.Pages.Student.Class.Models
+
+<div class="group bg-white rounded-[2rem] p-3 border border-slate-100 shadow-sm hover:shadow-xl hover:shadow-slate-200/50 transition-all duration-300">
+    <div class="relative aspect-video rounded-[1.5rem] overflow-hidden bg-slate-800 mb-4">
+        <div class="absolute inset-0 bg-gradient-to-br @Lecture.GradientFrom @Lecture.GradientTo"></div>
+        <div class="absolute inset-0 opacity-40 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] @Lecture.AccentGradient via-transparent to-transparent"></div>
+
+        <div class="absolute bottom-3 right-3 bg-black/60 backdrop-blur-md text-white text-xs font-bold px-2 py-1 rounded-md">
+            @Lecture.Duration
+        </div>
+
+        <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 bg-black/20 backdrop-blur-[2px]">
+            <button class="size-14 rounded-full bg-white text-slate-900 flex items-center justify-center shadow-xl transform scale-75 group-hover:scale-100 transition-transform duration-300">
+                <span class="material-symbols-outlined text-[32px] ml-1">play_arrow</span>
+            </button>
+        </div>
+    </div>
+
+    <div class="px-2 pb-2">
+        <div class="flex justify-between items-start mb-2">
+            <h4 class="font-bold text-lg text-slate-900 group-hover:text-primary transition-colors line-clamp-1">
+                @Lecture.Title
+            </h4>
+            <button class="text-slate-400 hover:text-slate-600">
+                <span class="material-symbols-outlined">more_vert</span>
+            </button>
+        </div>
+
+        <p class="text-sm text-slate-500 mb-4">@Lecture.Date • @Lecture.Unit</p>
+
+        <div class="grid grid-cols-2 gap-2">
+            <button class="flex items-center justify-center gap-2 py-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-600 text-xs font-bold transition-colors">
+                <span class="material-symbols-outlined text-[16px]">visibility</span>
+                View Notes
+            </button>
+            <button class="flex items-center justify-center gap-2 py-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-600 text-xs font-bold transition-colors">
+                <span class="material-symbols-outlined text-[16px]">download</span>
+                Download
+            </button>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public VideoLecture Lecture { get; set; } = null!;
+}

@@ -156,11 +156,17 @@
 .lm-modal-email { font-size: .875rem; color: #64748b; margin: 0; }
 .lm-modal-input-wrapper { position: relative; display: flex; align-items: center; }
 .lm-modal-input {
-    width: 100%; padding: .5rem 2.5rem .5rem .75rem; border: 1px solid #e2e8f0;
-    border-radius: 16px; background: #f8fafc; font-size: .9375rem; color: #0f172a;
-    outline: none; transition: border-color .15s, box-shadow .15s; box-sizing: border-box;
+    width: 100%; padding: .75rem 2.75rem .75rem 1rem; background: #f8fafc;
+    border: 2px solid #e2e8f0; border-radius: 16px; font-size: .9375rem;
+    font-family: inherit; color: #0f172a;
+    transition: border-color .15s ease, background .15s ease;
+    outline: none; box-sizing: border-box; appearance: none;
 }
-.lm-modal-input:focus { border-color: transparent; box-shadow: 0 0 0 2px #1e293b; }
+.lm-modal-input::placeholder { color: #94a3b8; }
+.lm-modal-input:focus { border-color: #1e293b !important; box-shadow: none !important; }
+.lm-modal-input--error { border-color: #fb7185 !important; background: rgba(255,241,242,.3) !important; }
+.lm-modal-input--error:focus { border-color: #f43f5e !important; }
+.lm-modal-input:disabled { opacity: .5; cursor: not-allowed; }
 .lm-modal-continue-btn {
     width: 100%; padding: .5rem 1rem; background: #0f172a; color: #fff;
     border: none; border-radius: 16px; font-size: .875rem; font-weight: 500;

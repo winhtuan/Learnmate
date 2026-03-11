@@ -1,0 +1,152 @@
+@using LearnmateSolution.Components.Pages.Student.FindTutor.Models
+@inject IJSRuntime JS
+@implements IDisposable
+
+@if (_visible)
+{
+    <!-- Overlay -->
+    <div class="fixed inset-0 z-40 bg-black/40 transition-opacity duration-300 @(_open ? "opacity-100" : "opacity-0")"
+         @onclick="Close">
+    </div>
+
+    <!-- Drawer -->
+    <div class="fixed top-0 right-0 z-50 h-full w-full sm:w-1/3 min-w-[320px] bg-white shadow-2xl flex flex-col
+                transition-transform duration-300 ease-out @(_open ? "translate-x-0" : "translate-x-full")">
+
+        <!-- Header -->
+        <div class="flex items-center justify-between px-5 py-4 border-b border-[#E9E9E7]">
+            <div class="flex items-center gap-3">
+                <div class="size-9 rounded-full bg-[#F1F1EF] bg-cover bg-center shrink-0"
+                     style="background-image: url('@Tutor?.AvatarUrl')">
+                </div>
+                <div>
+                    <p class="text-sm font-semibold text-[#37352F] leading-snug">@Tutor?.Name</p>
+                    <p class="text-xs text-[#787774]">@(Tutor?.IsSuperTutor == true ? "Super Tutor" : "Tutor")</p>
+                </div>
+            </div>
+            <button class="p-1.5 rounded-md hover:bg-[#F1F1EF] transition-colors" @onclick="Close">
+                <span class="material-symbols-outlined text-[#787774] text-[20px]">close</span>
+            </button>
+        </div>
+
+        <!-- Messages -->
+        <div class="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-3">
+            <!-- Intro message -->
+            <div class="flex gap-2.5">
+                <div class="size-7 rounded-full bg-[#F1F1EF] bg-cover bg-center shrink-0 mt-0.5"
+                     style="background-image: url('@Tutor?.AvatarUrl')">
+                </div>
+                <div class="bg-[#F7F7F5] rounded-xl rounded-tl-sm px-3.5 py-2.5 max-w-[80%]">
+                    <p class="text-sm text-[#37352F]">
+                        Hi! I'm @Tutor?.Name.Split(' ')[0]. Feel free to ask me anything about my teaching style or availability.
+                    </p>
+                    <p class="text-[11px] text-[#787774] mt-1">Just now</p>
+                </div>
+            </div>
+
+            @foreach (var msg in _messages)
+            {
+                if (msg.IsMe)
+                {
+                    <div class="flex justify-end">
+                        <div class="bg-[#37352F] rounded-xl rounded-tr-sm px-3.5 py-2.5 max-w-[80%]">
+                            <p class="text-sm text-white whitespace-pre-wrap">@msg.Text</p>
+                            <p class="text-[11px] text-white/60 mt-1 text-right">@msg.Time</p>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="flex gap-2.5">
+                        <div class="size-7 rounded-full bg-[#F1F1EF] bg-cover bg-center shrink-0 mt-0.5"
+                             style="background-image: url('@Tutor?.AvatarUrl')">
+                        </div>
+                        <div class="bg-[#F7F7F5] rounded-xl rounded-tl-sm px-3.5 py-2.5 max-w-[80%]">
+                            <p class="text-sm text-[#37352F] whitespace-pre-wrap">@msg.Text</p>
+                            <p class="text-[11px] text-[#787774] mt-1">@msg.Time</p>
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+
+        <!-- Input -->
+        <div class="px-4 py-3 border-t border-[#E9E9E7] flex items-end gap-2">
+            <textarea @ref="_textareaRef"
+                      class="flex-1 resize-none overflow-y-auto rounded-xl border border-[#E9E9E7] bg-[#F7F7F5]
+                             px-3.5 py-2.5 text-sm text-[#37352F] placeholder:text-[#B0AEAC]
+                             focus:outline-none focus:ring-0 focus:border-[#37352F] transition-colors
+                             min-h-[42px] max-h-32 leading-relaxed"
+                      placeholder="Type a message…"
+                      rows="1"
+                      value="@_draft"
+                      @oninput="OnInput">
+            </textarea>
+            <button class="shrink-0 size-[42px] rounded-xl bg-[#37352F] hover:bg-[#2F2E2B] transition-colors
+                           flex items-center justify-center disabled:opacity-40"
+                    disabled="@(string.IsNullOrWhiteSpace(_draft))"
+                    @onclick="SendMessage">
+                <span class="material-symbols-outlined text-white text-[18px]">send</span>
+            </button>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public TutorListItem? Tutor { get; set; }
+
+    private bool _visible;
+    private bool _open;
+    private string _draft = "";
+    private ElementReference _textareaRef;
+    private DotNetObjectReference<ChatDrawer>? _dotnetRef;
+
+    private record ChatMessage(string Text, bool IsMe, string Time);
+    private List<ChatMessage> _messages = [];
+
+    public async Task OpenAsync()
+    {
+        _messages.Clear();
+        _draft = "";
+        _visible = true;
+        StateHasChanged();
+        await Task.Delay(20);
+        _open = true;
+        StateHasChanged();
+        await Task.Delay(20);
+        _dotnetRef = DotNetObjectReference.Create(this);
+        await JS.InvokeVoidAsync("initChatInput", _textareaRef, _dotnetRef);
+    }
+
+    private async Task Close()
+    {
+        _open = false;
+        StateHasChanged();
+        await Task.Delay(300);
+        _visible = false;
+        StateHasChanged();
+    }
+
+    private void OnInput(ChangeEventArgs e)
+    {
+        _draft = e.Value?.ToString() ?? "";
+    }
+
+    [JSInvokable]
+    public async Task SendFromJs()
+    {
+        var text = _draft.Trim();
+        if (string.IsNullOrEmpty(text)) return;
+        _messages.Add(new(text, true, DateTime.Now.ToString("h:mm tt")));
+        _draft = "";
+        StateHasChanged();
+        await JS.InvokeVoidAsync("resetTextareaHeight", _textareaRef);
+    }
+
+    private async Task SendMessage()
+    {
+        await SendFromJs();
+    }
+
+    public void Dispose() => _dotnetRef?.Dispose();
+}
