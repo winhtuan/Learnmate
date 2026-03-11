@@ -8,6 +8,29 @@ namespace DataAccessLayer.Repositories;
 
 public class ClassRepository(AppDbContext db) : IClassRepository
 {
+    public async Task<Class> CreateAsync(Class cls)
+    {
+        db.Classes.Add(cls);
+        await db.SaveChangesAsync();
+        return cls;
+    }
+
+    public async Task<IReadOnlyList<Class>> GetByTeacherIdAsync(
+        long teacherId, CancellationToken ct = default)
+    {
+        var nowUtc = DateTime.UtcNow;
+        return await db.Classes
+            .AsNoTracking()
+            .Where(c => c.TeacherId == teacherId && c.DeletedAt == null)
+            .Include(c => c.ClassMembers.Where(m => m.Status == ClassMemberStatus.ACTIVE))
+            .Include(c => c.Schedules
+                .Where(s => s.Status != ScheduleStatus.CANCELLED && s.StartTime > nowUtc)
+                .OrderBy(s => s.StartTime)
+                .Take(1))
+            .OrderByDescending(c => c.CreatedAt)
+            .ToListAsync(ct);
+    }
+
     public async Task<IReadOnlyList<Class>> GetEnrolledWithDetailsAsync(
         long studentId, CancellationToken ct = default)
     {

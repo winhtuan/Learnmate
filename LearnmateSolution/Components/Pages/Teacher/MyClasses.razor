@@ -1,4 +1,4 @@
-@* This file is kept for reference only. The active route is in MyClasses.razor *@
+@page "/teacher/classes"
 @rendermode InteractiveServer
 @layout Layout.TeacherLayout
 
@@ -85,11 +85,11 @@ else
             <div @onclick="() => NavigateToClass(cls.Id)"
                  class="group bg-white border border-slate-200 rounded-xl shadow-sm hover:shadow-md hover:border-primary/40 transition-all cursor-pointer overflow-hidden flex flex-col">
 
-                <!-- Card color accent top bar -->
+                <!-- Color accent bar -->
                 <div class="h-1.5 @GetSubjectColor(cls.Subject)"></div>
 
                 <div class="p-5 flex flex-col flex-1">
-                    <!-- Header: icon + menu -->
+                    <!-- Icon + menu -->
                     <div class="flex items-start justify-between mb-4">
                         <div class="size-10 rounded-lg @GetSubjectBg(cls.Subject) flex items-center justify-center shrink-0">
                             <span class="material-symbols-outlined text-[22px] @GetSubjectText(cls.Subject)">@GetSubjectIcon(cls.Subject)</span>
@@ -120,32 +120,31 @@ else
                         <p class="text-xs text-slate-400 mb-3 italic">Chưa có lịch học</p>
                     }
 
-                    <!-- Footer: students + status -->
+                    <!-- Footer -->
                     <div class="flex items-center justify-between mt-auto pt-3 border-t border-slate-100">
                         <span class="flex items-center gap-1.5 text-xs text-slate-500">
                             <span class="material-symbols-outlined text-[16px]">group</span>
-                            <span class="font-medium text-slate-700">@cls.StudentCount</span> học sinh
+                            <span class="font-medium text-slate-700">@cls.StudentCount</span> / @cls.MaxStudents học sinh
                         </span>
-
                         @{
-                            var (statusDot, statusLabel, statusBg) = cls.Status switch
+                            var (dot, label, badge) = cls.Status switch
                             {
-                                ClassStatus.ACTIVE    => ("bg-green-500", "Active",   "bg-green-50 text-green-700"),
-                                ClassStatus.INACTIVE  => ("bg-slate-400", "Archived", "bg-slate-100 text-slate-500"),
-                                ClassStatus.COMPLETED => ("bg-blue-400",  "Completed","bg-blue-50 text-blue-700"),
-                                _                     => ("bg-slate-300", cls.Status.ToString(), "bg-slate-100 text-slate-500")
+                                ClassStatus.ACTIVE    => ("bg-green-500", "Active",    "bg-green-50 text-green-700"),
+                                ClassStatus.INACTIVE  => ("bg-slate-400",  "Archived", "bg-slate-100 text-slate-500"),
+                                ClassStatus.COMPLETED => ("bg-blue-400",   "Completed","bg-blue-50 text-blue-700"),
+                                _                     => ("bg-slate-300",  cls.Status.ToString(), "bg-slate-100 text-slate-500")
                             };
                         }
-                        <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-semibold @statusBg">
-                            <span class="size-1.5 rounded-full @statusDot"></span>
-                            @statusLabel
+                        <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-semibold @badge">
+                            <span class="size-1.5 rounded-full @dot"></span>
+                            @label
                         </span>
                     </div>
                 </div>
             </div>
         }
 
-        <!-- Create another class card -->
+        <!-- Create new class card -->
         <button @onclick="OpenCreateModal"
                 class="flex flex-col items-center justify-center gap-3 min-h-[180px] border-2 border-dashed border-slate-200 rounded-xl text-slate-400 hover:border-primary/50 hover:text-primary hover:bg-blue-50/30 transition-all group">
             <div class="size-12 rounded-full border-2 border-dashed border-current flex items-center justify-center group-hover:scale-110 transition-transform">
@@ -155,12 +154,12 @@ else
         </button>
     </div>
 
-    <!-- Empty filter state -->
+    <!-- Empty filter result -->
     @if (FilteredClasses.Count == 0 && AllClasses.Count > 0)
     {
         <div class="text-center py-16">
             <span class="material-symbols-outlined text-slate-300 text-5xl mb-3">search_off</span>
-            <p class="text-slate-500">Không tìm thấy lớp nào phù hợp với bộ lọc.</p>
+            <p class="text-slate-500">Không tìm thấy lớp nào phù hợp.</p>
             <button @onclick='() => { SearchText = ""; ActiveTab = "Tất cả"; }'
                     class="mt-3 text-sm font-medium text-primary hover:underline">Xóa bộ lọc</button>
         </div>
@@ -168,36 +167,27 @@ else
 }
 
 @code {
-    // ── State ─────────────────────────────────────────────────────────────────
-    private List<TeacherClassListItemDto> AllClasses     = new();
-    private bool                          IsLoading      = true;
-
+    private List<TeacherClassListItemDto> AllClasses = new();
+    private bool   IsLoading  = true;
     private string SearchText = string.Empty;
     private string ActiveTab  = "Tất cả";
 
     private static readonly string[] Tabs = ["Tất cả", "Active", "Archived"];
 
-    // ── Computed ──────────────────────────────────────────────────────────────
     private List<TeacherClassListItemDto> FilteredClasses =>
-        AllClasses
-            .Where(c =>
+        AllClasses.Where(c =>
+        {
+            bool tabMatch = ActiveTab switch
             {
-                // Tab filter
-                bool tabMatch = ActiveTab switch
-                {
-                    "Active"   => c.Status == ClassStatus.ACTIVE,
-                    "Archived" => c.Status != ClassStatus.ACTIVE,
-                    _          => true
-                };
-
-                // Search filter
-                bool searchMatch = string.IsNullOrWhiteSpace(SearchText)
-                    || c.Name.Contains(SearchText, StringComparison.OrdinalIgnoreCase)
-                    || c.Subject.Contains(SearchText, StringComparison.OrdinalIgnoreCase);
-
-                return tabMatch && searchMatch;
-            })
-            .ToList();
+                "Active"   => c.Status == ClassStatus.ACTIVE,
+                "Archived" => c.Status != ClassStatus.ACTIVE,
+                _          => true
+            };
+            bool searchMatch = string.IsNullOrWhiteSpace(SearchText)
+                || c.Name.Contains(SearchText, StringComparison.OrdinalIgnoreCase)
+                || c.Subject.Contains(SearchText, StringComparison.OrdinalIgnoreCase);
+            return tabMatch && searchMatch;
+        }).ToList();
 
     private string FilterLabel => ActiveTab switch
     {
@@ -206,71 +196,62 @@ else
         _          => "tất cả"
     };
 
-    // ── Lifecycle ─────────────────────────────────────────────────────────────
     protected override async Task OnInitializedAsync()
     {
-        long teacherId = Session.UserId > 0 ? Session.UserId : 2; // fallback = seeded teacher
-        try
-        {
-            AllClasses = await ClassService.GetTeacherClassesAsync(teacherId);
-        }
-        catch { /* handle gracefully */ }
+        long teacherId = Session.UserId > 0 ? Session.UserId : 2;
+        try { AllClasses = await ClassService.GetTeacherClassesAsync(teacherId); }
+        catch { }
         finally { IsLoading = false; }
     }
 
-    // ── Actions ───────────────────────────────────────────────────────────────
-    private void NavigateToClass(long classId) =>
-        NavigationManager.NavigateTo($"/teacher/classes/{classId}");
+    private void NavigateToClass(long id) => NavigationManager.NavigateTo($"/teacher/classes/{id}");
+    private void OpenCreateModal()        => NavigationManager.NavigateTo("/teacher/classes/create");
 
-    private void OpenCreateModal() =>
-        NavigationManager.NavigateTo("/teacher/classes/create");
-
-    // ── Subject theming ───────────────────────────────────────────────────────
-    private static string GetSubjectColor(string subject) => subject.ToLowerInvariant() switch
+    private static string GetSubjectColor(string s) => s.ToLower() switch
     {
-        var s when s.Contains("toán") || s.Contains("math")    => "bg-blue-500",
-        var s when s.Contains("lý")   || s.Contains("physics") => "bg-purple-500",
-        var s when s.Contains("hóa")  || s.Contains("chem")    => "bg-orange-500",
-        var s when s.Contains("sinh") || s.Contains("bio")     => "bg-green-500",
-        var s when s.Contains("văn")  || s.Contains("liter")   => "bg-pink-500",
-        var s when s.Contains("sử")   || s.Contains("hist")    => "bg-yellow-500",
-        var s when s.Contains("tin")  || s.Contains("comp")    => "bg-cyan-500",
-        var s when s.Contains("art")  || s.Contains("nghệ")    => "bg-red-500",
+        var x when x.Contains("toán") || x.Contains("math")    => "bg-blue-500",
+        var x when x.Contains("lý")   || x.Contains("physics") => "bg-purple-500",
+        var x when x.Contains("hóa")  || x.Contains("chem")    => "bg-orange-500",
+        var x when x.Contains("sinh") || x.Contains("bio")     => "bg-green-500",
+        var x when x.Contains("văn")  || x.Contains("liter")   => "bg-pink-500",
+        var x when x.Contains("sử")   || x.Contains("hist")    => "bg-yellow-500",
+        var x when x.Contains("tin")  || x.Contains("comp")    => "bg-cyan-500",
+        var x when x.Contains("nghệ") || x.Contains("art")     => "bg-red-500",
         _                                                        => "bg-indigo-500"
     };
 
-    private static string GetSubjectBg(string subject) => subject.ToLowerInvariant() switch
+    private static string GetSubjectBg(string s)   => s.ToLower() switch
     {
-        var s when s.Contains("toán") || s.Contains("math")    => "bg-blue-50",
-        var s when s.Contains("lý")   || s.Contains("physics") => "bg-purple-50",
-        var s when s.Contains("hóa")  || s.Contains("chem")    => "bg-orange-50",
-        var s when s.Contains("sinh") || s.Contains("bio")     => "bg-green-50",
-        var s when s.Contains("văn")  || s.Contains("liter")   => "bg-pink-50",
-        var s when s.Contains("tin")  || s.Contains("comp")    => "bg-cyan-50",
+        var x when x.Contains("toán") || x.Contains("math")    => "bg-blue-50",
+        var x when x.Contains("lý")   || x.Contains("physics") => "bg-purple-50",
+        var x when x.Contains("hóa")  || x.Contains("chem")    => "bg-orange-50",
+        var x when x.Contains("sinh") || x.Contains("bio")     => "bg-green-50",
+        var x when x.Contains("văn")  || x.Contains("liter")   => "bg-pink-50",
+        var x when x.Contains("tin")  || x.Contains("comp")    => "bg-cyan-50",
         _                                                        => "bg-indigo-50"
     };
 
-    private static string GetSubjectText(string subject) => subject.ToLowerInvariant() switch
+    private static string GetSubjectText(string s) => s.ToLower() switch
     {
-        var s when s.Contains("toán") || s.Contains("math")    => "text-blue-600",
-        var s when s.Contains("lý")   || s.Contains("physics") => "text-purple-600",
-        var s when s.Contains("hóa")  || s.Contains("chem")    => "text-orange-600",
-        var s when s.Contains("sinh") || s.Contains("bio")     => "text-green-600",
-        var s when s.Contains("văn")  || s.Contains("liter")   => "text-pink-600",
-        var s when s.Contains("tin")  || s.Contains("comp")    => "text-cyan-600",
+        var x when x.Contains("toán") || x.Contains("math")    => "text-blue-600",
+        var x when x.Contains("lý")   || x.Contains("physics") => "text-purple-600",
+        var x when x.Contains("hóa")  || x.Contains("chem")    => "text-orange-600",
+        var x when x.Contains("sinh") || x.Contains("bio")     => "text-green-600",
+        var x when x.Contains("văn")  || x.Contains("liter")   => "text-pink-600",
+        var x when x.Contains("tin")  || x.Contains("comp")    => "text-cyan-600",
         _                                                        => "text-indigo-600"
     };
 
-    private static string GetSubjectIcon(string subject) => subject.ToLowerInvariant() switch
+    private static string GetSubjectIcon(string s) => s.ToLower() switch
     {
-        var s when s.Contains("toán") || s.Contains("math")    => "calculate",
-        var s when s.Contains("lý")   || s.Contains("physics") => "science",
-        var s when s.Contains("hóa")  || s.Contains("chem")    => "biotech",
-        var s when s.Contains("sinh") || s.Contains("bio")     => "eco",
-        var s when s.Contains("văn")  || s.Contains("liter")   => "menu_book",
-        var s when s.Contains("sử")   || s.Contains("hist")    => "history_edu",
-        var s when s.Contains("tin")  || s.Contains("comp")    => "terminal",
-        var s when s.Contains("art")  || s.Contains("nghệ")    => "palette",
+        var x when x.Contains("toán") || x.Contains("math")    => "calculate",
+        var x when x.Contains("lý")   || x.Contains("physics") => "science",
+        var x when x.Contains("hóa")  || x.Contains("chem")    => "biotech",
+        var x when x.Contains("sinh") || x.Contains("bio")     => "eco",
+        var x when x.Contains("văn")  || x.Contains("liter")   => "menu_book",
+        var x when x.Contains("sử")   || x.Contains("hist")    => "history_edu",
+        var x when x.Contains("tin")  || x.Contains("comp")    => "terminal",
+        var x when x.Contains("nghệ") || x.Contains("art")     => "palette",
         _                                                        => "class"
     };
 }
