@@ -119,6 +119,30 @@ public static class DataSeeder
                 MaxStudents = 20,
                 CreatedAt   = Now,
                 UpdatedAt   = Now,
+            },
+            new Class
+            {
+                Id          = 4,
+                TeacherId   = 2,
+                Name        = "Vật Lý 12 — Nâng cao",
+                Description = "Chuyên đề Vật Lý chuyên sâu luyện thi Đại học.",
+                Subject     = "Vật Lý",
+                Status      = ClassStatus.ACTIVE,
+                MaxStudents = 15,
+                CreatedAt   = Now,
+                UpdatedAt   = Now,
+            },
+            new Class
+            {
+                Id          = 5,
+                TeacherId   = 2,
+                Name        = "Toán 11 — Đại số cơ bản",
+                Description = "Lớp lấy lại gốc Đại số Toán 11.",
+                Subject     = "Toán",
+                Status      = ClassStatus.ACTIVE,
+                MaxStudents = 30,
+                CreatedAt   = Now,
+                UpdatedAt   = Now,
             }
         );
     }

@@ -1,0 +1,405 @@
+@page "/teacher/schedule/class/{ClassId:long}"
+@rendermode InteractiveServer
+@layout Layout.TeacherLayout
+
+@using BusinessLogicLayer.DTOs
+@using BusinessLogicLayer.DTOs.Teacher.Schedules
+@using BusinessLogicLayer.Services.Interfaces.Teacher.Schedules
+@using BusinessLogicLayer.Services.Teacher.Schedules
+@using BusinessObject.Enum
+@inject ITeacherScheduleService ScheduleService
+@inject IVoiceScheduleAnalyzer VoiceScheduleAnalyzer
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JSRuntime
+@implements IDisposable
+
+<PageTitle>Schedules | Class @Class?.Name</PageTitle>
+
+<div class="mb-8 flex items-center justify-between">
+    <div>
+        <h1 class="text-3xl font-bold tracking-tight text-slate-900 mb-1">
+            @if (Class != null) { @Class.Name } else { <span class="animate-pulse bg-slate-200 h-8 w-48 rounded inline-block"></span> }
+        </h1>
+        <p class="text-slate-500 font-normal">Manage class schedule and track student attendance.</p>
+    </div>
+    <div class="flex items-center gap-3">
+        <button type="button" @onclick='() => NavigationManager.NavigateTo("/teacher/schedule")' class="flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-slate-800 transition-colors">
+            <span class="material-symbols-outlined text-[20px]">arrow_back</span>
+            Back
+        </button>
+        <button type="button" @onclick="OpenCreateModal" class="flex items-center gap-2 bg-primary hover:bg-blue-600 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition-all shadow-sm group">
+            <span class="material-symbols-outlined text-[20px] group-hover:scale-110 transition-transform">add</span>
+            Add Schedule
+        </button>
+        <button type="button" @onclick="StartVoiceRecognition" disabled="@IsListening" class="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition-all shadow-sm group disabled:opacity-70" title="Ví dụ: Lên lịch dạy Toán từ 7 giờ đến 9 giờ tối mai">
+            <span class="material-symbols-outlined text-[20px] @(IsListening ? "animate-pulse text-red-300" : "group-hover:scale-110 transition-transform")">mic</span>
+            @(IsListening ? "Listening..." : "AI Voice")
+        </button>
+    </div>
+</div>
+
+@if (IsLoading)
+{
+    <div class="flex items-center justify-center py-20">
+        <span class="material-symbols-outlined animate-spin text-primary text-4xl">progress_activity</span>
+    </div>
+}
+else if (Schedules == null || Schedules.Count == 0)
+{
+    <div class="bg-white border border-slate-200 rounded-lg p-16 text-center shadow-sm">
+        <span class="material-symbols-outlined text-slate-300 text-6xl mb-4">calendar_add_on</span>
+        <h2 class="text-xl font-bold text-slate-900 mb-2">No Schedules Yet</h2>
+        <p class="text-slate-500 mb-6">Create the first schedule lesson for this class.</p>
+        <button type="button" @onclick="OpenCreateModal" class="bg-primary text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-600 transition-colors inline-flex items-center gap-2">
+            <span class="material-symbols-outlined text-[20px]">add</span> Add Schedule
+        </button>
+    </div>
+}
+else
+{
+    <div class="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
+        <table class="w-full text-left border-collapse">
+            <thead>
+                <tr class="bg-slate-50 border-b border-slate-200 text-xs uppercase tracking-wider text-slate-500 font-semibold">
+                    <th class="p-4 rounded-tl-lg">LESSON INFO</th>
+                    <th class="p-4">DATE &amp; TIME</th>
+                    <th class="p-4">STATUS</th>
+                    <th class="p-4">ATTENDANCE</th>
+                    <th class="p-4 text-right rounded-tr-lg">ACTIONS</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100 text-sm text-slate-700">
+                @foreach (var s in Schedules)
+                {
+                    <tr class="hover:bg-slate-50 transition-colors group">
+                        <td class="p-4">
+                            <p class="font-bold text-slate-900 mb-0.5">@s.Title</p>
+                            <div class="flex items-center gap-2 text-xs">
+                                @if (s.IsTrial)
+                                {
+                                    <span class="bg-purple-100 text-purple-700 font-bold px-1.5 py-0.5 rounded text-[10px] uppercase">Trial</span>
+                                }
+                                <span class="text-slate-500">@s.Type</span>
+                            </div>
+                        </td>
+                        <td class="p-4">
+                            <div class="flex items-center gap-2 mb-0.5">
+                                <span class="material-symbols-outlined text-[16px] text-primary">calendar_today</span>
+                                <span class="font-medium">@s.StartTime.ToString("MMM dd, yyyy")</span>
+                            </div>
+                            <div class="flex items-center gap-2 text-xs text-slate-500 ml-6">
+                                <span>@s.StartTime.ToString("HH:mm") - @s.EndTime.ToString("HH:mm")</span>
+                            </div>
+                        </td>
+                        <td class="p-4">
+                            @{
+                                var (statusBg, statusText) = s.Status switch
+                                {
+                                    ScheduleStatus.SCHEDULED => ("bg-blue-50", "text-blue-700"),
+                                    ScheduleStatus.ONGOING => ("bg-orange-50", "text-orange-700"),
+                                    ScheduleStatus.COMPLETED => ("bg-green-50", "text-green-700"),
+                                    ScheduleStatus.CANCELLED => ("bg-red-50", "text-red-700"),
+                                    _ => ("bg-slate-50", "text-slate-700")
+                                };
+                            }
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold uppercase tracking-wider @statusBg @statusText">
+                                @s.Status
+                            </span>
+                        </td>
+                        <td class="p-4">
+                            <div class="flex items-center gap-2">
+                                <span class="material-symbols-outlined text-[18px] text-green-500">check_circle</span>
+                                <span class="font-semibold text-slate-900">@s.AttendanceCount</span>
+                                <span class="text-slate-400">/ @Class?.EnrolledStudents</span>
+                            </div>
+                        </td>
+                        <td class="p-4 text-right">
+                            <button type="button" @onclick='() => NavigationManager.NavigateTo($"/teacher/schedule/{s.Id}/attendance")' class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 text-primary hover:bg-primary hover:text-white rounded-md text-xs font-semibold transition-colors mr-2">
+                                <span class="material-symbols-outlined text-[16px]">how_to_reg</span> Attendance
+                            </button>
+                            <button type="button" @onclick="() => OpenEditModal(s)" class="text-slate-400 hover:text-primary transition-colors p-1" title="Edit">
+                                <span class="material-symbols-outlined text-[20px]">edit</span>
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+<!-- Modal Update/Create -->
+@if (IsModalOpen)
+{
+    <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm transition-opacity">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
+            <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50 shrink-0">
+                <h3 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+                    <span class="material-symbols-outlined text-primary">@((IsEditing) ? "edit_calendar" : "event")</span>
+                    @(IsEditing ? "Edit Schedule" : "Add New Schedule")
+                </h3>
+                <button type="button" @onclick="CloseModal" class="text-slate-400 hover:text-slate-700 transition-colors p-1 rounded-full hover:bg-slate-200 flex items-center justify-center">
+                    <span class="material-symbols-outlined text-[20px]">close</span>
+                </button>
+            </div>
+            
+            <div class="p-6 overflow-y-auto">
+                @if (!string.IsNullOrEmpty(ErrorMessage))
+                {
+                    <div class="mb-4 p-3 rounded-lg bg-red-50 text-red-600 border border-red-200 flex items-center gap-2 text-sm">
+                        <span class="material-symbols-outlined text-[20px]">error</span>
+                        @ErrorMessage
+                    </div>
+                }
+
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Lesson Title <span class="text-red-500">*</span></label>
+                        <input type="text" @bind="ModalModel.Title" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all placeholder:text-slate-400" placeholder="e.g., Lesson 1: Introduction" />
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Start Time <span class="text-red-500">*</span></label>
+                            <input type="datetime-local" @bind="ModalModel.StartTime" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary outline-none transition-all" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">End Time <span class="text-red-500">*</span></label>
+                            <input type="datetime-local" @bind="ModalModel.EndTime" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary outline-none transition-all" />
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Type</label>
+                            <select @bind="ModalModel.Type" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary outline-none transition-all bg-white">
+                                <option value="@ScheduleType.REGULAR">Regular Class</option>
+                                <option value="@ScheduleType.EXTRA">Extra Class</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Status</label>
+                            <select @bind="ModalModel.Status" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary outline-none transition-all bg-white">
+                                <option value="@ScheduleStatus.SCHEDULED">Scheduled</option>
+                                <option value="@ScheduleStatus.ONGOING">Ongoing</option>
+                                <option value="@ScheduleStatus.COMPLETED">Completed</option>
+                                <option value="@ScheduleStatus.CANCELLED">Cancelled</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-2 pt-2">
+                        <input type="checkbox" id="trialCb" @bind="ModalModel.IsTrial" class="size-4 text-primary rounded border-slate-300" />
+                        <label for="trialCb" class="text-sm font-medium text-slate-700 cursor-pointer">This is a Trial Lesson</label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="px-6 py-4 border-t border-slate-100 bg-slate-50 flex items-center justify-end gap-3 shrink-0">
+                <button type="button" @onclick="CloseModal" class="px-4 py-2 text-sm font-medium text-slate-600 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors">
+                    Cancel
+                </button>
+                <button type="button" @onclick="SaveSchedule" disabled="@IsSaving" class="px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-blue-600 flex items-center gap-2 transition-colors disabled:opacity-70">
+                    @if (IsSaving)
+                    {
+                        <span class="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>
+                        <span>Saving...</span>
+                    }
+                    else
+                    {
+                        <span class="material-symbols-outlined text-[18px]">save</span>
+                        <span>Save Schedule</span>
+                    }
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public long ClassId { get; set; }
+
+    private long TeacherId = 2;
+
+    private TeacherScheduleClassDto? Class;
+    private List<TeacherScheduleDto>? Schedules;
+    private bool IsLoading = true;
+    private bool IsModalOpen = false;
+    private bool IsSaving = false;
+    private string? ErrorMessage;
+
+    private bool IsEditing = false;
+    private long EditScheduleId;
+    private CreateScheduleDto ModalModel = new();
+    
+    private bool IsListening = false;
+    private DotNetObjectReference<ClassScheduleList>? objRef;
+
+    protected override async Task OnInitializedAsync()
+    {
+        objRef = DotNetObjectReference.Create(this);
+        await LoadData();
+    }
+
+    public void Dispose()
+    {
+        objRef?.Dispose();
+    }
+
+    private async Task StartVoiceRecognition()
+    {
+        IsListening = true;
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("window.voiceAssistant.startListening", objRef, nameof(OnVoiceRecognized));
+        }
+        catch
+        {
+            IsListening = false;
+        }
+    }
+
+    [JSInvokable]
+    public async Task OnVoiceRecognized(string transcript)
+    {
+        IsListening = false;
+        
+        if (transcript.StartsWith("ERROR:"))
+        {
+            return;
+        }
+
+        try
+        {
+            var parsedDto = await VoiceScheduleAnalyzer.ParseTranscriptAsync(transcript);
+            
+            IsEditing = false;
+            ErrorMessage = null;
+            ModalModel = parsedDto;
+            ModalModel.ClassId = ClassId;
+            ModalModel.Type = ScheduleType.REGULAR;
+            ModalModel.Status = ScheduleStatus.SCHEDULED;
+            
+            IsModalOpen = true;
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = "Lỗi phân tích giọng nói: " + ex.Message;
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadData()
+    {
+        IsLoading = true;
+        try
+        {
+            Class = await ScheduleService.GetClassByIdAsync(ClassId, TeacherId);
+            if (Class != null)
+            {
+                Schedules = await ScheduleService.GetSchedulesByClassAsync(ClassId);
+            }
+        }
+        catch (Exception)
+        {
+            // Error
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    private void OpenCreateModal()
+    {
+        IsEditing = false;
+        ErrorMessage = null;
+        ModalModel = new CreateScheduleDto
+        {
+            ClassId = ClassId,
+            Title = "",
+            StartTime = DateTime.Today.AddHours(9),
+            EndTime = DateTime.Today.AddHours(11),
+            Type = ScheduleType.REGULAR,
+            Status = ScheduleStatus.SCHEDULED,
+            IsTrial = false
+        };
+        IsModalOpen = true;
+    }
+
+    private void OpenEditModal(TeacherScheduleDto s)
+    {
+        IsEditing = true;
+        EditScheduleId = s.Id;
+        ErrorMessage = null;
+        ModalModel = new CreateScheduleDto
+        {
+            ClassId = ClassId,
+            Title = s.Title,
+            StartTime = s.StartTime,
+            EndTime = s.EndTime,
+            Type = s.Type,
+            Status = s.Status,
+            IsTrial = s.IsTrial
+        };
+        IsModalOpen = true;
+    }
+
+    private void CloseModal()
+    {
+        IsModalOpen = false;
+    }
+
+    private async Task SaveSchedule()
+    {
+        if (string.IsNullOrWhiteSpace(ModalModel.Title))
+        {
+            ErrorMessage = "Title is required.";
+            return;
+        }
+        
+        IsSaving = true;
+        ErrorMessage = null;
+
+        try
+        {
+            ApiResponse<object> res;
+            if (IsEditing)
+            {
+                res = await ScheduleService.UpdateScheduleAsync(TeacherId, EditScheduleId, new UpdateScheduleDto
+                {
+                    Title = ModalModel.Title,
+                    StartTime = ModalModel.StartTime,
+                    EndTime = ModalModel.EndTime,
+                    Type = ModalModel.Type,
+                    Status = ModalModel.Status,
+                    IsTrial = ModalModel.IsTrial
+                });
+            }
+            else
+            {
+                res = await ScheduleService.CreateScheduleAsync(TeacherId, ModalModel);
+            }
+
+            if (res.Success)
+            {
+                CloseModal();
+                await LoadData();
+            }
+            else
+            {
+                ErrorMessage = res.Message;
+            }
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = "An Error Occurred: " + ex.Message;
+        }
+        finally
+        {
+            IsSaving = false;
+        }
+    }
+}

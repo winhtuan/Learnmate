@@ -3,6 +3,7 @@ using System;
 using DataAccessLayer.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace DataAccessLayer.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260309174357_AddAttendanceTable")]
+    partial class AddAttendanceTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -321,30 +324,6 @@ namespace DataAccessLayer.Migrations
                             Description = "Ôn luyện toàn bộ chương trình Toán lớp 12.",
                             MaxStudents = 20,
                             Name = "Toán 12 — Luyện thi THPT",
-                            Status = "ACTIVE",
-                            Subject = "Toán",
-                            TeacherId = 2L,
-                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
-                        },
-                        new
-                        {
-                            Id = 4L,
-                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Chuyên đề Vật Lý chuyên sâu luyện thi Đại học.",
-                            MaxStudents = 15,
-                            Name = "Vật Lý 12 — Nâng cao",
-                            Status = "ACTIVE",
-                            Subject = "Vật Lý",
-                            TeacherId = 2L,
-                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
-                        },
-                        new
-                        {
-                            Id = 5L,
-                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Lớp lấy lại gốc Đại số Toán 11.",
-                            MaxStudents = 30,
-                            Name = "Toán 11 — Đại số cơ bản",
                             Status = "ACTIVE",
                             Subject = "Toán",
                             TeacherId = 2L,
