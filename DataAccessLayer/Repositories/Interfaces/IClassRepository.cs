@@ -7,6 +7,9 @@ public interface IClassRepository
     /// <summary>Creates a new class and returns it with its generated Id.</summary>
     Task<Class> CreateAsync(Class cls);
 
+    /// <summary>Returns full class detail for teacher view (students, assignments, schedules, materials).</summary>
+    Task<Class?> GetTeacherClassDetailAsync(long classId, long teacherId, CancellationToken ct = default);
+
     /// <summary>Returns all classes owned by a teacher, with member count and next schedule.</summary>
     Task<IReadOnlyList<Class>> GetByTeacherIdAsync(long teacherId, CancellationToken ct = default);
 

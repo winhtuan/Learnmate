@@ -1,0 +1,456 @@
+@page "/teacher/classes/{ClassId:long}"
+@rendermode InteractiveServer
+@layout Layout.TeacherLayout
+
+@using BusinessLogicLayer.DTOs.Teacher.Classes
+@using BusinessLogicLayer.Services.Interfaces
+@using BusinessObject.Enum
+@using LearnmateSolution.AppState
+@inject IClassService ClassService
+@inject UserSessionService Session
+@inject NavigationManager Nav
+
+<PageTitle>@(Detail?.Name ?? "Chi tiết lớp") | LearnMate</PageTitle>
+
+@if (IsLoading)
+{
+    <div class="flex items-center justify-center py-32">
+        <span class="material-symbols-outlined animate-spin text-primary text-5xl">progress_activity</span>
+    </div>
+}
+else if (Detail is null)
+{
+    <div class="flex flex-col items-center justify-center py-32 text-center">
+        <span class="material-symbols-outlined text-slate-300 text-6xl mb-4">search_off</span>
+        <h3 class="text-xl font-bold text-slate-900 mb-2">Không tìm thấy lớp học</h3>
+        <p class="text-slate-500 mb-5">Lớp học không tồn tại hoặc bạn không có quyền truy cập.</p>
+        <a href="/teacher/classes" class="text-primary font-medium hover:underline flex items-center gap-1">
+            <span class="material-symbols-outlined text-[18px]">arrow_back</span> Quay về danh sách lớp
+        </a>
+    </div>
+}
+else
+{
+    <!-- Breadcrumb -->
+    <nav class="flex items-center gap-1.5 text-sm text-slate-400 mb-5">
+        <a href="/teacher/dashboard" class="hover:text-primary transition-colors">Dashboard</a>
+        <span class="material-symbols-outlined text-[16px]">chevron_right</span>
+        <a href="/teacher/classes" class="hover:text-primary transition-colors">Lớp học</a>
+        <span class="material-symbols-outlined text-[16px]">chevron_right</span>
+        <span class="text-slate-700 font-medium truncate max-w-[200px]">@Detail.Name</span>
+    </nav>
+
+    <!-- ── Header ─────────────────────────────────────────────────────────── -->
+    <div class="flex items-start justify-between gap-4 mb-6 flex-wrap">
+        <div class="flex items-center gap-4">
+            <!-- Subject Icon -->
+            <div class="size-14 rounded-xl @GetSubjectBg(Detail.Subject) flex items-center justify-center shrink-0 shadow-sm">
+                <span class="material-symbols-outlined text-3xl @GetSubjectText(Detail.Subject)">@GetSubjectIcon(Detail.Subject)</span>
+            </div>
+            <div>
+                <div class="flex items-center gap-2 flex-wrap">
+                    <h1 class="text-2xl font-bold text-slate-900">@Detail.Name</h1>
+                    @{
+                        var (dot, badge, color) = Detail.Status switch
+                        {
+                            ClassStatus.ACTIVE    => ("bg-green-500", "Active",    "bg-green-100 text-green-700"),
+                            ClassStatus.INACTIVE  => ("bg-slate-400",  "Inactive", "bg-slate-100 text-slate-600"),
+                            ClassStatus.COMPLETED => ("bg-blue-400",   "Completed","bg-blue-100 text-blue-700"),
+                            _                     => ("bg-slate-300",  Detail.Status.ToString(), "bg-slate-100 text-slate-500")
+                        };
+                    }
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold @color">
+                        <span class="size-1.5 rounded-full @dot"></span>
+                        @badge
+                    </span>
+                </div>
+                <p class="text-slate-500 text-sm mt-0.5 flex items-center gap-3">
+                    <span class="flex items-center gap-1">
+                        <span class="material-symbols-outlined text-[14px]">book</span>@Detail.Subject
+                    </span>
+                    <span class="flex items-center gap-1">
+                        <span class="material-symbols-outlined text-[14px]">calendar_today</span>Tạo @Detail.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy")
+                    </span>
+                </p>
+            </div>
+        </div>
+        <div class="flex items-center gap-2">
+            <a href="/teacher/classes/@ClassId/edit"
+               class="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-slate-200 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors">
+                <span class="material-symbols-outlined text-[18px]">settings</span>Cài đặt
+            </a>
+            <button class="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary hover:bg-blue-600 text-white text-sm font-medium transition-all shadow-sm">
+                <span class="material-symbols-outlined text-[18px]">person_add</span>Thêm học sinh
+            </button>
+        </div>
+    </div>
+
+    <!-- ── Stats Cards ─────────────────────────────────────────────────────── -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-7">
+        @foreach (var stat in GetStats())
+        {
+            <div class="bg-white border border-slate-200 rounded-xl shadow-sm p-4">
+                <p class="text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">@stat.Label</p>
+                <div class="flex items-end justify-between">
+                    <span class="text-3xl font-bold text-slate-900">@stat.Value</span>
+                    <span class="material-symbols-outlined text-[28px] @stat.IconColor">@stat.Icon</span>
+                </div>
+                @if (!string.IsNullOrEmpty(stat.Sub))
+                {
+                    <p class="text-xs text-slate-400 mt-1">@stat.Sub</p>
+                }
+            </div>
+        }
+    </div>
+
+    <!-- ── Tab Bar ─────────────────────────────────────────────────────────── -->
+    <div class="flex items-center gap-1 border-b border-slate-200 mb-6 overflow-x-auto">
+        @foreach (var tab in Tabs)
+        {
+            <button @onclick="() => ActiveTab = tab.Key"
+                    class="flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 transition-all whitespace-nowrap
+                           @(ActiveTab == tab.Key
+                               ? "border-primary text-primary"
+                               : "border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300")">
+                <span class="material-symbols-outlined text-[18px]">@tab.Icon</span>
+                @tab.Label
+                @if (tab.Count > 0)
+                {
+                    <span class="ml-1 flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full text-[10px] font-bold
+                                 @(ActiveTab == tab.Key ? "bg-primary text-white" : "bg-slate-100 text-slate-500")">
+                        @tab.Count
+                    </span>
+                }
+            </button>
+        }
+    </div>
+
+    <!-- ── Tab Content ─────────────────────────────────────────────────────── -->
+
+    @* STUDENTS TAB *@
+    @if (ActiveTab == "students")
+    {
+        @if (Detail.Students.Count == 0)
+        {
+            <div class="flex flex-col items-center justify-center py-16 text-center">
+                <span class="material-symbols-outlined text-slate-200 text-6xl mb-3">group</span>
+                <p class="text-slate-400 text-sm">Chưa có học sinh nào trong lớp.</p>
+            </div>
+        }
+        else
+        {
+            <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                <div class="p-4 border-b border-slate-100 flex items-center justify-between">
+                    <p class="font-semibold text-slate-900 text-sm">@Detail.Students.Count / @Detail.MaxStudents học sinh</p>
+                    <div class="w-40 bg-slate-100 rounded-full h-1.5">
+                        <div class="bg-primary h-1.5 rounded-full transition-all"
+                             style="width: @Math.Min(100, Detail.Students.Count * 100 / Detail.MaxStudents)%"></div>
+                    </div>
+                </div>
+                <div class="divide-y divide-slate-100">
+                    @foreach (var s in Detail.Students)
+                    {
+                        <div class="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 transition-colors">
+                            <div class="size-9 rounded-full overflow-hidden bg-slate-100 flex items-center justify-center shrink-0">
+                                @if (!string.IsNullOrEmpty(s.AvatarUrl))
+                                {
+                                    <img src="@s.AvatarUrl" alt="@s.FullName" class="size-9 object-cover" />
+                                }
+                                else
+                                {
+                                    <span class="text-sm font-bold text-slate-400">@s.FullName[0]</span>
+                                }
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="font-medium text-slate-900 text-sm truncate">@s.FullName</p>
+                                <p class="text-xs text-slate-400 truncate">@s.Email</p>
+                            </div>
+                            @if (!string.IsNullOrEmpty(s.GradeLevel))
+                            {
+                                <span class="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 font-medium shrink-0">
+                                    Lớp @s.GradeLevel
+                                </span>
+                            }
+                            <span class="text-xs text-slate-400 shrink-0 hidden sm:block">
+                                Tham gia @s.JoinedAt.ToLocalTime().ToString("dd/MM/yy")
+                            </span>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    }
+
+    @* ASSIGNMENTS TAB *@
+    else if (ActiveTab == "assignments")
+    {
+        <div class="flex justify-end mb-4">
+            <a href="/teacher/classes/@ClassId/assignments/create"
+               class="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary hover:bg-blue-600 text-white text-sm font-medium transition-all shadow-sm">
+                <span class="material-symbols-outlined text-[18px]">add</span> Tạo bài tập
+            </a>
+        </div>
+        @if (Detail.Assignments.Count == 0)
+        {
+            <div class="flex flex-col items-center justify-center py-16 text-center">
+                <span class="material-symbols-outlined text-slate-200 text-6xl mb-3">assignment</span>
+                <p class="text-slate-400 text-sm">Chưa có bài tập nào.</p>
+            </div>
+        }
+        else
+        {
+            <div class="flex flex-col gap-3">
+                @foreach (var a in Detail.Assignments)
+                {
+                    var (aColor, aBg) = a.Status switch
+                    {
+                        "PUBLISHED" => ("text-green-700",  "bg-green-50 border-green-200"),
+                        "DRAFT"     => ("text-slate-600",  "bg-slate-50 border-slate-200"),
+                        "CLOSED"    => ("text-orange-700", "bg-orange-50 border-orange-200"),
+                        _           => ("text-slate-500",  "bg-slate-50 border-slate-200")
+                    };
+                    int pct = a.Total > 0 ? a.Submitted * 100 / a.Total : 0;
+
+                    <div class="bg-white border border-slate-200 rounded-xl shadow-sm p-4 hover:border-primary/30 hover:shadow-md transition-all">
+                        <div class="flex items-start gap-3">
+                            <div class="size-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                                <span class="material-symbols-outlined text-primary text-[22px]">assignment</span>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center gap-2 flex-wrap mb-1">
+                                    <p class="font-semibold text-slate-900 text-sm">@a.Title</p>
+                                    <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full border @aColor @aBg">@a.Status</span>
+                                </div>
+                                @if (a.DueDate.HasValue)
+                                {
+                                    <p class="text-xs text-slate-500 flex items-center gap-1 mb-2">
+                                        <span class="material-symbols-outlined text-[14px]">event</span>
+                                        Hạn nộp: @a.DueDate.Value.ToString("dd/MM/yyyy HH:mm")
+                                    </p>
+                                }
+                                <!-- Submission progress -->
+                                <div class="flex items-center gap-2">
+                                    <div class="flex-1 bg-slate-100 rounded-full h-1.5">
+                                        <div class="bg-primary h-1.5 rounded-full transition-all" style="width: @pct%"></div>
+                                    </div>
+                                    <span class="text-xs text-slate-500 shrink-0">@a.Submitted/@a.Total đã nộp</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    }
+
+    @* MATERIALS TAB *@
+    else if (ActiveTab == "materials")
+    {
+        <div class="flex justify-end mb-4">
+            <button class="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary hover:bg-blue-600 text-white text-sm font-medium transition-all shadow-sm">
+                <span class="material-symbols-outlined text-[18px]">upload</span> Tải lên tài liệu
+            </button>
+        </div>
+        @if (Detail.Materials.Count == 0)
+        {
+            <div class="flex flex-col items-center justify-center py-16 text-center">
+                <span class="material-symbols-outlined text-slate-200 text-6xl mb-3">folder_open</span>
+                <p class="text-slate-400 text-sm">Chưa có tài liệu nào.</p>
+            </div>
+        }
+        else
+        {
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                @foreach (var m in Detail.Materials)
+                {
+                    var (fileIcon, fileColor) = GetFileStyle(m.FileType);
+                    <div class="bg-white border border-slate-200 rounded-xl shadow-sm p-4 hover:border-primary/30 hover:shadow-md transition-all flex items-start gap-3">
+                        <div class="size-10 rounded-lg @fileColor flex items-center justify-center shrink-0">
+                            <span class="material-symbols-outlined text-[22px] text-white">@fileIcon</span>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="font-medium text-slate-900 text-sm truncate mb-0.5">@m.Title</p>
+                            @if (!string.IsNullOrEmpty(m.Description))
+                            {
+                                <p class="text-xs text-slate-400 line-clamp-1 mb-1">@m.Description</p>
+                            }
+                            <p class="text-xs text-slate-400">@m.UploadedAt.ToString("dd/MM/yyyy")</p>
+                        </div>
+                        <a href="@m.FileUrl" target="_blank"
+                           class="size-8 flex items-center justify-center rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors shrink-0">
+                            <span class="material-symbols-outlined text-[20px]">download</span>
+                        </a>
+                    </div>
+                }
+            </div>
+        }
+    }
+
+    @* SCHEDULE TAB *@
+    else if (ActiveTab == "schedule")
+    {
+        <div class="flex justify-end mb-4">
+            <button class="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary hover:bg-blue-600 text-white text-sm font-medium transition-all shadow-sm">
+                <span class="material-symbols-outlined text-[18px]">add</span> Thêm buổi học
+            </button>
+        </div>
+        @if (Detail.Schedules.Count == 0)
+        {
+            <div class="flex flex-col items-center justify-center py-16 text-center">
+                <span class="material-symbols-outlined text-slate-200 text-6xl mb-3">calendar_month</span>
+                <p class="text-slate-400 text-sm">Chưa có lịch học nào.</p>
+            </div>
+        }
+        else
+        {
+            <div class="flex flex-col gap-3">
+                @foreach (var s in Detail.Schedules)
+                {
+                    bool isPast    = s.StartTime < DateTime.Now;
+                    bool isToday   = s.StartTime.Date == DateTime.Today;
+                    var  rowStyle  = isToday   ? "border-primary/40 bg-blue-50/40" :
+                                    isPast     ? "opacity-60" :
+                                    "hover:border-primary/30 hover:shadow-sm";
+                    var (typeIcon, typeBg) = s.Type switch
+                    {
+                        "ONLINE"  => ("videocam",   "bg-blue-500"),
+                        "OFFLINE" => ("location_on", "bg-green-500"),
+                        _         => ("event",       "bg-slate-500")
+                    };
+                    <div class="bg-white border border-slate-200 rounded-xl shadow-sm p-4 flex items-center gap-4 transition-all @rowStyle">
+                        <!-- Date block -->
+                        <div class="flex flex-col items-center min-w-[52px] text-center">
+                            <span class="text-xs font-semibold text-slate-400 uppercase">@s.StartTime.ToString("ddd")</span>
+                            <span class="text-2xl font-bold @(isToday ? "text-primary" : "text-slate-900")">@s.StartTime.ToString("dd")</span>
+                            <span class="text-xs text-slate-400">@s.StartTime.ToString("MMM")</span>
+                        </div>
+                        <div class="w-px h-10 bg-slate-100"></div>
+                        <!-- Time -->
+                        <div class="min-w-[90px]">
+                            <p class="text-sm font-semibold text-slate-900">@s.StartTime.ToString("HH:mm")</p>
+                            <p class="text-xs text-slate-400">→ @s.EndTime.ToString("HH:mm")</p>
+                        </div>
+                        <!-- Title + type -->
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center gap-2">
+                                <p class="font-medium text-slate-900 text-sm truncate">@s.Title</p>
+                                @if (s.IsTrial)
+                                {
+                                    <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-700">Trial</span>
+                                }
+                            </div>
+                        </div>
+                        <span class="size-8 rounded-lg @typeBg flex items-center justify-center shrink-0">
+                            <span class="material-symbols-outlined text-white text-[18px]">@typeIcon</span>
+                        </span>
+                        @{
+                            var (sLabel, sBg2) = s.Status switch
+                            {
+                                "SCHEDULED"  => ("Sắp tới",  "bg-slate-100 text-slate-600"),
+                                "ONGOING"    => ("Đang diễn ra", "bg-green-100 text-green-700"),
+                                "COMPLETED"  => ("Đã xong",  "bg-blue-100 text-blue-700"),
+                                _            => (s.Status, "bg-slate-100 text-slate-500")
+                            };
+                        }
+                        <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full @sBg2 shrink-0">@sLabel</span>
+                    </div>
+                }
+            </div>
+        }
+    }
+}
+
+<!-- Shared empty state component -->
+@code {
+    [Parameter] public long ClassId { get; set; }
+
+    private TeacherClassDetailDto? Detail;
+    private bool IsLoading = true;
+    private string ActiveTab = "students";
+
+    // ── Tab definitions ─────────────────────────────────────────────────────
+    private IEnumerable<(string Key, string Label, string Icon, int Count)> Tabs =>
+        Detail is null ? [] :
+        [
+            ("students",    "Học sinh",  "group",          Detail.TotalStudents),
+            ("assignments", "Bài tập",   "assignment",     Detail.TotalAssignments),
+            ("materials",   "Tài liệu",  "folder_open",    Detail.TotalMaterials),
+            ("schedule",    "Lịch học",  "calendar_month", Detail.TotalSchedules)
+        ];
+
+    // ── Lifecycle ───────────────────────────────────────────────────────────
+    protected override async Task OnInitializedAsync()
+    {
+        long teacherId = Session.UserId > 0 ? Session.UserId : 2;
+        try { Detail = await ClassService.GetTeacherClassDetailAsync(ClassId, teacherId); }
+        catch { }
+        finally { IsLoading = false; }
+    }
+
+    // ── Stats ───────────────────────────────────────────────────────────────
+    private IEnumerable<(string Label, string Value, string Icon, string IconColor, string Sub)> GetStats() =>
+        Detail is null ? [] :
+        [
+            ("Học sinh",    Detail.TotalStudents.ToString(),
+             "group",       "text-blue-400",
+             $"/ {Detail.MaxStudents} tối đa"),
+            ("Bài tập",     Detail.TotalAssignments.ToString(),
+             "assignment",  "text-purple-400",
+             Detail.Assignments.Count(a => a.Status == "PUBLISHED") + " đang mở"),
+            ("Lịch học",    Detail.TotalSchedules.ToString(),
+             "calendar_month","text-green-400",
+             Detail.Schedules.Count(s => s.StartTime >= DateTime.Now) + " sắp tới"),
+            ("Tài liệu",    Detail.TotalMaterials.ToString(),
+             "folder_open", "text-orange-400",
+             "tài liệu đang hoạt động")
+        ];
+
+    // ── Subject theming ─────────────────────────────────────────────────────
+    private static string GetSubjectBg(string s) => s.ToLower() switch
+    {
+        var x when x.Contains("toán") || x.Contains("math")    => "bg-blue-100",
+        var x when x.Contains("lý")   || x.Contains("physics") => "bg-purple-100",
+        var x when x.Contains("hóa")  || x.Contains("chem")    => "bg-orange-100",
+        var x when x.Contains("sinh") || x.Contains("bio")     => "bg-green-100",
+        var x when x.Contains("văn")  || x.Contains("liter")   => "bg-pink-100",
+        var x when x.Contains("tin")  || x.Contains("comp")    => "bg-cyan-100",
+        _                                                        => "bg-indigo-100"
+    };
+
+    private static string GetSubjectText(string s) => s.ToLower() switch
+    {
+        var x when x.Contains("toán") || x.Contains("math")    => "text-blue-600",
+        var x when x.Contains("lý")   || x.Contains("physics") => "text-purple-600",
+        var x when x.Contains("hóa")  || x.Contains("chem")    => "text-orange-600",
+        var x when x.Contains("sinh") || x.Contains("bio")     => "text-green-600",
+        var x when x.Contains("văn")  || x.Contains("liter")   => "text-pink-600",
+        var x when x.Contains("tin")  || x.Contains("comp")    => "text-cyan-600",
+        _                                                        => "text-indigo-600"
+    };
+
+    private static string GetSubjectIcon(string s) => s.ToLower() switch
+    {
+        var x when x.Contains("toán") || x.Contains("math")    => "calculate",
+        var x when x.Contains("lý")   || x.Contains("physics") => "science",
+        var x when x.Contains("hóa")  || x.Contains("chem")    => "biotech",
+        var x when x.Contains("sinh") || x.Contains("bio")     => "eco",
+        var x when x.Contains("văn")  || x.Contains("liter")   => "menu_book",
+        var x when x.Contains("tin")  || x.Contains("comp")    => "terminal",
+        _                                                        => "class"
+    };
+
+    private static (string icon, string bg) GetFileStyle(string fileType) =>
+        fileType.ToLower() switch
+        {
+            "pdf"                      => ("picture_as_pdf", "bg-red-500"),
+            "doc" or "docx"           => ("description",    "bg-blue-500"),
+            "xls" or "xlsx"           => ("table_chart",    "bg-green-500"),
+            "ppt" or "pptx"           => ("slideshow",      "bg-orange-500"),
+            "mp4" or "mov" or "avi"   => ("play_circle",    "bg-purple-500"),
+            "jpg" or "jpeg" or "png"  => ("image",          "bg-pink-500"),
+            "zip" or "rar"            => ("folder_zip",     "bg-yellow-500"),
+            _                         => ("insert_drive_file","bg-slate-500")
+        };
+}
+
+
