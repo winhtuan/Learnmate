@@ -25,6 +25,9 @@ public class Class : SoftDeletableEntity
 
     public int MaxStudents { get; set; } = 30;
 
+    [MaxLength(500)]
+    public string? ThumbnailUrl { get; set; } = "https://placehold.co/400?text=Course";
+
     // Navigation properties
     [ForeignKey("TeacherId")]
     public User Teacher { get; set; } = null!;

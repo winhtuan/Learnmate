@@ -1,7 +1,19 @@
 using BusinessLogicLayer.Services;
 using BusinessLogicLayer.Services.Interfaces;
+using BusinessLogicLayer.Services.Interfaces.Teacher.Assignments;
+using BusinessLogicLayer.Services.Interfaces.Teacher.Courses;
+using BusinessLogicLayer.Services.Interfaces.Teacher.Profile;
+using BusinessLogicLayer.Services.Teacher.Assignments;
+using BusinessLogicLayer.Services.Teacher.Courses;
+using BusinessLogicLayer.Services.Teacher.Profile;
 using DataAccessLayer.Repositories;
 using DataAccessLayer.Repositories.Interfaces;
+using DataAccessLayer.Repositories.Interfaces.Teacher.Assignments;
+using DataAccessLayer.Repositories.Interfaces.Teacher.Courses;
+using DataAccessLayer.Repositories.Interfaces.Teacher.Profile;
+using DataAccessLayer.Repositories.Teacher.Assignments;
+using DataAccessLayer.Repositories.Teacher.Courses;
+using DataAccessLayer.Repositories.Teacher.Profile;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace BusinessLogicLayer;
@@ -18,17 +30,26 @@ public static class ServiceCollectionExtensions
                 services.AddScoped<INotificationRepository, NotificationRepository>();
                 services.AddScoped<IScheduleRepository, ScheduleRepository>();
                 services.AddScoped<IClassRepository, ClassRepository>();
-                services.AddScoped<DataAccessLayer.Repositories.Interfaces.Teacher.Assignments.ITeacherAssignmentRepository, DataAccessLayer.Repositories.Teacher.Assignments.TeacherAssignmentRepository>();
+                services.AddScoped<ITeacherAssignmentRepository, TeacherAssignmentRepository>();
+                services.AddScoped<ITeacherCourseRepository, TeacherCourseRepository>();
+                services.AddScoped<ITeacherProfileRepository, TeacherProfileRepository>();
+                services.AddScoped<IReportRepository, ReportRepository>();
 
                 // Services
                 services.AddScoped<IAuthService, AuthService>();
                 services.AddScoped<IEmailService, EmailService>();
                 services.AddScoped<IOtpService, OtpService>();
-                services.AddScoped<Services.Interfaces.Teacher.Assignments.ITeacherAssignmentService, Services.Teacher.Assignments.TeacherAssignmentService>();
+                services.AddScoped<ITeacherAssignmentService, TeacherAssignmentService>();
+                services.AddScoped<ITeacherCourseService, TeacherCourseService>();
+                services.AddScoped<ITeacherProfileService, TeacherProfileService>();
                 services.AddSingleton<IJwtService, JwtService>();
                 services.AddScoped<IDashboardService, DashboardService>();
                 services.AddScoped<IStudentDashboardService, StudentDashboardService>();
                 services.AddScoped<IClassService, ClassService>();
+                services.AddScoped<IUserManagementService, UserManagementService>();
+                services.AddScoped<IClassManagementService, ClassManagementService>();
+                services.AddScoped<IReportService, ReportService>();
+
 
                 // Token blacklist cache
                 services.AddMemoryCache();

@@ -3,6 +3,7 @@ using System;
 using DataAccessLayer.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace DataAccessLayer.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260309144809_AddClassThumbnailUrl")]
+    partial class AddClassThumbnailUrl
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -284,7 +287,6 @@ namespace DataAccessLayer.Migrations
                             Status = "ACTIVE",
                             Subject = "Toán",
                             TeacherId = 2L,
-                            ThumbnailUrl = "https://placehold.co/400?text=Course",
                             UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
@@ -297,7 +299,6 @@ namespace DataAccessLayer.Migrations
                             Status = "ACTIVE",
                             Subject = "PRN222",
                             TeacherId = 2L,
-                            ThumbnailUrl = "https://placehold.co/400?text=Course",
                             UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
@@ -310,7 +311,6 @@ namespace DataAccessLayer.Migrations
                             Status = "ACTIVE",
                             Subject = "PRU213",
                             TeacherId = 2L,
-                            ThumbnailUrl = "https://placehold.co/400?text=Course",
                             UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         });
                 });
@@ -1136,55 +1136,6 @@ namespace DataAccessLayer.Migrations
                         .HasDatabaseName("ix_submission_answer_options_submission_answer_id_option_id");
 
                     b.ToTable("submission_answer_options", (string)null);
-                });
-
-            modelBuilder.Entity("BusinessObject.Models.System.Report", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasColumnName("id");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("Category")
-                        .HasColumnType("integer")
-                        .HasColumnName("category");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("created_at");
-
-                    b.Property<string>("FileUrl")
-                        .HasColumnType("text")
-                        .HasColumnName("file_url");
-
-                    b.Property<int>("Format")
-                        .HasColumnType("integer")
-                        .HasColumnName("format");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)")
-                        .HasColumnName("name");
-
-                    b.Property<DateTime>("RequestedOn")
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("requested_on");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("integer")
-                        .HasColumnName("status");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("updated_at");
-
-                    b.HasKey("Id")
-                        .HasName("pk_reports");
-
-                    b.ToTable("reports", (string)null);
                 });
 
             modelBuilder.Entity("BusinessObject.Models.TeacherProfile", b =>

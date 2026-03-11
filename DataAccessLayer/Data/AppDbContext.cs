@@ -1,6 +1,7 @@
 using System.Reflection;
 using BusinessObject.Models;
 using BusinessObject.Models.Base;
+using BusinessObject.Models.System;
 using DataAccessLayer.Data.Seeding;
 using Microsoft.EntityFrameworkCore;
 
@@ -39,6 +40,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
     // ── System ───────────────────────────────────────────────────────────────
     public DbSet<Notification> Notifications => Set<Notification>();
+    public DbSet<Report> Reports => Set<Report>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

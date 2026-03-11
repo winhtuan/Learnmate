@@ -1,9 +1,12 @@
 @page "/admin/users"
 @using LearnmateSolution.Components.Layout.Admin
+@using BusinessLogicLayer.DTOs.UserManagement
+@using BusinessLogicLayer.Services.Interfaces
 @layout AdminLayout
 @rendermode InteractiveServer
 @inject NavigationManager Nav
 @inject UserSessionService Session
+@inject IUserManagementService UserManagementService
 @inject IJSRuntime JS
 
 <PageTitle>Admin User Management - LearnMate</PageTitle>
@@ -73,11 +76,11 @@
         <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:1rem;padding:1rem 1.25rem;border-bottom:1px solid #e7edf3;">
             <div style="position:relative;width:100%;max-width:20rem;">
                 <span class="material-symbols-outlined" style="position:absolute;left:0.625rem;top:50%;transform:translateY(-50%);color:#90a4ae;font-size:20px;pointer-events:none;">search</span>
-                <input class="um-search-input" type="text" placeholder="Search users by name, email or ID..." style="padding-left:2.25rem;" />
+                <input class="um-search-input" type="text" placeholder="Search users by name, email or ID..." style="padding-left:2.25rem;" @bind="searchQuery" @bind:after="ApplyFilters" />
             </div>
             <div style="display:flex;align-items:center;gap:0.75rem;">
                 <div style="position:relative;">
-                    <select class="um-select" @bind="filterRole">
+                    <select class="um-select" @bind="filterRole" @bind:after="ApplyFilters">
                         <option value="">All Roles</option>
                         <option>Admin</option>
                         <option>Instructor</option>
@@ -86,7 +89,7 @@
                     <span class="material-symbols-outlined" style="position:absolute;right:0.5rem;top:50%;transform:translateY(-50%);font-size:18px;color:#4c739a;pointer-events:none;">expand_more</span>
                 </div>
                 <div style="position:relative;">
-                    <select class="um-select" @bind="filterStatus">
+                    <select class="um-select" @bind="filterStatus" @bind:after="ApplyFilters">
                         <option value="">All Status</option>
                         <option>Active</option>
                         <option>Blocked</option>
@@ -175,7 +178,7 @@
                 </select>
             </div>
             <div style="display:flex;align-items:center;gap:1rem;">
-                <span style="font-size:0.875rem;color:#4c739a;">1–@users.Count of 2,453</span>
+                <span style="font-size:0.875rem;color:#4c739a;">Total Users: @users.Count</span>
                 <div style="display:flex;align-items:center;gap:0.25rem;">
                     <button class="um-page-btn"><span class="material-symbols-outlined" style="font-size:18px;">chevron_left</span></button>
                     <button class="um-page-btn um-page-btn--active">1</button>
@@ -466,12 +469,22 @@
                 Session.SetSession(email, role, token);
         }
         if (!Session.IsAuthenticated) { Nav.NavigateTo("/login", replace: true); return; }
-        if (Session.Role != "ADMIN") { Nav.NavigateTo(Session.Role == "STUDENT" ? "/student-dashboard" : "/", replace: true); }
+        if (Session.Role != "ADMIN") { Nav.NavigateTo(Session.Role == "STUDENT" ? "/student-dashboard" : "/", replace: true); return; }
+
+        await LoadUsersAsync();
+        StateHasChanged();
+    }
+
+    private async Task LoadUsersAsync()
+    {
+        var result = await UserManagementService.GetUsersAsync(filterRole, filterStatus, searchQuery);
+        users = result.ToList();
     }
 
     // ── State ─────────────────────────────────────────────
     private string filterRole   = "";
     private string filterStatus = "";
+    private string searchQuery  = "";
 
     private bool showAddModal     = false;
     private bool showBlockModal   = false;
@@ -484,24 +497,17 @@
     private string deleteConfirmText = "";
     private string formError        = "";
 
-    private UserRow? selectedUser;
-    private NewUserForm newUser = new();
+    private UserRowDto? selectedUser;
+    private NewUserRequestDto newUser = new();
 
     // ── Data ──────────────────────────────────────────────
-    private List<UserRow> users = new()
-    {
-        new("1001", "Sarah Smith",    "sarah@univ.edu",       "Instructor", "Active",  "2 mins ago",  "https://lh3.googleusercontent.com/aida-public/AB6AXuA0Qzxvzl0knd3z1Y0WhSDo7-wv0clphsvO5zHN9Fa4-119Jf0rZ-WiD6ZdN0PqytuQ2qApIbPKZz5FpiNr-vnVPYhD8hTWEMN9T7n3AySe6vMWTEY3Dl47UAlJNKsC-5SczcXgRAmqPA8vX0K64ZnVLCNXVht_R4mwo9CJ8Q_casQiicSljZWV8iKUz_9jvhtyvMVL1mXohH1_KGn1lguQymNGV4idxkxB30lgdCu0EhIfStUIlAEGEslSDIAJ3dfMWfXYA-SmTGM"),
-        new("1005", "Michael Jordan", "m.jordan@univ.edu",    "Student",    "Active",  "1 day ago",   ""),
-        new("1024", "John Doe",       "j.doe@test.com",       "Student",    "Blocked", "3 months ago","https://lh3.googleusercontent.com/aida-public/AB6AXuDthMKBgxg4hexcTULlxs4skpoIZ_qsqFAY3srCwtW134sTDCkDEy0a1NHzRlEzBAxQmKnwruSoHfXGcg36XKLjasp8xw4qEWHqNllroqFo8PLA-5Uua3xwWFjqrgaElruGvo7A3-m0WE2F3k0t5pISaT6JUWSBbwu4XBHG8Anso4Pb7lwfZwWWxRTyQ6sghwBe6-6YysQzkNMwT8GSbLchueAt8_V0yPOeOctyNZwJmBTnBjVD-v5gs1aZsF9g8ku74-6cEu1erBg"),
-        new("1089", "Emily Chen",     "emily.c@univ.edu",     "Instructor", "Active",  "4 hours ago", "https://lh3.googleusercontent.com/aida-public/AB6AXuD7TMPBJ3PIQO-BGmxklKYI9U7AGUu0NvSSY_9Ck2JWotG5OBG2aaNJMHqYOgsXql9uQFq4Bg04G94C2ZIby6bQo0snRMh6b4vFVx4616qGQRuXqNmbOlNb7Ma5s4h8gsH-RKGam9z4l4RVvkFK4YAfm0rV2Coz_QO20j6JJ14QN3_a4KPOYO2YpsaHJZD5Kwn038ceJLLdmnhWCynHI7-y8sCmVCDqtaodITto9oryrHWD0nRsgVLpONq1VwcZWCqGM_I1raQ14a4"),
-        new("1102", "David Ross",     "dross@lab.com",        "Admin",      "Active",  "Now",         ""),
-    };
+    private List<UserRowDto> users = new();
 
     // ── Modal openers ─────────────────────────────────────
     private void OpenAddUserModal()   { CloseAllModals(); newUser = new(); formError = ""; showAddModal = true; }
-    private void OpenBlockModal(UserRow u)   { CloseAllModals(); selectedUser = u; blockReason = ""; blockNotes = ""; formError = ""; showBlockModal = true; }
-    private void OpenUnblockModal(UserRow u) { CloseAllModals(); selectedUser = u; unblockReason = ""; formError = ""; showUnblockModal = true; }
-    private void OpenDeleteModal(UserRow u)  { CloseAllModals(); selectedUser = u; deleteConfirmText = ""; formError = ""; showDeleteModal = true; }
+    private void OpenBlockModal(UserRowDto u)   { CloseAllModals(); selectedUser = u; blockReason = ""; blockNotes = ""; formError = ""; showBlockModal = true; }
+    private void OpenUnblockModal(UserRowDto u) { CloseAllModals(); selectedUser = u; unblockReason = ""; formError = ""; showUnblockModal = true; }
+    private void OpenDeleteModal(UserRowDto u)  { CloseAllModals(); selectedUser = u; deleteConfirmText = ""; formError = ""; showDeleteModal = true; }
     private void OpenExportModal() { /* TODO: implement export */ }
 
     private void CloseAllModals()
@@ -511,75 +517,77 @@
     }
 
     // ── Actions ───────────────────────────────────────────
-    private void ConfirmAddUser()
+    private async Task ConfirmAddUser()
     {
         if (string.IsNullOrWhiteSpace(newUser.Name) || string.IsNullOrWhiteSpace(newUser.Email) ||
             string.IsNullOrWhiteSpace(newUser.Role) || string.IsNullOrWhiteSpace(newUser.TempPassword))
         { formError = "Please fill in all required fields."; return; }
 
-        // TODO: call API to create user
-        users.Add(new(
-            (1200 + users.Count).ToString(),
-            newUser.Name, newUser.Email, newUser.Role,
-            "Active", "Just now", ""));
+        var response = await UserManagementService.CreateUserAsync(newUser);
+        if (!response.Success)
+        {
+            formError = response.Message ?? "Failed to create user.";
+            return;
+        }
+
+        await LoadUsersAsync();
         CloseAllModals();
     }
 
-    private void ConfirmBlock()
+    private async Task ConfirmBlock()
     {
         if (string.IsNullOrWhiteSpace(blockReason))
         { formError = "Please select a reason for blocking."; return; }
 
-        // TODO: call API to block user
-        if (selectedUser != null) selectedUser.Status = "Blocked";
+        if (selectedUser != null)
+        {
+            var response = await UserManagementService.ChangeUserStatusAsync(selectedUser.Id, false, blockReason, blockNotes);
+            if (!response.Success)
+            {
+                formError = response.Message ?? "Failed to block user.";
+                return;
+            }
+            await LoadUsersAsync();
+        }
         CloseAllModals();
     }
 
-    private void ConfirmUnblock()
+    private async Task ConfirmUnblock()
     {
         if (string.IsNullOrWhiteSpace(unblockReason))
         { formError = "Please select a reason for unblocking."; return; }
 
-        // TODO: call API to unblock user
-        if (selectedUser != null) selectedUser.Status = "Active";
+        if (selectedUser != null)
+        {
+            var response = await UserManagementService.ChangeUserStatusAsync(selectedUser.Id, true, unblockReason);
+            if (!response.Success)
+            {
+                formError = response.Message ?? "Failed to unblock user.";
+                return;
+            }
+            await LoadUsersAsync();
+        }
         CloseAllModals();
     }
 
-    private void ConfirmDelete()
+    private async Task ConfirmDelete()
     {
         if (selectedUser == null || deleteConfirmText != selectedUser.Name)
         { formError = "Name does not match. Please type the exact name to confirm."; return; }
 
-        // TODO: call API to delete user
-        users.Remove(selectedUser);
+        var response = await UserManagementService.DeleteUserAsync(selectedUser.Id);
+        if (!response.Success)
+        {
+            formError = response.Message ?? "Failed to delete user.";
+            return;
+        }
+
+        await LoadUsersAsync();
         CloseAllModals();
     }
 
-    // ── Models ────────────────────────────────────────────
-    private class UserRow
+    private async Task ApplyFilters()
     {
-        public string Id        { get; }
-        public string Name      { get; }
-        public string Email     { get; }
-        public string Role      { get; }
-        public string Status    { get; set; }
-        public string LastLogin { get; }
-        public string AvatarUrl { get; }
-
-        // Initials fallback
-        public string Initials      => string.Concat(Name.Split(' ').Take(2).Select(w => w[0].ToString().ToUpper()));
-        public string InitialsBg    => Role == "Admin" ? "#e0e7ff" : Role == "Instructor" ? "#f3e8ff" : "#dbeafe";
-        public string InitialsColor => Role == "Admin" ? "#4338ca" : Role == "Instructor" ? "#7c3aed" : "#1d4ed8";
-
-        public UserRow(string id, string name, string email, string role, string status, string lastLogin, string avatarUrl)
-        { Id = id; Name = name; Email = email; Role = role; Status = status; LastLogin = lastLogin; AvatarUrl = avatarUrl; }
-    }
-
-    private class NewUserForm
-    {
-        public string Name         { get; set; } = "";
-        public string Email        { get; set; } = "";
-        public string Role         { get; set; } = "";
-        public string TempPassword { get; set; } = "";
+        await LoadUsersAsync();
     }
 }
