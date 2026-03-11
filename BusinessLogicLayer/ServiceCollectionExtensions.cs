@@ -20,9 +20,21 @@ namespace BusinessLogicLayer;
 
 public static class ServiceCollectionExtensions
 {
-        
-    public static IServiceCollection AddBusinessLogicLayer(this IServiceCollection services)
-    {
+        public static IServiceCollection AddBusinessLogicLayer(this IServiceCollection services)
+        {
+                // Repositories
+                services.AddScoped<IUserRepository, UserRepository>();
+                services.AddScoped<IOtpVerificationRepository, OtpVerificationRepository>();
+                services.AddScoped<IStudentProfileRepository, StudentProfileRepository>();
+                services.AddScoped<IClassMemberRepository, ClassMemberRepository>();
+                services.AddScoped<INotificationRepository, NotificationRepository>();
+                services.AddScoped<IScheduleRepository, ScheduleRepository>();
+                services.AddScoped<IClassRepository, ClassRepository>();
+                services.AddScoped<ITeacherAssignmentRepository, TeacherAssignmentRepository>();
+                services.AddScoped<ITeacherCourseRepository, TeacherCourseRepository>();
+                services.AddScoped<ITeacherProfileRepository, TeacherProfileRepository>();
+                services.AddScoped<IReportRepository, ReportRepository>();
+   
         // Repositories
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IOtpVerificationRepository, OtpVerificationRepository>();
@@ -56,7 +68,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<BusinessLogicLayer.Services.Interfaces.Teacher.Schedules.ITeacherScheduleService, BusinessLogicLayer.Services.Teacher.Schedules.TeacherScheduleService>();
         services.AddScoped<BusinessLogicLayer.Services.Interfaces.Teacher.Schedules.IVoiceScheduleAnalyzer, BusinessLogicLayer.Services.Teacher.Schedules.VoiceScheduleAnalyzer>();
         services.AddSingleton<IJwtService, JwtService>();
-       
+        
         services.AddScoped<IDashboardService, DashboardService>();
         services.AddScoped<IStudentDashboardService, StudentDashboardService>();
 
