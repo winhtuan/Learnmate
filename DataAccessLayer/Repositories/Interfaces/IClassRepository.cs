@@ -4,6 +4,12 @@ namespace DataAccessLayer.Repositories.Interfaces;
 
 public interface IClassRepository
 {
+    /// <summary>Creates a new class and returns it with its generated Id.</summary>
+    Task<Class> CreateAsync(Class cls);
+
+    /// <summary>Returns all classes owned by a teacher, with member count and next schedule.</summary>
+    Task<IReadOnlyList<Class>> GetByTeacherIdAsync(long teacherId, CancellationToken ct = default);
+
     /// <summary>Returns all ACTIVE classes the student is enrolled in, with teacher profile and next schedule.</summary>
     Task<IReadOnlyList<Class>> GetEnrolledWithDetailsAsync(long studentId, CancellationToken ct = default);
 
@@ -23,3 +29,4 @@ public interface IClassRepository
     /// <summary>Returns true if the student is an ACTIVE member of the class.</summary>
     Task<bool> IsEnrolledAsync(long classId, long studentId, CancellationToken ct = default);
 }
+

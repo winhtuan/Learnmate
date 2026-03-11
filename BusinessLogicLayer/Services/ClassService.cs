@@ -1,5 +1,6 @@
 using BusinessLogicLayer.DTOs;
 using BusinessLogicLayer.DTOs.Class;
+using BusinessLogicLayer.DTOs.Teacher.Classes;
 using BusinessLogicLayer.Services.Interfaces;
 using BusinessObject.Enum;
 using BusinessObject.Models;
@@ -9,6 +10,51 @@ namespace BusinessLogicLayer.Services;
 
 public class ClassService(IClassRepository classRepo) : IClassService
 {
+    public async Task<long> CreateClassAsync(long teacherId, CreateClassDto dto)
+    {
+        var cls = new Class
+        {
+            TeacherId    = teacherId,
+            Name         = dto.Name.Trim(),
+            Subject      = dto.Subject.Trim(),
+            Description  = dto.Description?.Trim(),
+            MaxStudents  = dto.MaxStudents,
+            ThumbnailUrl = string.IsNullOrWhiteSpace(dto.ThumbnailUrl)
+                ? $"https://placehold.co/400?text={Uri.EscapeDataString(dto.Subject)}"
+                : dto.ThumbnailUrl.Trim(),
+            Status = BusinessObject.Enum.ClassStatus.ACTIVE
+        };
+        var created = await classRepo.CreateAsync(cls);
+        return created.Id;
+    }
+
+    public async Task<List<TeacherClassListItemDto>> GetTeacherClassesAsync(
+        long teacherId, CancellationToken ct = default)
+    {
+        var classes = await classRepo.GetByTeacherIdAsync(teacherId, ct);
+
+        return classes.Select(c =>
+        {
+            var next = c.Schedules.FirstOrDefault();
+            return new TeacherClassListItemDto
+            {
+                Id           = c.Id,
+                Name         = c.Name,
+                Subject      = c.Subject,
+                Description  = c.Description,
+                Status       = c.Status,
+                StudentCount = c.ClassMembers.Count,
+                MaxStudents  = c.MaxStudents,
+                ThumbnailUrl = c.ThumbnailUrl,
+                CreatedAt    = c.CreatedAt,
+                NextSessionUtc = next?.StartTime,
+                ScheduleLabel  = next is not null
+                    ? next.StartTime.ToLocalTime().ToString("ddd, MMM d • hh:mm tt")
+                    : null
+            };
+        }).ToList();
+    }
+
     public async Task<ApiResponse<IReadOnlyList<ClassListItemDto>>> GetEnrolledClassesAsync(
         long studentId, CancellationToken ct = default)
     {

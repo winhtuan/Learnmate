@@ -2,6 +2,23 @@ using System.ComponentModel.DataAnnotations;
 
 namespace BusinessLogicLayer.DTOs.Teacher.Profile;
 
+/// <summary>DTO trả về thông tin profile đầy đủ của giáo viên.</summary>
+public class TeacherProfileDto
+{
+    public long    UserId           { get; set; }
+    public string  Email            { get; set; } = string.Empty;
+    public string  FullName         { get; set; } = string.Empty;
+    public string? AvatarUrl        { get; set; }
+    public string? Bio              { get; set; }
+    public string  Subjects         { get; set; } = string.Empty;
+    public decimal HourlyRate       { get; set; }
+    public string? BankAccount      { get; set; }
+    public decimal RatingAvg        { get; set; }
+    public int     TotalRatingCount { get; set; }
+}
+
+
+
 public class UpdateTeacherProfileDto
 {
     [Required(ErrorMessage = "Họ tên không được để trống")]
