@@ -43,7 +43,8 @@
                 }
                 <button class="lm-avatar-btn lm-avatar-add" title="Add account">
                     <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+                        <line x1="12" y1="5" x2="12" y2="19" />
+                        <line x1="5" y1="12" x2="19" y2="12" />
                     </svg>
                 </button>
             </div>
@@ -183,7 +184,7 @@
     private RecentAccount? selectedAccount;
 
     private readonly List<RecentAccount> recentAccounts =
-    [
+        [
         new("Alex Johnson", "alex.johnson@email.com", "https://i.pravatar.cc/48?img=1"),
         new("Maria Chen",   "maria.chen@email.com",   "https://i.pravatar.cc/48?img=5"),
     ];
@@ -204,8 +205,8 @@
     {
         if (Session.IsAuthenticated) return;
         var email = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_email");
-        var role  = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_role");
-        var token  = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_token");
+        var role = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_role");
+        var token = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_token");
         var avatar = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_avatar");
         if (!string.IsNullOrEmpty(email) && !string.IsNullOrEmpty(role) && !string.IsNullOrEmpty(token))
             Session.SetSession(email, role, token, avatar);
@@ -213,10 +214,10 @@
 
     private static string DashboardFor(string? role) => role switch
     {
-        "ADMIN"   => "/admin/dashboard",
+        "ADMIN" => "/admin/dashboard",
         "STUDENT" => "/student-dashboard",
         "TEACHER" => "/teacher/dashboard",
-        _         => "/"
+        _ => "/"
     };
 
     private async Task HandleLogin()
@@ -245,9 +246,9 @@
 
             if (result.Success)
             {
-                var userEmail  = result.Data!.Email;
-                var userRole   = result.Data!.Role;
-                var userToken  = result.Data!.AccessToken;
+                var userEmail = result.Data!.Email;
+                var userRole = result.Data!.Role;
+                var userToken = result.Data!.AccessToken;
                 var userAvatar = result.Data!.AvatarUrl;
                 var userId     = result.Data!.UserId;
                 Session.SetSession(userEmail, userRole, userToken, userAvatar);

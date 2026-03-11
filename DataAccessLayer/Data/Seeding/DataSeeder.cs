@@ -37,36 +37,36 @@ public static class DataSeeder
         m.Entity<User>().HasData(
             new User
             {
-                Id           = 1,
-                Email        = "admin@learnmate.vn",
+                Id = 1,
+                Email = "admin@learnmate.vn",
                 PasswordHash = Hash123,
-                Role         = UserRole.ADMIN,
-                IsActive     = true,
-                AvatarUrl    = "https://placehold.co/400?text=Admin",
-                CreatedAt    = Now,
-                UpdatedAt    = Now,
+                Role = UserRole.ADMIN,
+                IsActive = true,
+                AvatarUrl = "https://placehold.co/400?text=Admin",
+                CreatedAt = Now,
+                UpdatedAt = Now,
             },
             new User
             {
-                Id           = 2,
-                Email        = "teacher@learnmate.vn",
+                Id = 2,
+                Email = "teacher@learnmate.vn",
                 PasswordHash = Hash123,
-                Role         = UserRole.TEACHER,
-                IsActive     = true,
-                AvatarUrl    = "https://placehold.co/400?text=Teacher",
-                CreatedAt    = Now,
-                UpdatedAt    = Now,
+                Role = UserRole.TEACHER,
+                IsActive = true,
+                AvatarUrl = "https://placehold.co/400?text=Teacher",
+                CreatedAt = Now,
+                UpdatedAt = Now,
             },
             new User
             {
-                Id           = 3,
-                Email        = "student@learnmate.vn",
+                Id = 3,
+                Email = "student@learnmate.vn",
                 PasswordHash = Hash123,
-                Role         = UserRole.STUDENT,
-                IsActive     = true,
-                AvatarUrl    = "https://placehold.co/400?text=Student",
-                CreatedAt    = Now,
-                UpdatedAt    = Now,
+                Role = UserRole.STUDENT,
+                IsActive = true,
+                AvatarUrl = "https://placehold.co/400?text=Student",
+                CreatedAt = Now,
+                UpdatedAt = Now,
             }
         );
     }
@@ -77,29 +77,29 @@ public static class DataSeeder
         m.Entity<TeacherProfile>().HasData(
             new TeacherProfile
             {
-                Id               = 1,
-                UserId           = 2,
-                FullName         = "Nguyen Van A",
-                Bio              = "Giáo viên Toán với 5 năm kinh nghiệm.",
-                Subjects         = "Toán, Vật Lý",
-                HourlyRate       = 200_000m,
-                RatingAvg        = 0m,
+                Id = 1,
+                UserId = 2,
+                FullName = "Nguyen Van A",
+                Bio = "Giáo viên Toán với 5 năm kinh nghiệm.",
+                Subjects = "Toán, Vật Lý",
+                HourlyRate = 200_000m,
+                RatingAvg = 0m,
                 TotalRatingCount = 0,
-                CreatedAt        = Now,
-                UpdatedAt        = Now,
+                CreatedAt = Now,
+                UpdatedAt = Now,
             }
         );
 
         m.Entity<StudentProfile>().HasData(
             new StudentProfile
             {
-                Id               = 1,
-                UserId           = 3,
-                FullName         = "Nguyen Minh Tuan",
-                GradeLevel       = "12",
-                StudyStreakDays   = 8,
-                CreatedAt        = Now,
-                UpdatedAt        = Now,
+                Id = 1,
+                UserId = 3,
+                FullName = "Nguyen Minh Tuan",
+                GradeLevel = "12",
+                StudyStreakDays = 8,
+                CreatedAt = Now,
+                UpdatedAt = Now,
             }
         );
     }
@@ -110,16 +110,16 @@ public static class DataSeeder
         m.Entity<Class>().HasData(
             new Class
             {
-                Id          = 1,
-                TeacherId   = 2,
-                Name        = "Toán 12 — Luyện thi THPT",
+                Id = 1,
+                TeacherId = 2,
+                Name = "Toán 12 — Luyện thi THPT",
                 Description = "Ôn luyện toàn bộ chương trình Toán lớp 12.",
-                Subject     = "Toán",
-                Status      = ClassStatus.ACTIVE,
-                MaxStudents  = 20,
+                Subject = "Toán",
+                Status = ClassStatus.ACTIVE,
+                MaxStudents = 20,
                 ThumbnailUrl = "https://placehold.co/400?text=Course",
-                CreatedAt    = Now,
-                UpdatedAt    = Now,
+                CreatedAt = Now,
+                UpdatedAt = Now,
             }
         );
     }
@@ -130,11 +130,11 @@ public static class DataSeeder
         m.Entity<ClassMember>().HasData(
             new ClassMember
             {
-                Id        = 1,
-                ClassId   = 1,
+                Id = 1,
+                ClassId = 1,
                 StudentId = 3,
-                Status    = ClassMemberStatus.ACTIVE,
-                JoinedAt  = Now,
+                Status = ClassMemberStatus.ACTIVE,
+                JoinedAt = Now,
             }
         );
     }
