@@ -21,6 +21,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<Schedule> Schedules => Set<Schedule>();
     public DbSet<VideoSession> VideoSessions => Set<VideoSession>();
     public DbSet<Material> Materials => Set<Material>();
+    public DbSet<Attendance> Attendances => Set<Attendance>();
 
     // ── Assignment System ────────────────────────────────────────────────────
     public DbSet<Assignment> Assignments => Set<Assignment>();

@@ -31,4 +31,5 @@ public class Schedule : AuditableEntity
     public Class Class { get; set; } = null!;
 
     public VideoSession? VideoSession { get; set; }
+    public ICollection<Attendance> Attendances { get; set; } = [];
 }
