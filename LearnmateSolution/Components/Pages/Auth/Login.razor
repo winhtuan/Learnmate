@@ -250,18 +250,16 @@
                 var userRole = result.Data!.Role;
                 var userToken = result.Data!.AccessToken;
                 var userAvatar = result.Data!.AvatarUrl;
+                var userId     = result.Data!.UserId;
                 Session.SetSession(userEmail, userRole, userToken, userAvatar);
-                await JS.InvokeVoidAsync("sessionStorage.setItem", "lm_email", userEmail);
-                await JS.InvokeVoidAsync("sessionStorage.setItem", "lm_role", userRole);
-                await JS.InvokeVoidAsync("sessionStorage.setItem", "lm_token", userToken);
+                await JS.InvokeVoidAsync("sessionStorage.setItem", "lm_email",  userEmail);
+                await JS.InvokeVoidAsync("sessionStorage.setItem", "lm_role",   userRole);
+                await JS.InvokeVoidAsync("sessionStorage.setItem", "lm_token",  userToken);
+                await JS.InvokeVoidAsync("sessionStorage.setItem", "lm_userid", userId.ToString());
                 if (!string.IsNullOrEmpty(userAvatar))
-                {
-                    await JS.InvokeVoidAsync("sessionStorage.setItem", "lm_avatar", userAvatar);
-                }
+                    await JS.InvokeVoidAsync("sessionStorage.setItem",    "lm_avatar", userAvatar);
                 else
-                {
                     await JS.InvokeVoidAsync("sessionStorage.removeItem", "lm_avatar");
-                }
                 Nav.NavigateTo(DashboardFor(userRole));
             }
             else
