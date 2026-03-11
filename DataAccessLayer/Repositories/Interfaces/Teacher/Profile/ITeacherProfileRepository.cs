@@ -1,9 +1,10 @@
-// using BusinessObject.Models;
+using BusinessObject.Models;
 
 namespace DataAccessLayer.Repositories.Interfaces.Teacher.Profile;
 
 public interface ITeacherProfileRepository
 {
-    // Task<TeacherProfile?> GetByTeacherIdAsync(int teacherId);
-    // Task UpdateAsync(TeacherProfile profile);
+    Task<TeacherProfile?> GetByUserIdAsync(long userId);
+    Task UpdateAsync(TeacherProfile profile);
 }
+

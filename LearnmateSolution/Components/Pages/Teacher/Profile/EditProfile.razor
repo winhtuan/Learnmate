@@ -1,31 +1,486 @@
-@page "/teacher/profile/edit"
-@* @inject ITeacherProfileService ProfileService *@
+@page "/teacher/profile"
+@rendermode InteractiveServer
+@layout Layout.TeacherLayout
 
-<PageTitle>Edit Profile</PageTitle>
+@using BusinessLogicLayer.DTOs.Teacher.Profile
+@using BusinessLogicLayer.Services.Interfaces.Teacher.Profile
+@using LearnmateSolution.AppState
+@inject ITeacherProfileService ProfileService
+@inject UserSessionService Session
+@inject NavigationManager NavigationManager
 
-<h3>Edit Teacher Profile</h3>
+<PageTitle>Hồ sơ của tôi | LearnMate</PageTitle>
 
-<p>This is where Dev A will work on the form to update teacher details.</p>
-
-<div class="row">
-    <div class="col-md-6">
-        @* Example Form structure *@
-        <div class="mb-3">
-            <label class="form-label">Full Name</label>
-            <input type="text" class="form-control" placeholder="Enter full name" />
-        </div>
-        <div class="mb-3">
-            <label class="form-label">Bio</label>
-            <textarea class="form-control" rows="3" placeholder="Tell us about yourself"></textarea>
-        </div>
-        <button class="btn btn-primary">Save Changes</button>
+@if (IsLoading)
+{
+    <div class="flex items-center justify-center py-24">
+        <span class="material-symbols-outlined animate-spin text-primary text-4xl">progress_activity</span>
     </div>
-</div>
+}
+else
+{
+    <!-- Page Header -->
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold tracking-tight text-slate-900 mb-1">Hồ sơ của tôi</h1>
+        <p class="text-slate-500">Quản lý thông tin cá nhân và bảo mật tài khoản.</p>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+
+        <!-- ── Left: Avatar card ─────────────────────────────────── -->
+        <div class="lg:col-span-4">
+            <div class="bg-white border border-slate-200 rounded-xl shadow-sm p-6 flex flex-col items-center text-center gap-4">
+                <!-- Avatar -->
+                <div class="relative group">
+                    <div class="size-28 rounded-full overflow-hidden border-4 border-white shadow-md ring-2 ring-slate-100">
+                        @if (!string.IsNullOrWhiteSpace(ProfileForm.AvatarUrl))
+                        {
+                            <img src="@ProfileForm.AvatarUrl" alt="Avatar" class="size-full object-cover" />
+                        }
+                        else
+                        {
+                            <div class="size-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
+                                <span class="text-white text-4xl font-bold">@GetInitials()</span>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <div>
+                    <h2 class="text-xl font-bold text-slate-900">@ProfileForm.FullName</h2>
+                    <p class="text-slate-500 text-sm mt-0.5">@Profile?.Email</p>
+                    <div class="inline-flex items-center gap-1 mt-2 px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-semibold">
+                        <span class="material-symbols-outlined text-[14px]">school</span>
+                        Giáo viên
+                    </div>
+                </div>
+
+                <!-- Rating -->
+                @if (Profile != null && Profile.TotalRatingCount > 0)
+                {
+                    <div class="w-full pt-4 border-t border-slate-100">
+                        <div class="flex items-center justify-center gap-2">
+                            <span class="material-symbols-outlined text-yellow-400 text-[22px]">star</span>
+                            <span class="text-2xl font-bold text-slate-900">@Profile.RatingAvg.ToString("F1")</span>
+                            <span class="text-slate-400 text-sm">(@Profile.TotalRatingCount đánh giá)</span>
+                        </div>
+                    </div>
+                }
+
+                <!-- Avatar URL input -->
+                <div class="w-full pt-4 border-t border-slate-100">
+                    <label class="block text-xs font-semibold text-slate-500 text-left mb-1.5">URL ảnh đại diện</label>
+                    <input type="url"
+                           @bind="ProfileForm.AvatarUrl"
+                           @bind:event="oninput"
+                           placeholder="https://example.com/avatar.jpg"
+                           class="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary focus:border-primary outline-none" />
+                    <p class="text-[11px] text-slate-400 mt-1 text-left">Dán đường dẫn URL ảnh của bạn</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── Right: Forms ──────────────────────────────────────── -->
+        <div class="lg:col-span-8 flex flex-col gap-6">
+
+            <!-- ── Tab Navigation ── -->
+            <div class="flex border-b border-slate-200">
+                <button @onclick='() => ActiveTab = "profile"'
+                        class="@TabClass("profile") px-5 py-3 text-sm font-semibold transition-colors border-b-2">
+                    <span class="flex items-center gap-2">
+                        <span class="material-symbols-outlined text-[18px]">person</span>
+                        Thông tin cá nhân
+                    </span>
+                </button>
+                <button @onclick='() => ActiveTab = "password"'
+                        class="@TabClass("password") px-5 py-3 text-sm font-semibold transition-colors border-b-2">
+                    <span class="flex items-center gap-2">
+                        <span class="material-symbols-outlined text-[18px]">lock</span>
+                        Đổi mật khẩu
+                    </span>
+                </button>
+            </div>
+
+            <!-- ── Profile Info Tab ── -->
+            @if (ActiveTab == "profile")
+            {
+                <EditForm Model="ProfileForm" OnValidSubmit="HandleProfileSubmit">
+                    <DataAnnotationsValidator />
+
+                    <div class="bg-white border border-slate-200 rounded-xl shadow-sm p-6">
+                        <h3 class="text-base font-bold text-slate-900 mb-5 pb-3 border-b border-slate-100">Thông tin cơ bản</h3>
+
+                        @if (!string.IsNullOrEmpty(ProfileMessage))
+                        {
+                            <div class="mb-4 p-3.5 rounded-lg flex items-center gap-2 text-sm
+                                        @(ProfileSuccess ? "bg-green-50 text-green-700 border border-green-200" : "bg-red-50 text-red-600 border border-red-200")">
+                                <span class="material-symbols-outlined text-[18px]">@(ProfileSuccess ? "check_circle" : "error")</span>
+                                @ProfileMessage
+                            </div>
+                        }
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                            <!-- Full Name -->
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-medium text-slate-700 mb-1.5">
+                                    Họ và tên <span class="text-red-500">*</span>
+                                </label>
+                                <InputText @bind-Value="ProfileForm.FullName"
+                                           class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all"
+                                           placeholder="Nguyễn Văn A" />
+                                <ValidationMessage For="@(() => ProfileForm.FullName)" class="text-red-500 text-xs mt-1" />
+                            </div>
+
+                            <!-- Subjects -->
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1.5">
+                                    Môn dạy <span class="text-red-500">*</span>
+                                </label>
+                                <InputText @bind-Value="ProfileForm.Subjects"
+                                           class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all"
+                                           placeholder="Toán, Vật lý, Hóa học" />
+                                <ValidationMessage For="@(() => ProfileForm.Subjects)" class="text-red-500 text-xs mt-1" />
+                            </div>
+
+                            <!-- Hourly Rate -->
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1.5">
+                                    Học phí (VNĐ/giờ) <span class="text-red-500">*</span>
+                                </label>
+                                <InputNumber @bind-Value="ProfileForm.HourlyRate"
+                                             class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all"
+                                             placeholder="200000" />
+                                <ValidationMessage For="@(() => ProfileForm.HourlyRate)" class="text-red-500 text-xs mt-1" />
+                            </div>
+
+                            <!-- Bank Account -->
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-medium text-slate-700 mb-1.5">
+                                    Số tài khoản ngân hàng
+                                </label>
+                                <div class="relative">
+                                    <span class="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-400 text-[20px]">account_balance</span>
+                                    <InputText @bind-Value="ProfileForm.BankAccount"
+                                               class="w-full pl-10 pr-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all"
+                                               placeholder="Vietcombank - 1234567890" />
+                                </div>
+                            </div>
+
+                            <!-- Bio -->
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-medium text-slate-700 mb-1.5">Giới thiệu bản thân</label>
+                                <InputTextArea @bind-Value="ProfileForm.Bio"
+                                               rows="4"
+                                               class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all resize-y"
+                                               placeholder="Mô tả kinh nghiệm giảng dạy, học vấn, phương pháp dạy học của bạn..." />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-end gap-3 mt-2">
+                        <button type="button" @onclick="ResetProfileForm"
+                                class="px-5 py-2.5 rounded-lg border border-slate-200 text-slate-600 text-sm font-medium hover:bg-slate-50 transition-colors">
+                            Hoàn tác
+                        </button>
+                        <button type="submit" disabled="@IsProfileSubmitting"
+                                class="flex items-center gap-2 px-6 py-2.5 rounded-lg bg-primary hover:bg-blue-600 text-white text-sm font-medium transition-all shadow-sm disabled:opacity-60 disabled:cursor-not-allowed">
+                            @if (IsProfileSubmitting)
+                            {
+                                <span class="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>
+                                <span>Đang lưu...</span>
+                            }
+                            else
+                            {
+                                <span class="material-symbols-outlined text-[18px]">save</span>
+                                <span>Lưu thay đổi</span>
+                            }
+                        </button>
+                    </div>
+                </EditForm>
+            }
+
+            <!-- ── Change Password Tab ── -->
+            @if (ActiveTab == "password")
+            {
+                <EditForm Model="PasswordForm" OnValidSubmit="HandlePasswordSubmit">
+                    <DataAnnotationsValidator />
+
+                    <div class="bg-white border border-slate-200 rounded-xl shadow-sm p-6">
+                        <h3 class="text-base font-bold text-slate-900 mb-5 pb-3 border-b border-slate-100">Đổi mật khẩu</h3>
+
+                        @if (!string.IsNullOrEmpty(PasswordMessage))
+                        {
+                            <div class="mb-4 p-3.5 rounded-lg flex items-center gap-2 text-sm
+                                        @(PasswordSuccess ? "bg-green-50 text-green-700 border border-green-200" : "bg-red-50 text-red-600 border border-red-200")">
+                                <span class="material-symbols-outlined text-[18px]">@(PasswordSuccess ? "check_circle" : "error")</span>
+                                @PasswordMessage
+                            </div>
+                        }
+
+                        <div class="flex flex-col gap-5 max-w-md">
+                            <!-- Current Password -->
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1.5">
+                                    Mật khẩu hiện tại <span class="text-red-500">*</span>
+                                </label>
+                                <div class="relative">
+                                    <span class="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-400 text-[20px]">lock</span>
+                                    <InputText @bind-Value="PasswordForm.CurrentPassword"
+                                               type="@(ShowCurrent ? "text" : "password")"
+                                               class="w-full pl-10 pr-10 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all"
+                                               placeholder="••••••••" />
+                                    <button type="button" @onclick='() => ShowCurrent = !ShowCurrent'
+                                            class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                                        <span class="material-symbols-outlined text-[20px]">@(ShowCurrent ? "visibility_off" : "visibility")</span>
+                                    </button>
+                                </div>
+                                <ValidationMessage For="@(() => PasswordForm.CurrentPassword)" class="text-red-500 text-xs mt-1" />
+                            </div>
+
+                            <!-- New Password -->
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1.5">
+                                    Mật khẩu mới <span class="text-red-500">*</span>
+                                </label>
+                                <div class="relative">
+                                    <span class="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-400 text-[20px]">lock_reset</span>
+                                    <InputText @bind-Value="PasswordForm.NewPassword"
+                                               type="@(ShowNew ? "text" : "password")"
+                                               class="w-full pl-10 pr-10 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all"
+                                               placeholder="••••••••" />
+                                    <button type="button" @onclick='() => ShowNew = !ShowNew'
+                                            class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                                        <span class="material-symbols-outlined text-[20px]">@(ShowNew ? "visibility_off" : "visibility")</span>
+                                    </button>
+                                </div>
+                                <ValidationMessage For="@(() => PasswordForm.NewPassword)" class="text-red-500 text-xs mt-1" />
+                                <!-- Strength bar -->
+                                @if (!string.IsNullOrEmpty(PasswordForm.NewPassword))
+                                {
+                                    var strength = GetPasswordStrength(PasswordForm.NewPassword);
+                                    <div class="mt-2 flex gap-1">
+                                        @for (int i = 0; i < 4; i++)
+                                        {
+                                            var iCopy = i;
+                                            <div class="h-1.5 flex-1 rounded-full @(iCopy < strength.Level ? strength.Color : "bg-slate-200") transition-colors"></div>
+                                        }
+                                    </div>
+                                    <p class="text-xs mt-1 @strength.TextColor">@strength.Label</p>
+                                }
+                            </div>
+
+                            <!-- Confirm Password -->
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1.5">
+                                    Xác nhận mật khẩu mới <span class="text-red-500">*</span>
+                                </label>
+                                <div class="relative">
+                                    <span class="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-400 text-[20px]">verified</span>
+                                    <InputText @bind-Value="PasswordForm.ConfirmNewPassword"
+                                               type="@(ShowConfirm ? "text" : "password")"
+                                               class="w-full pl-10 pr-10 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all"
+                                               placeholder="••••••••" />
+                                    <button type="button" @onclick='() => ShowConfirm = !ShowConfirm'
+                                            class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                                        <span class="material-symbols-outlined text-[20px]">@(ShowConfirm ? "visibility_off" : "visibility")</span>
+                                    </button>
+                                </div>
+                                <ValidationMessage For="@(() => PasswordForm.ConfirmNewPassword)" class="text-red-500 text-xs mt-1" />
+                            </div>
+                        </div>
+
+                        <!-- Guidelines -->
+                        <div class="mt-6 p-4 rounded-lg bg-slate-50 border border-slate-100">
+                            <p class="text-xs font-semibold text-slate-600 mb-2">Yêu cầu mật khẩu:</p>
+                            <ul class="space-y-1 text-xs text-slate-500">
+                                <li class="flex items-center gap-1.5">
+                                    <span class="material-symbols-outlined text-[14px] @(PasswordForm.NewPassword.Length >= 6 ? "text-green-500" : "text-slate-300")">check_circle</span>
+                                    Ít nhất 6 ký tự
+                                </li>
+                                <li class="flex items-center gap-1.5">
+                                    <span class="material-symbols-outlined text-[14px] @(PasswordForm.NewPassword == PasswordForm.ConfirmNewPassword && !string.IsNullOrEmpty(PasswordForm.NewPassword) ? "text-green-500" : "text-slate-300")">check_circle</span>
+                                    Mật khẩu xác nhận khớp
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-end gap-3 mt-2">
+                        <button type="button" @onclick="ResetPasswordForm"
+                                class="px-5 py-2.5 rounded-lg border border-slate-200 text-slate-600 text-sm font-medium hover:bg-slate-50 transition-colors">
+                            Xóa form
+                        </button>
+                        <button type="submit" disabled="@IsPasswordSubmitting"
+                                class="flex items-center gap-2 px-6 py-2.5 rounded-lg bg-primary hover:bg-blue-600 text-white text-sm font-medium transition-all shadow-sm disabled:opacity-60 disabled:cursor-not-allowed">
+                            @if (IsPasswordSubmitting)
+                            {
+                                <span class="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>
+                                <span>Đang đổi...</span>
+                            }
+                            else
+                            {
+                                <span class="material-symbols-outlined text-[18px]">key</span>
+                                <span>Đổi mật khẩu</span>
+                            }
+                        </button>
+                    </div>
+                </EditForm>
+            }
+        </div>
+    </div>
+}
 
 @code {
-    // Add logic for component initialization, form submisson, state handling etc.
+    // ── State ──────────────────────────────────────────────────────────────────
+    private TeacherProfileDto? Profile;
+    private UpdateTeacherProfileDto ProfileForm = new();
+    private ChangePasswordDto       PasswordForm = new();
+
+    private bool   IsLoading          = true;
+    private bool   IsProfileSubmitting = false;
+    private bool   IsPasswordSubmitting = false;
+
+    private string? ProfileMessage;
+    private bool    ProfileSuccess;
+    private string? PasswordMessage;
+    private bool    PasswordSuccess;
+
+    private string  ActiveTab   = "profile";
+    private bool    ShowCurrent = false;
+    private bool    ShowNew     = false;
+    private bool    ShowConfirm = false;
+
+    // ── Lifecycle ──────────────────────────────────────────────────────────────
     protected override async Task OnInitializedAsync()
     {
-        // Fetch current profile data using Service
+        // Hardcode userId = 1 nếu chưa có session thực; thay bằng Session.UserId khi đã login
+        long userId = Session.UserId > 0 ? Session.UserId : 1;
+
+        try
+        {
+            Profile = await ProfileService.GetProfileAsync(userId);
+            if (Profile is not null) MapProfileToForm();
+        }
+        catch { /* log nếu cần */ }
+        finally { IsLoading = false; }
+    }
+
+    // ── Helpers ────────────────────────────────────────────────────────────────
+    private void MapProfileToForm()
+    {
+        ProfileForm = new UpdateTeacherProfileDto
+        {
+            FullName    = Profile!.FullName,
+            Bio         = Profile.Bio,
+            Subjects    = Profile.Subjects,
+            HourlyRate  = Profile.HourlyRate,
+            BankAccount = Profile.BankAccount,
+            AvatarUrl   = Profile.AvatarUrl
+        };
+    }
+
+    private void ResetProfileForm() => MapProfileToForm();
+    private void ResetPasswordForm() => PasswordForm = new();
+
+    private string GetInitials()
+    {
+        var name = ProfileForm.FullName.Trim();
+        if (string.IsNullOrEmpty(name)) return "?";
+        var parts = name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        return parts.Length >= 2
+            ? $"{parts[0][0]}{parts[^1][0]}".ToUpper()
+            : name[0].ToString().ToUpper();
+    }
+
+    private string TabClass(string tab) => tab == ActiveTab
+        ? "border-primary text-primary"
+        : "border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300";
+
+    private (int Level, string Color, string TextColor, string Label) GetPasswordStrength(string pwd)
+    {
+        int score = 0;
+        if (pwd.Length >= 6)  score++;
+        if (pwd.Length >= 10) score++;
+        if (pwd.Any(char.IsDigit) && pwd.Any(char.IsLetter)) score++;
+        if (pwd.Any(c => !char.IsLetterOrDigit(c))) score++;
+
+        return score switch
+        {
+            1 => (1, "bg-red-400",    "text-red-500",    "Yếu"),
+            2 => (2, "bg-orange-400", "text-orange-500", "Trung bình"),
+            3 => (3, "bg-yellow-400", "text-yellow-600", "Khá"),
+            4 => (4, "bg-green-400",  "text-green-600",  "Mạnh"),
+            _ => (0, "bg-slate-200",  "text-slate-400",  "")
+        };
+    }
+
+    // ── Handlers ───────────────────────────────────────────────────────────────
+    private async Task HandleProfileSubmit()
+    {
+        ProfileMessage = null;
+        IsProfileSubmitting = true;
+
+        try
+        {
+            long userId = Session.UserId > 0 ? Session.UserId : 1;
+            var result = await ProfileService.UpdateProfileAsync(userId, ProfileForm);
+
+            ProfileSuccess = result.Success;
+            ProfileMessage = result.Message ?? (result.Success ? "Cập nhật thành công." : "Có lỗi xảy ra.");
+
+            if (result.Success)
+            {
+                // Cập nhật session
+                Session.UpdateFullName(ProfileForm.FullName);
+                Session.UpdateAvatar(ProfileForm.AvatarUrl);
+
+                // Refresh local profile reference
+                if (Profile is not null)
+                {
+                    Profile.FullName    = ProfileForm.FullName;
+                    Profile.Bio         = ProfileForm.Bio;
+                    Profile.Subjects    = ProfileForm.Subjects;
+                    Profile.HourlyRate  = ProfileForm.HourlyRate;
+                    Profile.BankAccount = ProfileForm.BankAccount;
+                    Profile.AvatarUrl   = ProfileForm.AvatarUrl;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            ProfileSuccess = false;
+            ProfileMessage = "Lỗi hệ thống: " + ex.Message;
+        }
+        finally
+        {
+            IsProfileSubmitting = false;
+        }
+    }
+
+    private async Task HandlePasswordSubmit()
+    {
+        PasswordMessage = null;
+        IsPasswordSubmitting = true;
+
+        try
+        {
+            long userId = Session.UserId > 0 ? Session.UserId : 1;
+            var result = await ProfileService.ChangePasswordAsync(userId, PasswordForm);
+
+            PasswordSuccess = result.Success;
+            PasswordMessage = result.Message ?? (result.Success ? "Đổi mật khẩu thành công." : "Có lỗi xảy ra.");
+
+            if (result.Success)
+                PasswordForm = new ChangePasswordDto();
+        }
+        catch (Exception ex)
+        {
+            PasswordSuccess = false;
+            PasswordMessage = "Lỗi hệ thống: " + ex.Message;
+        }
+        finally
+        {
+            IsPasswordSubmitting = false;
+        }
     }
 }
