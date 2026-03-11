@@ -120,6 +120,7 @@ public class ClassController(IClassService classService) : ControllerBase
             stream,
             file.FileName,
             file.ContentType,
+            file.Length,
             ct
         );
         return result.Success ? Ok(result) : BadRequest(result);

@@ -192,6 +192,7 @@ public class ClassService(
         Stream fileStream,
         string fileName,
         string contentType,
+        long? fileSizeBytes = null,
         CancellationToken ct = default
     )
     {
@@ -210,6 +211,7 @@ public class ClassService(
             Title = title,
             FileUrl = fileUrl,
             FileType = string.IsNullOrEmpty(ext) ? "FILE" : ext,
+            FileSizeBytes = fileSizeBytes,
             Status = MaterialStatus.ACTIVE,
         };
 
@@ -270,6 +272,10 @@ public class ClassService(
         else
             status = "not_started";
 
+        var totalPoints = a.Questions.Count > 0
+            ? a.Questions.Sum(q => q.Points)
+            : (decimal?)null;
+
         return new ClassAssignmentDto(
             Id: a.Id,
             Title: a.Title,
@@ -277,7 +283,8 @@ public class ClassService(
             DueDateLocal: a.DueDate?.ToLocalTime(),
             SubmissionStatus: status,
             Score: sub?.Score,
-            TotalQuestions: null // questions not loaded in this query
+            TotalQuestions: a.Questions.Count > 0 ? a.Questions.Count : null,
+            TotalPoints: totalPoints
         );
     }
 
@@ -298,6 +305,7 @@ public class ClassService(
             Description: m.Description,
             FileType: m.FileType,
             FileUrl: m.FileUrl,
-            UploadedAtLocal: m.CreatedAt.ToLocalTime()
+            UploadedAtLocal: m.CreatedAt.ToLocalTime(),
+            FileSizeBytes: m.FileSizeBytes
         );
 }

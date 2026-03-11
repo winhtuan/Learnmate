@@ -92,6 +92,7 @@ public class ClassRepository(AppDbContext db) : IClassRepository
                 && a.Status == AssignmentStatus.PUBLISHED
             )
             .OrderBy(a => a.DueDate)
+            .Include(a => a.Questions)
             .Include(a =>
                 a.Submissions.Where(s => s.StudentId == studentId && s.DeletedAt == null).Take(1)
             )

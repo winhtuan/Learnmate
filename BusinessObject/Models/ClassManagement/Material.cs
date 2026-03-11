@@ -26,6 +26,8 @@ public class Material : AuditableEntity
     [MaxLength(50)]
     public string FileType { get; set; } = null!;
 
+    public long? FileSizeBytes { get; set; }
+
     [Required]
     public MaterialStatus Status { get; set; } = MaterialStatus.ACTIVE;
 

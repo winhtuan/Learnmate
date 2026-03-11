@@ -32,7 +32,8 @@ public record ClassAssignmentDto(
     DateTime? DueDateLocal,
     string SubmissionStatus, // "not_started" | "in_progress" | "submitted" | "graded" | "missing"
     decimal? Score,
-    int? TotalQuestions
+    int? TotalQuestions,
+    decimal? TotalPoints
 );
 
 public record ClassScheduleItemDto(
@@ -50,5 +51,6 @@ public record ClassMaterialDto(
     string? Description,
     string FileType,
     string FileUrl,
-    DateTime UploadedAtLocal
+    DateTime UploadedAtLocal,
+    long? FileSizeBytes
 );

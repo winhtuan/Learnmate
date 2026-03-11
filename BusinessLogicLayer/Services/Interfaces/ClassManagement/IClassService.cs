@@ -53,6 +53,7 @@ public interface IClassService
         Stream fileStream,
         string fileName,
         string contentType,
+        long? fileSizeBytes = null,
         CancellationToken ct = default
     );
 

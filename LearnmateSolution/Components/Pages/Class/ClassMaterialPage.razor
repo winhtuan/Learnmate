@@ -52,6 +52,7 @@
                         <tr>
                             <th class="px-6 py-3 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Name</th>
                             <th class="px-6 py-3 text-left text-xs font-bold text-slate-400 uppercase tracking-wider hidden md:table-cell">Type</th>
+                            <th class="px-6 py-3 text-left text-xs font-bold text-slate-400 uppercase tracking-wider hidden lg:table-cell">Size</th>
                             <th class="px-6 py-3 text-left text-xs font-bold text-slate-400 uppercase tracking-wider hidden lg:table-cell">Uploaded</th>
                             <th class="px-6 py-3"></th>
                         </tr>
@@ -214,7 +215,7 @@
             Name:      m.Title,
             Type:      m.FileType.ToUpperInvariant(),
             Date:      m.UploadedAtLocal.ToString("MMM d"),
-            Size:      "",
+            Size:      ClassPageHelpers.FormatFileSize(m.FileSizeBytes),
             FileUrl:   m.FileUrl,
             Icon:      ClassPageHelpers.FileIcon(m.FileType),
             IconColor: ClassPageHelpers.IconColor(i),

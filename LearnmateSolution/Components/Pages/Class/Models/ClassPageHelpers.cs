@@ -56,4 +56,13 @@ internal static class ClassPageHelpers
         "mp4" or "avi" or "mov" => "videocam",
         _                        => "description"
     };
+
+    public static string FormatFileSize(long? bytes) => bytes switch
+    {
+        null or 0       => "—",
+        < 1024          => $"{bytes} B",
+        < 1_048_576     => $"{bytes / 1024.0:0.#} KB",
+        < 1_073_741_824 => $"{bytes / 1_048_576.0:0.#} MB",
+        _               => $"{bytes / 1_073_741_824.0:0.#} GB"
+    };
 }

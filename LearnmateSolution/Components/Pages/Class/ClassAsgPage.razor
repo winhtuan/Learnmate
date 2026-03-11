@@ -199,7 +199,7 @@
             Title:            a.Title,
             Type:             "Assignment",
             DueDate:          dueLabel,
-            Points:           "",
+            Points:           a.TotalPoints is { } tp ? $"{tp:0.#} pts" : "",
             SubmissionStatus: a.SubmissionStatus,
             Instructions:     new AssignmentInstructions(
                 Text:  a.Description ?? "No description provided.",
