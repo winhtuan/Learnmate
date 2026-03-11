@@ -8,6 +8,7 @@
 @inject ITeacherProfileService ProfileService
 @inject UserSessionService Session
 @inject NavigationManager NavigationManager
+@inject IJSRuntime JS
 
 <PageTitle>Hồ sơ của tôi | LearnMate</PageTitle>
 
@@ -353,16 +354,53 @@ else
     // ── Lifecycle ──────────────────────────────────────────────────────────────
     protected override async Task OnInitializedAsync()
     {
-        // Hardcode userId = 1 nếu chưa có session thực; thay bằng Session.UserId khi đã login
-        long userId = Session.UserId > 0 ? Session.UserId : 1;
+        // UserId sẽ được load trong OnAfterRenderAsync (cần JS interop)
+        // Nếu session đã có, dùng luôn
+        if (Session.UserId > 0)
+        {
+            await LoadProfileAsync(Session.UserId);
+            IsLoading = false;
+        }
+    }
 
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+
+        // Session.UserId đã có → đã load trong OnInitializedAsync → skip
+        if (Session.UserId > 0 && Profile is not null) return;
+
+        // Đọc userId từ sessionStorage (JS interop chỉ dùng được trong OnAfterRender)
+        long userId = Session.UserId;
+        if (userId <= 0)
+        {
+            var stored = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_userid");
+            if (long.TryParse(stored, out var parsed) && parsed > 0)
+                userId = parsed;
+        }
+
+        // Fallback cuối cùng: dùng 2 (seeded teacher)
+        if (userId <= 0) userId = 2;
+
+        await LoadProfileAsync(userId);
+        IsLoading = false;
+        StateHasChanged();
+    }
+
+    private async Task LoadProfileAsync(long userId)
+    {
         try
         {
             Profile = await ProfileService.GetProfileAsync(userId);
-            if (Profile is not null) MapProfileToForm();
+            if (Profile is not null)
+                MapProfileToForm();
+            else
+                ProfileMessage = "Không tìm thấy hồ sơ giáo viên.";
         }
-        catch { /* log nếu cần */ }
-        finally { IsLoading = false; }
+        catch
+        {
+            ProfileMessage = "Lỗi kết nối, vui lòng thử lại.";
+        }
     }
 
     // ── Helpers ────────────────────────────────────────────────────────────────
@@ -422,7 +460,7 @@ else
 
         try
         {
-            long userId = Session.UserId > 0 ? Session.UserId : 1;
+            long userId = Session.UserId > 0 ? Session.UserId : 2;
             var result = await ProfileService.UpdateProfileAsync(userId, ProfileForm);
 
             ProfileSuccess = result.Success;
@@ -464,7 +502,7 @@ else
 
         try
         {
-            long userId = Session.UserId > 0 ? Session.UserId : 1;
+            long userId = Session.UserId > 0 ? Session.UserId : 2;
             var result = await ProfileService.ChangePasswordAsync(userId, PasswordForm);
 
             PasswordSuccess = result.Success;
