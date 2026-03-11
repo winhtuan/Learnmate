@@ -1,58 +1,104 @@
-@page "/classes/{Id:int}/videos"
+@page "/classes/{Id:long}/videos"
 @layout ClassLayout
 @rendermode InteractiveServer
 @using LearnmateSolution.Components.Layout
 @using LearnmateSolution.Components.Pages.Class.Components
 @using LearnmateSolution.Components.Pages.Class.Models
+@using BusinessLogicLayer.DTOs
+@using BusinessLogicLayer.DTOs.Class
+@inject NavigationManager Nav
+@inject UserSessionService Session
+@inject IJSRuntime JS
+@inject IHttpClientFactory HttpClientFactory
 
 <div class="space-y-6 max-w-screen-xl mx-auto">
-    <Breadcrumb Items="@([ new("Dashboard", "/student-dashboard"), new("My Classes", "/classes"), new("Advanced Calculus", $"/classes/{Id}"), new("Videos") ])" />
+    <Breadcrumb Items="@([ new("Dashboard", "/student-dashboard"), new("My Classes", "/classes"), new(_className, $"/classes/{Id}"), new("Videos") ])" />
 
-    <HeroBanner
-        ClassCode="MATH101"
-        ClassStatus="Active"
-        ClassName="Advanced Calculus"
-        Description="Multivariable calculus, vector analysis, and differential equations for science and engineering students."
-        BackgroundImage="https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=1200" />
-
-    <ClassTabNav ClassId="@Id" ActiveTab="videos" />
-
-    @* Live Session *@
-    <LiveSessionCard Session="liveSession" />
-
-    @* Recorded lectures *@
-    <div>
-        <div class="flex items-center justify-between mb-4">
-            <h3 class="text-xl font-bold text-slate-900">Recorded Lectures</h3>
-            <button class="text-sm font-semibold text-primary hover:text-primary/80 transition-colors">View all (@lectures.Count)</button>
+    @if (!_ready)
+    {
+        <div class="flex items-center justify-center h-64 text-slate-400">
+            <svg class="animate-spin h-8 w-8 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+            </svg>
+            <span class="text-sm font-medium">Loading...</span>
         </div>
-        <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
-            @foreach (var lecture in lectures)
-            {
-                <VideoLectureCard Lecture="lecture" />
-            }
+    }
+    else
+    {
+        <HeroBanner ClassCode="@_subject" ClassStatus="@_status" ClassName="@_className"
+                    Description="@_description" BackgroundImage="" />
+
+        <ClassTabNav ClassId="@Id" ActiveTab="videos" />
+
+        @* Video sessions not yet implemented — placeholder *@
+        <div class="flex flex-col items-center justify-center py-20 bg-white rounded-[2rem] border border-slate-100 shadow-sm text-slate-400">
+            <span class="material-symbols-outlined text-5xl mb-3">videocam_off</span>
+            <p class="text-base font-medium">No recorded lectures available yet.</p>
         </div>
-    </div>
+    }
 </div>
 
 @code {
-    [Parameter] public int Id { get; set; }
+    [Parameter] public long Id { get; set; }
 
-    // LiveSession(string Status, string Date, string Title, string Description, LiveSessionHost Host, int StudentsWaiting)
-    private LiveSession liveSession = new(
-        Status: "Live Now",
-        Date: "Monday, October 16 • 9:00 AM",
-        Title: "Multivariable Chain Rule",
-        Description: "Today we continue with advanced chain rule applications in multivariable calculus. Bring your problem sets!",
-        Host: new LiveSessionHost("Prof. Sarah Smith", "https://api.dicebear.com/7.x/notionists/svg?seed=sarah"),
-        StudentsWaiting: 12
-    );
+    private bool _ready;
+    private string _className   = "Class";
+    private string _subject     = "";
+    private string _status      = "ACTIVE";
+    private string _description = "";
 
-    // VideoLecture(int Id, string Title, string Duration, string Date, string Unit, string GradientFrom, string GradientTo, string AccentGradient)
-    private List<VideoLecture> lectures =
-    [
-        new VideoLecture(1, "Introduction to Partial Derivatives", "52:14", "Oct 2, 2023", "Unit 1", "from-sky-600",    "to-blue-900",   "from-sky-300"),
-        new VideoLecture(2, "Gradient Vectors and Directional Derivatives", "48:33", "Oct 4, 2023", "Unit 1", "from-emerald-600", "to-teal-900", "from-emerald-300"),
-        new VideoLecture(3, "Optimization with Lagrange Multipliers", "61:07", "Oct 9, 2023", "Unit 2", "from-purple-600", "to-indigo-900", "from-purple-300"),
-    ];
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+
+        if (!Session.IsAuthenticated)
+        {
+            var email = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_email");
+            var role  = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_role");
+            var token = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_token");
+            if (!string.IsNullOrEmpty(email) && !string.IsNullOrEmpty(role) && !string.IsNullOrEmpty(token))
+                Session.SetSession(email, role, token);
+        }
+
+        if (!Session.IsAuthenticated) { Nav.NavigateTo("/login", replace: true); return; }
+        if (Session.Role != "STUDENT") { Nav.NavigateTo(Session.Role == "ADMIN" ? "/admin/dashboard" : "/", replace: true); return; }
+
+        await LoadAsync();
+        _ready = true;
+        StateHasChanged();
+    }
+
+    private async Task LoadAsync()
+    {
+        try
+        {
+            var client = HttpClientFactory.CreateClient("learnmate");
+            client.BaseAddress = new Uri(Nav.BaseUri);
+            client.DefaultRequestHeaders.Authorization =
+                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", Session.AccessToken);
+
+            var resp = await client.GetFromJsonAsync<ApiResponse<ClassDetailDto>>($"api/classes/{Id}");
+            var cls  = resp?.Data;
+            if (cls is not null)
+            {
+                _className   = cls.Name;
+                _subject     = cls.Subject;
+                _status      = cls.Status;
+                _description = cls.Description ?? "";
+            }
+        }
+        catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+        {
+            Session.Clear();
+            await JS.InvokeVoidAsync("sessionStorage.removeItem", "lm_email");
+            await JS.InvokeVoidAsync("sessionStorage.removeItem", "lm_role");
+            await JS.InvokeVoidAsync("sessionStorage.removeItem", "lm_token");
+            Nav.NavigateTo("/login", replace: true);
+        }
+        catch
+        {
+            // Keep defaults on error
+        }
+    }
 }

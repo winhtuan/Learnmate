@@ -145,12 +145,13 @@ public class AuthService(
         var expiryMinutes = 60; // default; JwtService reads from config
 
         return ApiResponse<LoginResponse>.Ok(new LoginResponse(
+            UserId:      user.Id,
             AccessToken: token,
-            TokenType: "Bearer",
-            ExpiresIn: expiryMinutes * 60,
-            Email: user.Email,
-            Role: user.Role.ToString(),
-            AvatarUrl: user.AvatarUrl));
+            TokenType:   "Bearer",
+            ExpiresIn:   expiryMinutes * 60,
+            Email:       user.Email,
+            Role:        user.Role.ToString(),
+            AvatarUrl:   user.AvatarUrl));
     }
 
     public Task<ApiResponse<object?>> LogoutAsync(string token)

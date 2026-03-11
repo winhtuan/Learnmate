@@ -1,144 +1,209 @@
-@page "/classes/{Id:int}/assignments"
+@page "/classes/{Id:long}/assignments"
 @layout ClassLayout
 @rendermode InteractiveServer
 @using LearnmateSolution.Components.Layout
 @using LearnmateSolution.Components.Pages.Class.Components
 @using LearnmateSolution.Components.Pages.Class.Models
+@using BusinessLogicLayer.DTOs
+@using BusinessLogicLayer.DTOs.Class
+@inject NavigationManager Nav
+@inject UserSessionService Session
+@inject IJSRuntime JS
+@inject IHttpClientFactory HttpClientFactory
 
 <div class="space-y-6 max-w-screen-xl mx-auto">
-    <Breadcrumb Items="@([ new("Dashboard", "/student-dashboard"), new("My Classes", "/classes"), new("Advanced Calculus", $"/classes/{Id}"), new("Assignments") ])" />
+    <Breadcrumb Items="@([ new("Dashboard", "/student-dashboard"), new("My Classes", "/classes"), new(_className, $"/classes/{Id}"), new("Assignments") ])" />
 
-    <HeroBanner
-        ClassCode="MATH101"
-        ClassStatus="Active"
-        ClassName="Advanced Calculus"
-        Description="Multivariable calculus, vector analysis, and differential equations for science and engineering students."
-        BackgroundImage="https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=1200" />
+    @if (!_ready)
+    {
+        <div class="flex items-center justify-center h-64 text-slate-400">
+            <svg class="animate-spin h-8 w-8 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+            </svg>
+            <span class="text-sm font-medium">Loading...</span>
+        </div>
+    }
+    else
+    {
+        <HeroBanner ClassCode="@_subject" ClassStatus="@_status" ClassName="@_className"
+                    Description="@_description" BackgroundImage="" />
 
-    <ClassTabNav ClassId="@Id" ActiveTab="assignments" />
+        <ClassTabNav ClassId="@Id" ActiveTab="assignments" />
 
-    <div class="grid grid-cols-1 xl:grid-cols-5 gap-6">
-        @* Left: Assignment list *@
-        <div class="xl:col-span-3 space-y-6">
-            @* Upcoming *@
-            <div>
-                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Upcoming</h3>
-                <div class="space-y-3">
-                    @foreach (var asg in upcoming)
-                    {
-                        <div @onclick="() => selectedAssignment = detailMap.GetValueOrDefault(asg.Title)"
-                             class="cursor-pointer">
-                            <AssignmentCard Assignment="asg" />
+        <div class="grid grid-cols-1 xl:grid-cols-5 gap-6">
+            @* Left: Assignment list *@
+            <div class="xl:col-span-3 space-y-6">
+                @if (_upcoming.Count > 0)
+                {
+                    <div>
+                        <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Upcoming</h3>
+                        <div class="space-y-3">
+                            @foreach (var asg in _upcoming)
+                            {
+                                <div @onclick="() => selectedAssignment = asg" class="cursor-pointer">
+                                    <AssignmentCard Assignment="@MapToCard(asg)" />
+                                </div>
+                            }
                         </div>
-                    }
-                </div>
+                    </div>
+                }
+
+                @if (_missing.Count > 0)
+                {
+                    <div>
+                        <h3 class="text-xs font-bold text-rose-400 uppercase tracking-wider mb-3">Missing</h3>
+                        <div class="space-y-3">
+                            @foreach (var asg in _missing)
+                            {
+                                <div @onclick="() => selectedAssignment = asg" class="cursor-pointer">
+                                    <AssignmentCard Assignment="@MapToCard(asg)" />
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+
+                @if (_completed.Count > 0)
+                {
+                    <div>
+                        <h3 class="text-xs font-bold text-emerald-500 uppercase tracking-wider mb-3">Completed</h3>
+                        <div class="space-y-3">
+                            @foreach (var asg in _completed)
+                            {
+                                <div @onclick="() => selectedAssignment = asg" class="cursor-pointer">
+                                    <AssignmentCard Assignment="@MapToCard(asg)" />
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+
+                @if (_upcoming.Count == 0 && _missing.Count == 0 && _completed.Count == 0)
+                {
+                    <div class="flex flex-col items-center justify-center py-16 text-slate-400">
+                        <span class="material-symbols-outlined text-5xl mb-3">assignment</span>
+                        <p class="text-base font-medium">No assignments yet.</p>
+                    </div>
+                }
             </div>
 
-            @* Missing *@
-            <div>
-                <h3 class="text-xs font-bold text-rose-400 uppercase tracking-wider mb-3">Missing</h3>
-                <div class="space-y-3">
-                    @foreach (var asg in missing)
-                    {
-                        <div @onclick="() => selectedAssignment = detailMap.GetValueOrDefault(asg.Title)"
-                             class="cursor-pointer">
-                            <AssignmentCard Assignment="asg" />
-                        </div>
-                    }
-                </div>
-            </div>
-
-            @* Completed *@
-            <div>
-                <h3 class="text-xs font-bold text-emerald-500 uppercase tracking-wider mb-3">Completed</h3>
-                <div class="space-y-3">
-                    @foreach (var asg in completed)
-                    {
-                        <div @onclick="() => selectedAssignment = detailMap.GetValueOrDefault(asg.Title)"
-                             class="cursor-pointer">
-                            <AssignmentCard Assignment="asg" />
-                        </div>
-                    }
-                </div>
+            @* Right: Detail panel *@
+            <div class="xl:col-span-2">
+                @if (selectedAssignment is not null)
+                {
+                    <AssignmentDetailPanel Assignment="@MapToDetail(selectedAssignment)" />
+                }
+                else
+                {
+                    <div class="bg-white rounded-[2rem] border border-slate-100 shadow-sm p-10 flex flex-col items-center justify-center text-center h-full min-h-[300px]">
+                        <span class="material-symbols-outlined text-slate-200 text-[64px] mb-4">assignment</span>
+                        <p class="text-slate-400 font-medium">Select an assignment to view details</p>
+                    </div>
+                }
             </div>
         </div>
-
-        @* Right: Detail panel *@
-        <div class="xl:col-span-2">
-            @if (selectedAssignment is not null)
-            {
-                <AssignmentDetailPanel Assignment="selectedAssignment" />
-            }
-            else
-            {
-                <div class="bg-white rounded-[2rem] border border-slate-100 shadow-sm p-10 flex flex-col items-center justify-center text-center h-full min-h-[300px]">
-                    <span class="material-symbols-outlined text-slate-200 text-[64px] mb-4">assignment</span>
-                    <p class="text-slate-400 font-medium">Select an assignment to view details</p>
-                </div>
-            }
-        </div>
-    </div>
+    }
 </div>
 
 @code {
-    [Parameter] public int Id { get; set; }
+    [Parameter] public long Id { get; set; }
 
-    private AssignmentDetail? selectedAssignment;
+    private bool _ready;
+    private string _className   = "Class";
+    private string _subject     = "";
+    private string _status      = "ACTIVE";
+    private string _description = "";
 
-    private List<AssignmentItem> upcoming =
-    [
-        new AssignmentItem(1, "Problem Set 7", "Tomorrow, 11:59 PM", "100 pts", "In Progress", "text-amber-700", "bg-amber-100", "edit_note", "bg-rose-100", "text-rose-600"),
-        new AssignmentItem(2, "Midterm Review Quiz", "In 5 days", "50 pts", "Not Started", "text-slate-600", "bg-slate-100", "quiz", "bg-purple-100", "text-purple-600"),
-        new AssignmentItem(3, "Chapter 8 Reading", "In 1 week", "20 pts", "Not Started", "text-slate-600", "bg-slate-100", "menu_book", "bg-sky-100", "text-sky-600"),
-    ];
+    private List<ClassAssignmentDto> _upcoming  = [];
+    private List<ClassAssignmentDto> _missing   = [];
+    private List<ClassAssignmentDto> _completed = [];
 
-    private List<AssignmentItem> missing =
-    [
-        new AssignmentItem(4, "Problem Set 6", "Was due Oct 14", "100 pts", "Missing", "text-rose-700", "bg-rose-100", "edit_note", "bg-rose-100", "text-rose-600"),
-    ];
+    private ClassAssignmentDto? selectedAssignment;
 
-    private List<AssignmentItem> completed =
-    [
-        new AssignmentItem(5, "Problem Set 5", "Submitted Oct 7", "94/100", "Graded", "text-emerald-700", "bg-emerald-100", "edit_note", "bg-emerald-100", "text-emerald-600"),
-        new AssignmentItem(6, "Quiz 3: Limits", "Submitted Oct 3", "88/100", "Graded", "text-emerald-700", "bg-emerald-100", "quiz", "bg-purple-100", "text-purple-600"),
-    ];
-
-    private Dictionary<string, AssignmentDetail> detailMap = new()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        ["Problem Set 7"] = new AssignmentDetail(
-            Id: 1,
-            Title: "Problem Set 7",
-            Type: "Problem Set",
-            DueDate: "October 18, 2023 at 11:59 PM",
-            Points: "100 pts",
+        if (!firstRender) return;
+
+        if (!Session.IsAuthenticated)
+        {
+            var email = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_email");
+            var role  = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_role");
+            var token = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_token");
+            if (!string.IsNullOrEmpty(email) && !string.IsNullOrEmpty(role) && !string.IsNullOrEmpty(token))
+                Session.SetSession(email, role, token);
+        }
+
+        if (!Session.IsAuthenticated) { Nav.NavigateTo("/login", replace: true); return; }
+        if (Session.Role != "STUDENT") { Nav.NavigateTo(Session.Role == "ADMIN" ? "/admin/dashboard" : "/", replace: true); return; }
+
+        await LoadAsync();
+        _ready = true;
+        StateHasChanged();
+    }
+
+    private async Task LoadAsync()
+    {
+        try
+        {
+            var client = HttpClientFactory.CreateClient("learnmate");
+            client.BaseAddress = new Uri(Nav.BaseUri);
+            client.DefaultRequestHeaders.Authorization =
+                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", Session.AccessToken);
+
+            var classTask = client.GetFromJsonAsync<ApiResponse<ClassDetailDto>>($"api/classes/{Id}");
+            var asgTask   = client.GetFromJsonAsync<ApiResponse<List<ClassAssignmentDto>>>($"api/classes/{Id}/assignments");
+            await Task.WhenAll(classTask, asgTask);
+
+            var cls = classTask.Result?.Data;
+            if (cls is not null)
+            {
+                _className   = cls.Name;
+                _subject     = cls.Subject;
+                _status      = cls.Status;
+                _description = cls.Description ?? "";
+            }
+
+            var assignments = asgTask.Result?.Data ?? [];
+
+            _upcoming  = assignments.Where(a => a.SubmissionStatus is "not_started" or "in_progress").ToList();
+            _missing   = assignments.Where(a => a.SubmissionStatus == "missing").ToList();
+            _completed = assignments.Where(a => a.SubmissionStatus is "submitted" or "graded").ToList();
+        }
+        catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+        {
+            Session.Clear();
+            await JS.InvokeVoidAsync("sessionStorage.removeItem", "lm_email");
+            await JS.InvokeVoidAsync("sessionStorage.removeItem", "lm_role");
+            await JS.InvokeVoidAsync("sessionStorage.removeItem", "lm_token");
+            Nav.NavigateTo("/login", replace: true);
+        }
+        catch
+        {
+            // Keep defaults on error
+        }
+    }
+
+    private static AssignmentItem MapToCard(ClassAssignmentDto a) =>
+        ClassPageHelpers.MapAssignment(a);
+
+    private static AssignmentDetail MapToDetail(ClassAssignmentDto a)
+    {
+        var dueLabel = a.DueDateLocal is { } d ? d.ToString("MMMM d, yyyy 'at' h:mm tt") : "No due date";
+
+        return new AssignmentDetail(
+            Id:           a.Id,
+            Title:        a.Title,
+            Type:         "Assignment",
+            DueDate:      dueLabel,
+            Points:       "",
             Instructions: new AssignmentInstructions(
-                Text: "Complete problems 1–10 from Chapter 7 on multivariable integration. Show all work for full credit.",
-                Items: ["Problems 1–5: Double integrals.", "Problems 6–8: Triple integrals.", "Problems 9–10: Change of variables."]
+                Text:  a.Description ?? "No description provided.",
+                Items: []
             ),
-            Resources:
-            [
-                new AssignmentResource(1, "Problem Set 7.pdf", "320 KB", "picture_as_pdf", "bg-rose-100", "text-rose-600", "#"),
-                new AssignmentResource(2, "Lecture 11 Notes", "1.2 MB", "picture_as_pdf", "bg-rose-100", "text-rose-600", "#"),
-            ],
-            UploadText: "Upload your submission",
+            Resources:     [],
+            UploadText:    "Upload your submission",
             UploadSubtext: "PDF, DOCX, or ZIP up to 50 MB"
-        ),
-        ["Midterm Review Quiz"] = new AssignmentDetail(
-            Id: 2,
-            Title: "Midterm Review Quiz",
-            Type: "Quiz",
-            DueDate: "October 22, 2023 at 11:59 PM",
-            Points: "50 pts",
-            Instructions: new AssignmentInstructions(
-                Text: "20-question multiple choice quiz covering Chapters 1–6. One attempt only, 50-minute time limit.",
-                Items: ["No notes allowed.", "Quiz unlocks on October 20.", "Submit before the deadline."]
-            ),
-            Resources:
-            [
-                new AssignmentResource(3, "Study Guide", "520 KB", "picture_as_pdf", "bg-rose-100", "text-rose-600", "#"),
-            ],
-            UploadText: "No submission required",
-            UploadSubtext: "Auto-graded quiz"
-        ),
-    };
+        );
+    }
 }

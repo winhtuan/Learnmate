@@ -18,7 +18,7 @@
 </div>
 
 @code {
-    [Parameter] public int ClassId { get; set; }
+    [Parameter] public long ClassId { get; set; }
     [Parameter] public string ActiveTab { get; set; } = "overview";
 
     private record TabEntry(string Key, string Label, string Path, string? Badge = null);
