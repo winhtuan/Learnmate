@@ -2,7 +2,7 @@ using BusinessObject.Models;
 
 namespace DataAccessLayer.Repositories.Interfaces;
 
-public interface IClassMemberRepository
+public interface IStudentClassMemberRepository
 {
     /// <summary>
     /// Trả về danh sách ClassMember (kèm Class và assignment gần nhất sắp tới) của student.

@@ -7,7 +7,7 @@ namespace BusinessLogicLayer.Services;
 
 public class StudentDashboardService(
     IStudentProfileRepository studentProfileRepo,
-    IClassMemberRepository classMemberRepo,
+    IStudentClassMemberRepository classMemberRepo,
     INotificationRepository notificationRepo,
     IScheduleRepository scheduleRepo
 ) : IStudentDashboardService

@@ -9,7 +9,7 @@ namespace BusinessLogicLayer.Services;
 
 public class StudentClassService(
     IStudentClassRepository classRepo,
-    IClassMemberRepository classMemberRepo,
+    IStudentClassMemberRepository classMemberRepo,
     IFileStorageService fileStorage
 ) : IStudentClassService
 {
