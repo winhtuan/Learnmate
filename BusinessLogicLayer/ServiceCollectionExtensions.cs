@@ -21,6 +21,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ITeacherAssignmentRepository, TeacherAssignmentRepository>();
         services.AddScoped<ITeacherCourseRepository, TeacherCourseRepository>();
         services.AddScoped<ITeacherProfileRepository, TeacherProfileRepository>();
+        services.AddScoped<IReportRepository, ReportRepository>();
+        services.AddScoped<DataAccessLayer.Repositories.Interfaces.Teacher.Schedules.ITeacherScheduleRepository, DataAccessLayer.Repositories.Teacher.Schedules.TeacherScheduleRepository>();
 
         // Services
         services.AddScoped<IAuthService, AuthService>();
@@ -33,6 +35,11 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IDashboardService, DashboardService>();
         services.AddScoped<IStudentDashboardService, StudentDashboardService>();
         services.AddScoped<IStudentClassService, StudentClassService>();
+        services.AddScoped<BusinessLogicLayer.Services.Interfaces.Teacher.Schedules.ITeacherScheduleService, BusinessLogicLayer.Services.Teacher.Schedules.TeacherScheduleService>();
+        services.AddScoped<BusinessLogicLayer.Services.Interfaces.Teacher.Schedules.IVoiceScheduleAnalyzer, BusinessLogicLayer.Services.Teacher.Schedules.VoiceScheduleAnalyzer>();
+        services.AddScoped<IUserManagementService, UserManagementService>();
+        services.AddScoped<IClassManagementService, ClassManagementService>();
+        services.AddScoped<IReportService, ReportService>();
 
         // Token blacklist cache
         services.AddMemoryCache();

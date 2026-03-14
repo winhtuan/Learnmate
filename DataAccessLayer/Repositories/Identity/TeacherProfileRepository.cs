@@ -1,19 +1,20 @@
+using BusinessObject.Models;
 using DataAccessLayer.Data;
 using DataAccessLayer.Repositories.Interfaces;
-
-// using BusinessObject.Models;
-// using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 
 namespace DataAccessLayer.Repositories;
 
-public class TeacherProfileRepository : ITeacherProfileRepository
+public class TeacherProfileRepository(AppDbContext db) : ITeacherProfileRepository
 {
-    private readonly AppDbContext _context;
+    public Task<TeacherProfile?> GetByUserIdAsync(long userId) =>
+        db.TeacherProfiles
+            .Include(p => p.User)
+            .FirstOrDefaultAsync(p => p.UserId == userId);
 
-    public TeacherProfileRepository(AppDbContext context)
+    public async Task UpdateAsync(TeacherProfile profile)
     {
-        _context = context;
+        db.TeacherProfiles.Update(profile);
+        await db.SaveChangesAsync();
     }
-
-    // Implement methods here
 }

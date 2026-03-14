@@ -1,11 +1,10 @@
-// using BusinessObject.Models;
+using BusinessObject.Models;
 
 namespace DataAccessLayer.Repositories.Interfaces;
 
 public interface ITeacherCourseRepository
 {
-    // Task<IEnumerable<Course>> GetCoursesByTeacherIdAsync(int teacherId);
-    // Task<Course> CreateAsync(Course course);
-    // Task UpdateAsync(Course course);
-    // Task DeleteAsync(int courseId);
+    Task<Class> CreateAsync(Class cls);
+    Task<Class?> GetTeacherClassDetailAsync(long classId, long teacherId, CancellationToken ct = default);
+    Task<IReadOnlyList<Class>> GetByTeacherIdAsync(long teacherId, CancellationToken ct = default);
 }

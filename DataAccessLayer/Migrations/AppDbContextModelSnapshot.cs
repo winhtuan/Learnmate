@@ -203,6 +203,51 @@ namespace DataAccessLayer.Migrations
                         });
                 });
 
+            modelBuilder.Entity("BusinessObject.Models.Attendance", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<bool>("IsPresent")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_present");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("text")
+                        .HasColumnName("notes");
+
+                    b.Property<long>("ScheduleId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("schedule_id");
+
+                    b.Property<long>("StudentId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("student_id");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_attendances");
+
+                    b.HasIndex("ScheduleId")
+                        .HasDatabaseName("ix_attendances_schedule_id");
+
+                    b.HasIndex("StudentId")
+                        .HasDatabaseName("ix_attendances_student_id");
+
+                    b.ToTable("attendances", (string)null);
+                });
+
             modelBuilder.Entity("BusinessObject.Models.Class", b =>
                 {
                     b.Property<long>("Id")
@@ -285,6 +330,30 @@ namespace DataAccessLayer.Migrations
                             Subject = "Toán",
                             TeacherId = 2L,
                             ThumbnailUrl = "https://placehold.co/400?text=Course",
+                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 4L,
+                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Chuyên đề Vật Lý chuyên sâu luyện thi Đại học.",
+                            MaxStudents = 15,
+                            Name = "Vật Lý 12 — Nâng cao",
+                            Status = "ACTIVE",
+                            Subject = "Vật Lý",
+                            TeacherId = 2L,
+                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 5L,
+                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Lớp lấy lại gốc Đại số Toán 11.",
+                            MaxStudents = 30,
+                            Name = "Toán 11 — Đại số cơ bản",
+                            Status = "ACTIVE",
+                            Subject = "Toán",
+                            TeacherId = 2L,
                             UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
@@ -1147,6 +1216,55 @@ namespace DataAccessLayer.Migrations
                     b.ToTable("submission_answer_options", (string)null);
                 });
 
+            modelBuilder.Entity("BusinessObject.Models.System.Report", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("Category")
+                        .HasColumnType("integer")
+                        .HasColumnName("category");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("FileUrl")
+                        .HasColumnType("text")
+                        .HasColumnName("file_url");
+
+                    b.Property<int>("Format")
+                        .HasColumnType("integer")
+                        .HasColumnName("format");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("name");
+
+                    b.Property<DateTime>("RequestedOn")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("requested_on");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer")
+                        .HasColumnName("status");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_reports");
+
+                    b.ToTable("reports", (string)null);
+                });
+
             modelBuilder.Entity("BusinessObject.Models.TeacherProfile", b =>
                 {
                     b.Property<long>("Id")
@@ -1497,6 +1615,27 @@ namespace DataAccessLayer.Migrations
                     b.Navigation("Assignment");
                 });
 
+            modelBuilder.Entity("BusinessObject.Models.Attendance", b =>
+                {
+                    b.HasOne("BusinessObject.Models.Schedule", "Schedule")
+                        .WithMany("Attendances")
+                        .HasForeignKey("ScheduleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_attendances_schedules_schedule_id");
+
+                    b.HasOne("BusinessObject.Models.User", "Student")
+                        .WithMany()
+                        .HasForeignKey("StudentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_attendances_users_student_id");
+
+                    b.Navigation("Schedule");
+
+                    b.Navigation("Student");
+                });
+
             modelBuilder.Entity("BusinessObject.Models.Class", b =>
                 {
                     b.HasOne("BusinessObject.Models.User", "Teacher")
@@ -1821,6 +1960,8 @@ namespace DataAccessLayer.Migrations
 
             modelBuilder.Entity("BusinessObject.Models.Schedule", b =>
                 {
+                    b.Navigation("Attendances");
+
                     b.Navigation("VideoSession");
                 });
 

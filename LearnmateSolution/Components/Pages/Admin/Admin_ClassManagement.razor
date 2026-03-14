@@ -1,0 +1,455 @@
+@page "/admin/classes"
+@using LearnmateSolution.Components.Layout.Admin
+@using BusinessLogicLayer.DTOs.ClassManagement
+@using BusinessLogicLayer.Services.Interfaces
+@layout AdminLayout
+@rendermode InteractiveServer
+@inject NavigationManager Nav
+@inject UserSessionService Session
+@inject IClassManagementService ClassManagementService
+@inject IJSRuntime JS
+
+<PageTitle>Admin Class Management - LearnMate</PageTitle>
+
+<HeadContent>
+    <link rel="stylesheet" href="css/admin/Admin_ClassManagement.css" />
+</HeadContent>
+
+<div style="display:flex;flex-direction:column;gap:2rem;">
+
+    <!-- ═══════ PAGE HEADING ═══════ -->
+    <div style="display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;gap:1rem;">
+        <div>
+            <h2 style="font-size:1.75rem;font-weight:700;color:#0d141b;margin:0;">Class Management</h2>
+            <p style="color:#4c739a;margin:0.25rem 0 0;">Manage classes, assignments, and enrollment capacity.</p>
+        </div>
+        <div style="display:flex;align-items:center;gap:0.75rem;">
+            <button class="um-btn um-btn--primary" @onclick="OpenAddClassModal">
+                <span class="material-symbols-outlined" style="font-size:18px;">add</span>
+                Create New Class
+            </button>
+        </div>
+    </div>
+
+    <!-- ═══════ TABLE CARD ═══════ -->
+    <div style="background:#fff;border:1px solid #e7edf3;border-radius:0.75rem;box-shadow:0 1px 3px rgba(0,0,0,.06);overflow:hidden;">
+
+        <!-- Toolbar -->
+        <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:1rem;padding:1rem 1.25rem;border-bottom:1px solid #e7edf3;">
+            <div style="position:relative;width:100%;max-width:20rem;">
+                <span class="material-symbols-outlined" style="position:absolute;left:0.625rem;top:50%;transform:translateY(-50%);color:#90a4ae;font-size:20px;pointer-events:none;">search</span>
+                <input class="um-search-input" type="text" placeholder="Search classes by name, subject..." style="padding-left:2.25rem;" @bind="searchQuery" @bind:after="ApplyFilters" />
+            </div>
+            <div style="display:flex;align-items:center;gap:0.75rem;">
+                <div style="position:relative;">
+                    <select class="um-select" @bind="filterStatus" @bind:after="ApplyFilters">
+                        <option value="">All Status</option>
+                        <option value="ACTIVE">Active</option>
+                        <option value="INACTIVE">Inactive</option>
+                        <option value="COMPLETED">Completed</option>
+                    </select>
+                    <span class="material-symbols-outlined" style="position:absolute;right:0.5rem;top:50%;transform:translateY(-50%);font-size:18px;color:#4c739a;pointer-events:none;">expand_more</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Table -->
+        <div style="overflow-x:auto;">
+            <table class="um-table">
+                <thead>
+                    <tr>
+                        <th style="width:3rem;text-align:center;"><input type="checkbox" /></th>
+                        <th>Class Info</th>
+                        <th>Teacher</th>
+                        <th>Status</th>
+                        <th>Enrollment</th>
+                        <th>Created</th>
+                        <th style="text-align:right;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (classes.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="7" style="text-align:center;padding:2rem;color:#90a4ae;">No classes found.</td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var c in classes)
+                        {
+                            <tr class="@(c.Status == "INACTIVE" ? "um-row--blocked" : "")">
+                                <td style="text-align:center;"><input type="checkbox" /></td>
+                                <td>
+                                    <div style="display:flex;flex-direction:column;">
+                                        <span style="font-weight:600;color:#0d141b;@(c.Status == "INACTIVE" ? "text-decoration:line-through;color:#94a3b8;" : "")">@c.Name</span>
+                                        <span style="font-size:0.75rem;color:#4c739a;">ID: #@c.Id • @c.Subject</span>
+                                    </div>
+                                </td>
+                                <td><span style="font-weight:500;color:#4c739a;">@c.TeacherName</span></td>
+                                <td>
+                                    <div style="display:flex;align-items:center;gap:0.375rem;">
+                                        <span class="um-status-dot @GetStatusDotClass(c.Status)"></span>
+                                        <span style="font-weight:500;color:@GetStatusTextColor(c.Status);">@c.Status</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div style="display:flex;align-items:center;gap:0.5rem;">
+                                        <div style="flex-grow:1;height:6px;background:#e7edf3;border-radius:3px;overflow:hidden;width:60px;">
+                                            <div style="height:100%;background:@GetProgressColor(c.EnrolledCount, c.MaxStudents);width:@((c.EnrolledCount*100/c.MaxStudents))%;"></div>
+                                        </div>
+                                        <span style="font-size:0.75rem;color:#4c739a;">@c.EnrolledCount/@c.MaxStudents</span>
+                                    </div>
+                                </td>
+                                <td style="color:#4c739a;">@c.CreatedAt</td>
+                                <td style="text-align:right;">
+                                    <div style="display:flex;align-items:center;justify-content:flex-end;gap:0.25rem;">
+                                        <button class="um-action-btn" title="Change Status" @onclick="() => OpenStatusModal(c)">
+                                            <span class="material-symbols-outlined" style="font-size:18px;">edit_document</span>
+                                        </button>
+                                        <button class="um-action-btn um-action-btn--delete" title="Delete class" @onclick="() => OpenDeleteModal(c)">
+                                            <span class="material-symbols-outlined" style="font-size:18px;">delete</span>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:0.875rem 1.5rem;border-top:1px solid #e7edf3;background:#fff;">
+            <div style="display:flex;align-items:center;gap:0.5rem;">
+                <span style="font-size:0.875rem;color:#4c739a;">Rows per page:</span>
+                <select class="um-select" style="height:2rem;font-size:0.78rem;">
+                    <option>10</option><option>20</option><option>50</option>
+                </select>
+            </div>
+            <div style="display:flex;align-items:center;gap:1rem;">
+                <span style="font-size:0.875rem;color:#4c739a;">Total Classes: @classes.Count</span>
+                <div style="display:flex;align-items:center;gap:0.25rem;">
+                    <button class="um-page-btn"><span class="material-symbols-outlined" style="font-size:18px;">chevron_left</span></button>
+                    <button class="um-page-btn um-page-btn--active">1</button>
+                    <button class="um-page-btn"><span class="material-symbols-outlined" style="font-size:18px;">chevron_right</span></button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     MODAL: ADD NEW CLASS
+══════════════════════════════════════════════════════ -->
+@if (showAddModal)
+{
+    <div class="um-modal-backdrop" @onclick="CloseAllModals">
+        <div class="um-modal" @onclick:stopPropagation>
+            <div class="um-modal-header">
+                <span class="um-modal-title">
+                    <span class="material-symbols-outlined um-icon--primary">class</span>
+                    Create New Class
+                </span>
+                <button class="um-modal-close" @onclick="CloseAllModals">
+                    <span class="material-symbols-outlined" style="font-size:20px;">close</span>
+                </button>
+            </div>
+            <div class="um-modal-body">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.875rem;">
+                    <div class="um-form-group" style="grid-column:1/-1;">
+                        <label class="um-label">Class Name *</label>
+                        <input class="um-input" type="text" placeholder="e.g. Intro to C# Programming" @bind="newClass.Name" />
+                    </div>
+                    <div class="um-form-group">
+                        <label class="um-label">Subject *</label>
+                        <input class="um-input" type="text" placeholder="e.g. Computer Science" @bind="newClass.Subject" />
+                    </div>
+                    <div class="um-form-group">
+                        <label class="um-label">Max Students *</label>
+                        <input class="um-input" type="number" min="1" max="1000" @bind="newClass.MaxStudents" />
+                    </div>
+                    <div class="um-form-group" style="grid-column:1/-1;">
+                        <label class="um-label">Instructor *</label>
+                        <select class="um-input um-form-select" @bind="newClass.TeacherId">
+                            <option value="0">Select an instructor...</option>
+                            @foreach(var t in availableTeachers)
+                            {
+                                <option value="@t.Id">@t.Name</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="um-form-group" style="grid-column:1/-1;">
+                        <label class="um-label">Description</label>
+                        <textarea class="um-input" rows="3" placeholder="Course overview..." @bind="newClass.Description"></textarea>
+                    </div>
+                </div>
+                @if (!string.IsNullOrEmpty(formError))
+                {
+                    <div class="um-warning-box um-warning-box--red" style="margin-top:0.5rem;">
+                        <span class="material-symbols-outlined icon-fill" style="font-size:18px;flex-shrink:0;">error</span>
+                        <span>@formError</span>
+                    </div>
+                }
+            </div>
+            <div class="um-modal-footer">
+                <button class="um-btn um-btn--ghost" @onclick="CloseAllModals">Cancel</button>
+                <button class="um-btn um-btn--primary" @onclick="ConfirmAddClass">
+                    <span class="material-symbols-outlined" style="font-size:16px;">add</span>
+                    Create Class
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- ══════════════════════════════════════════════════════
+     MODAL: CHANGE STATUS
+══════════════════════════════════════════════════════ -->
+@if (showStatusModal && selectedClass != null)
+{
+    <div class="um-modal-backdrop" @onclick="CloseAllModals">
+        <div class="um-modal" @onclick:stopPropagation>
+            <div class="um-modal-header">
+                <span class="um-modal-title">
+                    <span class="material-symbols-outlined um-icon--warning">edit_document</span>
+                    Change Class Status
+                </span>
+                <button class="um-modal-close" @onclick="CloseAllModals">
+                    <span class="material-symbols-outlined" style="font-size:20px;">close</span>
+                </button>
+            </div>
+            <div class="um-modal-body">
+                <div class="um-user-preview">
+                    <div class="um-avatar--initials" style="width:44px;height:44px;background-color:#e0e7ff;color:#4338ca;">
+                        @selectedClass.Name.FirstOrDefault()
+                    </div>
+                    <div>
+                        <div class="um-user-preview-name">@selectedClass.Name</div>
+                        <div class="um-user-preview-email">@selectedClass.Subject · @selectedClass.TeacherName</div>
+                    </div>
+                </div>
+                <div class="um-form-group" style="margin-top:0.75rem;">
+                    <label class="um-label">New Status *</label>
+                    <select class="um-input um-form-select" @bind="newStatusValue">
+                        <option value="ACTIVE">Active</option>
+                        <option value="INACTIVE">Inactive</option>
+                        <option value="COMPLETED">Completed</option>
+                    </select>
+                </div>
+                @if (!string.IsNullOrEmpty(formError))
+                {
+                    <div class="um-warning-box um-warning-box--red">
+                        <span class="material-symbols-outlined icon-fill" style="font-size:18px;flex-shrink:0;">error</span>
+                        <span>@formError</span>
+                    </div>
+                }
+            </div>
+            <div class="um-modal-footer">
+                <button class="um-btn um-btn--ghost" @onclick="CloseAllModals">Cancel</button>
+                <button class="um-btn um-btn--primary" @onclick="ConfirmChangeStatus">
+                    Save Changes
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- ══════════════════════════════════════════════════════
+     MODAL: DELETE CLASS
+══════════════════════════════════════════════════════ -->
+@if (showDeleteModal && selectedClass != null)
+{
+    <div class="um-modal-backdrop" @onclick="CloseAllModals">
+        <div class="um-modal" @onclick:stopPropagation>
+            <div class="um-modal-header">
+                <span class="um-modal-title">
+                    <span class="material-symbols-outlined um-icon--danger">delete_forever</span>
+                    Delete Class
+                </span>
+                <button class="um-modal-close" @onclick="CloseAllModals">
+                    <span class="material-symbols-outlined" style="font-size:20px;">close</span>
+                </button>
+            </div>
+            <div class="um-modal-body">
+                <div class="um-user-preview">
+                    <div class="um-avatar--initials" style="width:44px;height:44px;background-color:#fee2e2;color:#b91c1c;">
+                        @selectedClass.Name.FirstOrDefault()
+                    </div>
+                    <div>
+                        <div class="um-user-preview-name">@selectedClass.Name</div>
+                        <div class="um-user-preview-email">@selectedClass.Subject · @selectedClass.TeacherName</div>
+                    </div>
+                </div>
+                <div class="um-warning-box um-warning-box--red">
+                    <span class="material-symbols-outlined icon-fill" style="font-size:18px;flex-shrink:0;">dangerous</span>
+                    <span><strong>This action is permanent and cannot be undone.</strong> All data associated with this class — including enrollments, assignments, and schedules — will be lost.</span>
+                </div>
+                <div class="um-form-group" style="margin-top:0.875rem;">
+                    <label class="um-label">
+                        Type the class name to confirm: <strong>@selectedClass.Name</strong>
+                    </label>
+                    <input class="um-input" type="text" placeholder="@selectedClass.Name" @bind="deleteConfirmText" />
+                </div>
+                @if (!string.IsNullOrEmpty(formError))
+                {
+                    <div class="um-warning-box um-warning-box--red">
+                        <span class="material-symbols-outlined icon-fill" style="font-size:18px;flex-shrink:0;">error</span>
+                        <span>@formError</span>
+                    </div>
+                }
+            </div>
+            <div class="um-modal-footer">
+                <button class="um-btn um-btn--ghost" @onclick="CloseAllModals">Cancel</button>
+                <button class="um-btn um-btn--danger" @onclick="ConfirmDelete"
+                        disabled="@(deleteConfirmText != selectedClass.Name)">
+                    <span class="material-symbols-outlined" style="font-size:16px;">delete_forever</span>
+                    Permanently Delete
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        if (!Session.IsAuthenticated)
+        {
+            var email = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_email");
+            var role  = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_role");
+            var token = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_token");
+            if (!string.IsNullOrEmpty(email) && !string.IsNullOrEmpty(role) && !string.IsNullOrEmpty(token))
+                Session.SetSession(email, role, token);
+        }
+        if (!Session.IsAuthenticated) { Nav.NavigateTo("/login", replace: true); return; }
+        if (Session.Role != "ADMIN") { Nav.NavigateTo(Session.Role == "STUDENT" ? "/student-dashboard" : "/", replace: true); return; }
+
+        await LoadDataAsync();
+        StateHasChanged();
+    }
+
+    private async Task LoadDataAsync()
+    {
+        var result = await ClassManagementService.GetClassesAsync(filterStatus, searchQuery);
+        classes = result.ToList();
+        availableTeachers = (await ClassManagementService.GetAvailableTeachersAsync()).ToList();
+    }
+
+    private async Task ApplyFilters()
+    {
+        await LoadDataAsync();
+    }
+
+    // ── State ─────────────────────────────────────────────
+    private string filterStatus = "";
+    private string searchQuery  = "";
+
+    private bool showAddModal     = false;
+    private bool showStatusModal  = false;
+    private bool showDeleteModal  = false;
+
+    private string deleteConfirmText = "";
+    private string formError         = "";
+    private string newStatusValue    = "";
+
+    private ClassRowDto? selectedClass;
+    private NewClassRequestDto newClass = new() { MaxStudents = 50 };
+
+    // ── Data ──────────────────────────────────────────────
+    private List<ClassRowDto> classes = new();
+    private List<TeacherDropdownDto> availableTeachers = new();
+
+    // ── Modal openers ─────────────────────────────────────
+    private void OpenAddClassModal() { CloseAllModals(); newClass = new() { MaxStudents = 50 }; formError = ""; showAddModal = true; }
+    private void OpenStatusModal(ClassRowDto c) { CloseAllModals(); selectedClass = c; newStatusValue = c.Status.ToUpper(); formError = ""; showStatusModal = true; }
+    private void OpenDeleteModal(ClassRowDto c) { CloseAllModals(); selectedClass = c; deleteConfirmText = ""; formError = ""; showDeleteModal = true; }
+
+    private void CloseAllModals()
+    {
+        showAddModal = showStatusModal = showDeleteModal = false;
+        formError = "";
+    }
+
+    // ── Actions ───────────────────────────────────────────
+    private async Task ConfirmAddClass()
+    {
+        if (string.IsNullOrWhiteSpace(newClass.Name) || string.IsNullOrWhiteSpace(newClass.Subject) || newClass.TeacherId <= 0)
+        { formError = "Please fill in all required fields and select an instructor."; return; }
+
+        var response = await ClassManagementService.CreateClassAsync(newClass);
+        if (!response.Success)
+        {
+            formError = response.Message ?? "Failed to create class.";
+            return;
+        }
+
+        await LoadDataAsync();
+        CloseAllModals();
+    }
+
+    private async Task ConfirmChangeStatus()
+    {
+        if (selectedClass != null)
+        {
+            var response = await ClassManagementService.ChangeClassStatusAsync(selectedClass.Id, newStatusValue);
+            if (!response.Success)
+            {
+                formError = response.Message ?? "Failed to update status.";
+                return;
+            }
+            await LoadDataAsync();
+        }
+        CloseAllModals();
+    }
+
+    private async Task ConfirmDelete()
+    {
+        if (selectedClass == null || deleteConfirmText != selectedClass.Name)
+        { formError = "Name does not match."; return; }
+
+        var response = await ClassManagementService.DeleteClassAsync(selectedClass.Id);
+        if (!response.Success)
+        {
+            formError = response.Message ?? "Failed to delete class.";
+            return;
+        }
+
+        await LoadDataAsync();
+        CloseAllModals();
+    }
+
+    // ── Helpers ───────────────────────────────────────────
+    private string GetStatusDotClass(string status)
+    {
+        return status.ToUpper() switch
+        {
+            "ACTIVE" => "um-status-dot--active",
+            "INACTIVE" => "um-status-dot--blocked",
+            "COMPLETED" => "um-status-dot--blocked",
+            _ => "um-status-dot--blocked"
+        };
+    }
+    
+    // Just inline logic for now because standard ones might not fit
+    private string GetStatusTextColor(string status)
+    {
+        return status.ToUpper() switch
+        {
+            "ACTIVE" => "#3b82f6",
+            "INACTIVE" => "#ef4444",
+            "COMPLETED" => "#6b7280",
+            _ => "#0d141b"
+        };
+    }
+
+    private string GetProgressColor(int enrolled, int max)
+    {
+        if (max == 0) return "#3b82f6";
+        var pct = (double)enrolled / max;
+        if (pct >= 0.9) return "#ef4444";
+        if (pct >= 0.75) return "#f59e0b";
+        return "#10b981";
+    }
+}

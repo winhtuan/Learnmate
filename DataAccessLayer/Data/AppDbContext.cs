@@ -1,6 +1,7 @@
 using System.Reflection;
 using BusinessObject.Models;
 using BusinessObject.Models.Base;
+using BusinessObject.Models.System;
 using DataAccessLayer.Data.Seeding;
 using Microsoft.EntityFrameworkCore;
 
@@ -20,6 +21,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<Schedule> Schedules => Set<Schedule>();
     public DbSet<VideoSession> VideoSessions => Set<VideoSession>();
     public DbSet<Material> Materials => Set<Material>();
+    public DbSet<Attendance> Attendances => Set<Attendance>();
 
     // ── Assignment System ────────────────────────────────────────────────────
     public DbSet<Assignment> Assignments => Set<Assignment>();
@@ -39,6 +41,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
     // ── System ───────────────────────────────────────────────────────────────
     public DbSet<Notification> Notifications => Set<Notification>();
+    public DbSet<Report> Reports => Set<Report>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

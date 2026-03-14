@@ -1,4 +1,7 @@
 @inherits LayoutComponentBase
+@using LearnmateSolution.AppState
+@inject NavigationManager NavigationManager
+@inject UserSessionService Session
 
 <div class="flex min-h-screen bg-white font-display text-slate-900">
     <!-- Sidebar -->
@@ -31,17 +34,27 @@
                 </button>
                 <div class="w-px h-6 bg-slate-200 mx-1"></div>
                 
-                <!-- Profile Dropdown (Simplified) -->
-                <div class="flex items-center gap-3 cursor-pointer group">
-                    <div class="size-8 rounded-full bg-slate-200 border border-slate-200 dark:border-slate-700 overflow-hidden">
-                        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah" alt="Avatar" />
+                <!-- Profile Dropdown -->
+                <button @onclick='() => NavigationManager.NavigateTo("/teacher/profile")'
+                        class="flex items-center gap-3 cursor-pointer group hover:bg-slate-50 px-2 py-1.5 rounded-lg transition-colors">
+                    <div class="size-8 rounded-full bg-slate-200 border-2 border-white shadow-sm overflow-hidden ring-2 ring-slate-100">
+                        @if (!string.IsNullOrWhiteSpace(Session.AvatarUrl))
+                        {
+                            <img src="@Session.AvatarUrl" alt="Avatar" class="size-full object-cover" />
+                        }
+                        else
+                        {
+                            <div class="size-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
+                                <span class="text-white text-xs font-bold">@GetInitials()</span>
+                            </div>
+                        }
                     </div>
                     <div class="hidden sm:block text-left">
-                        <p class="text-xs font-bold text-slate-900 dark:text-white leading-none mb-0.5">Sarah Wilson</p>
-                        <p class="text-[10px] text-slate-500 dark:text-slate-400 leading-none">Mathematics Teacher</p>
+                        <p class="text-xs font-bold text-slate-900 leading-none mb-0.5">@(Session.FullName ?? Session.Email ?? "Teacher")</p>
+                        <p class="text-[10px] text-slate-500 leading-none">Giáo viên</p>
                     </div>
                     <span class="material-symbols-outlined text-slate-400 text-[18px] group-hover:translate-y-0.5 transition-transform">expand_more</span>
-                </div>
+                </button>
             </div>
         </header>
 
@@ -76,3 +89,19 @@
     ::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
     .dark ::-webkit-scrollbar-thumb { background: #1e293b; }
 </style>
+
+@code {
+    private string GetInitials()
+    {
+        var name = Session.FullName?.Trim();
+        if (!string.IsNullOrEmpty(name))
+        {
+            var parts = name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            return parts.Length >= 2
+                ? $"{parts[0][0]}{parts[^1][0]}".ToUpper()
+                : name[0].ToString().ToUpper();
+        }
+        var email = Session.Email;
+        return string.IsNullOrEmpty(email) ? "T" : email[0].ToString().ToUpper();
+    }
+}

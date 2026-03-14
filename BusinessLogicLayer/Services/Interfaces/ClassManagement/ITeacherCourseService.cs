@@ -1,10 +1,10 @@
-using BusinessLogicLayer.DTOs;
-using BusinessLogicLayer.DTOs.Teacher.Courses;
+using BusinessLogicLayer.DTOs.Teacher.Classes;
 
 namespace BusinessLogicLayer.Services.Interfaces;
 
 public interface ITeacherCourseService
 {
-    Task<ApiResponse<object>> CreateCourseAsync(int teacherId, CreateCourseDto dto);
-    // Add other course-specific methods (e.g., GetMyCourses)
+    Task<long> CreateClassAsync(long teacherId, CreateClassDto dto);
+    Task<TeacherClassDetailDto?> GetTeacherClassDetailAsync(long classId, long teacherId, CancellationToken ct = default);
+    Task<List<TeacherClassListItemDto>> GetTeacherClassesAsync(long teacherId, CancellationToken ct = default);
 }
