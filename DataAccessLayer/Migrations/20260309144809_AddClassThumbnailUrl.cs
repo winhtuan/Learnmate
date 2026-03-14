@@ -15,36 +15,38 @@ namespace DataAccessLayer.Migrations
                 table: "classes",
                 type: "character varying(500)",
                 maxLength: 500,
-                nullable: true);
+                nullable: true
+            );
 
             migrationBuilder.UpdateData(
                 table: "classes",
                 keyColumn: "id",
                 keyValue: 1L,
                 column: "thumbnail_url",
-                value: null);
+                value: null
+            );
 
             migrationBuilder.UpdateData(
                 table: "classes",
                 keyColumn: "id",
                 keyValue: 2L,
                 column: "thumbnail_url",
-                value: null);
+                value: null
+            );
 
             migrationBuilder.UpdateData(
                 table: "classes",
                 keyColumn: "id",
                 keyValue: 3L,
                 column: "thumbnail_url",
-                value: null);
+                value: null
+            );
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropColumn(
-                name: "thumbnail_url",
-                table: "classes");
+            migrationBuilder.DropColumn(name: "thumbnail_url", table: "classes");
         }
     }
 }

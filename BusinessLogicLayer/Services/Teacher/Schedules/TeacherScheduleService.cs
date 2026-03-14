@@ -11,53 +11,65 @@ public class TeacherScheduleService(ITeacherScheduleRepository repo) : ITeacherS
     public async Task<List<TeacherScheduleClassDto>> GetTeacherClassesAsync(long teacherId)
     {
         var classes = await repo.GetTeacherClassesAsync(teacherId);
-        return classes.Select(c => new TeacherScheduleClassDto
-        {
-            Id = c.Id,
-            Name = c.Name,
-            Subject = c.Subject,
-            Status = c.Status,
-            EnrolledStudents = c.ClassMembers?.Count(cm => cm.Status == BusinessObject.Enum.ClassMemberStatus.ACTIVE) ?? 0
-        }).ToList();
+        return classes
+            .Select(c => new TeacherScheduleClassDto
+            {
+                Id = c.Id,
+                Name = c.Name,
+                Subject = c.Subject,
+                Status = c.Status,
+                EnrolledStudents =
+                    c.ClassMembers?.Count(cm =>
+                        cm.Status == BusinessObject.Enum.ClassMemberStatus.ACTIVE
+                    ) ?? 0,
+            })
+            .ToList();
     }
 
     public async Task<TeacherScheduleClassDto?> GetClassByIdAsync(long classId, long teacherId)
     {
         var c = await repo.GetClassByIdAsync(classId, teacherId);
-        if (c == null) return null;
-        
+        if (c == null)
+            return null;
+
         return new TeacherScheduleClassDto
         {
             Id = c.Id,
             Name = c.Name,
             Subject = c.Subject,
             Status = c.Status,
-            EnrolledStudents = c.ClassMembers?.Count(cm => cm.Status == BusinessObject.Enum.ClassMemberStatus.ACTIVE) ?? 0
+            EnrolledStudents =
+                c.ClassMembers?.Count(cm =>
+                    cm.Status == BusinessObject.Enum.ClassMemberStatus.ACTIVE
+                ) ?? 0,
         };
     }
 
     public async Task<List<TeacherScheduleDto>> GetSchedulesByClassAsync(long classId)
     {
         var schedules = await repo.GetSchedulesByClassAsync(classId);
-        return schedules.Select(s => new TeacherScheduleDto
-        {
-            Id = s.Id,
-            ClassId = s.ClassId,
-            Title = s.Title,
-            StartTime = s.StartTime,
-            EndTime = s.EndTime,
-            Type = s.Type,
-            Status = s.Status,
-            IsTrial = s.IsTrial,
-            AttendanceCount = s.Attendances?.Count(a => a.IsPresent) ?? 0,
-            TotalStudents = s.Attendances?.Count() ?? 0
-        }).ToList();
+        return schedules
+            .Select(s => new TeacherScheduleDto
+            {
+                Id = s.Id,
+                ClassId = s.ClassId,
+                Title = s.Title,
+                StartTime = s.StartTime,
+                EndTime = s.EndTime,
+                Type = s.Type,
+                Status = s.Status,
+                IsTrial = s.IsTrial,
+                AttendanceCount = s.Attendances?.Count(a => a.IsPresent) ?? 0,
+                TotalStudents = s.Attendances?.Count() ?? 0,
+            })
+            .ToList();
     }
 
     public async Task<TeacherScheduleDto?> GetScheduleByIdAsync(long scheduleId)
     {
         var s = await repo.GetScheduleByIdAsync(scheduleId);
-        if (s == null) return null;
+        if (s == null)
+            return null;
 
         return new TeacherScheduleDto
         {
@@ -70,17 +82,22 @@ public class TeacherScheduleService(ITeacherScheduleRepository repo) : ITeacherS
             Status = s.Status,
             IsTrial = s.IsTrial,
             AttendanceCount = s.Attendances?.Count(a => a.IsPresent) ?? 0,
-            TotalStudents = s.Attendances?.Count() ?? 0
+            TotalStudents = s.Attendances?.Count() ?? 0,
         };
     }
 
-    public async Task<ApiResponse<object>> CreateScheduleAsync(long teacherId, CreateScheduleDto dto)
+    public async Task<ApiResponse<object>> CreateScheduleAsync(
+        long teacherId,
+        CreateScheduleDto dto
+    )
     {
         // verify teacher owns class
         var c = await repo.GetClassByIdAsync(dto.ClassId, teacherId);
-        if (c == null) return ApiResponse<object>.Fail("Class not found or access denied.");
+        if (c == null)
+            return ApiResponse<object>.Fail("Class not found or access denied.");
 
-        if (dto.StartTime >= dto.EndTime) return ApiResponse<object>.Fail("End time must be after start time.");
+        if (dto.StartTime >= dto.EndTime)
+            return ApiResponse<object>.Fail("End time must be after start time.");
 
         var schedule = new Schedule
         {
@@ -91,7 +108,7 @@ public class TeacherScheduleService(ITeacherScheduleRepository repo) : ITeacherS
             Type = dto.Type,
             Status = dto.Status,
             IsTrial = dto.IsTrial,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
 
         await repo.CreateScheduleAsync(schedule);
@@ -99,15 +116,22 @@ public class TeacherScheduleService(ITeacherScheduleRepository repo) : ITeacherS
         return ApiResponse<object>.Ok(schedule.Id, "Schedule created successfully");
     }
 
-    public async Task<ApiResponse<object>> UpdateScheduleAsync(long teacherId, long scheduleId, UpdateScheduleDto dto)
+    public async Task<ApiResponse<object>> UpdateScheduleAsync(
+        long teacherId,
+        long scheduleId,
+        UpdateScheduleDto dto
+    )
     {
         var schedule = await repo.GetScheduleByIdAsync(scheduleId);
-        if (schedule == null) return ApiResponse<object>.Fail("Schedule not found.");
+        if (schedule == null)
+            return ApiResponse<object>.Fail("Schedule not found.");
 
         var c = await repo.GetClassByIdAsync(schedule.ClassId, teacherId);
-        if (c == null) return ApiResponse<object>.Fail("Access denied.");
+        if (c == null)
+            return ApiResponse<object>.Fail("Access denied.");
 
-        if (dto.StartTime >= dto.EndTime) return ApiResponse<object>.Fail("End time must be after start time.");
+        if (dto.StartTime >= dto.EndTime)
+            return ApiResponse<object>.Fail("End time must be after start time.");
 
         schedule.Title = dto.Title;
         schedule.StartTime = dto.StartTime;
@@ -124,10 +148,12 @@ public class TeacherScheduleService(ITeacherScheduleRepository repo) : ITeacherS
     public async Task<ApiResponse<object>> DeleteScheduleAsync(long teacherId, long scheduleId)
     {
         var schedule = await repo.GetScheduleByIdAsync(scheduleId);
-        if (schedule == null) return ApiResponse<object>.Fail("Schedule not found.");
+        if (schedule == null)
+            return ApiResponse<object>.Fail("Schedule not found.");
 
         var c = await repo.GetClassByIdAsync(schedule.ClassId, teacherId);
-        if (c == null) return ApiResponse<object>.Fail("Access denied.");
+        if (c == null)
+            return ApiResponse<object>.Fail("Access denied.");
 
         await repo.DeleteScheduleAsync(schedule);
 
@@ -137,7 +163,8 @@ public class TeacherScheduleService(ITeacherScheduleRepository repo) : ITeacherS
     public async Task<List<StudentAttendanceDto>> GetAttendanceForScheduleAsync(long scheduleId)
     {
         var schedule = await repo.GetScheduleByIdAsync(scheduleId);
-        if (schedule == null) return new List<StudentAttendanceDto>();
+        if (schedule == null)
+            return new List<StudentAttendanceDto>();
 
         var studentsInClass = await repo.GetClassStudentsAsync(schedule.ClassId);
         var existingAttendances = await repo.GetAttendancesByScheduleAsync(scheduleId);
@@ -147,27 +174,35 @@ public class TeacherScheduleService(ITeacherScheduleRepository repo) : ITeacherS
         foreach (var student in studentsInClass)
         {
             var record = existingAttendances.FirstOrDefault(a => a.StudentId == student.Id);
-            result.Add(new StudentAttendanceDto
-            {
-                StudentId = student.Id,
-                StudentName = student.StudentProfile?.FullName ?? "Unknown",
-                StudentEmail = student.Email,
-                AttendanceId = record?.Id ?? 0,
-                IsPresent = record?.IsPresent ?? false,
-                Notes = record?.Notes
-            });
+            result.Add(
+                new StudentAttendanceDto
+                {
+                    StudentId = student.Id,
+                    StudentName = student.StudentProfile?.FullName ?? "Unknown",
+                    StudentEmail = student.Email,
+                    AttendanceId = record?.Id ?? 0,
+                    IsPresent = record?.IsPresent ?? false,
+                    Notes = record?.Notes,
+                }
+            );
         }
 
         return result.OrderBy(a => a.StudentName).ToList();
     }
 
-    public async Task<ApiResponse<object>> SaveAttendanceAsync(long teacherId, long scheduleId, List<StudentAttendanceDto> dtos)
+    public async Task<ApiResponse<object>> SaveAttendanceAsync(
+        long teacherId,
+        long scheduleId,
+        List<StudentAttendanceDto> dtos
+    )
     {
         var schedule = await repo.GetScheduleByIdAsync(scheduleId);
-        if (schedule == null) return ApiResponse<object>.Fail("Schedule not found.");
+        if (schedule == null)
+            return ApiResponse<object>.Fail("Schedule not found.");
 
         var c = await repo.GetClassByIdAsync(schedule.ClassId, teacherId);
-        if (c == null) return ApiResponse<object>.Fail("Access denied.");
+        if (c == null)
+            return ApiResponse<object>.Fail("Access denied.");
 
         var existingAttendances = await repo.GetAttendancesByScheduleAsync(scheduleId);
         var toAdd = new List<Attendance>();
@@ -177,14 +212,16 @@ public class TeacherScheduleService(ITeacherScheduleRepository repo) : ITeacherS
         {
             if (dto.AttendanceId == 0)
             {
-                toAdd.Add(new Attendance
-                {
-                    ScheduleId = scheduleId,
-                    StudentId = dto.StudentId,
-                    IsPresent = dto.IsPresent,
-                    Notes = dto.Notes,
-                    CreatedAt = DateTime.UtcNow
-                });
+                toAdd.Add(
+                    new Attendance
+                    {
+                        ScheduleId = scheduleId,
+                        StudentId = dto.StudentId,
+                        IsPresent = dto.IsPresent,
+                        Notes = dto.Notes,
+                        CreatedAt = DateTime.UtcNow,
+                    }
+                );
             }
             else
             {

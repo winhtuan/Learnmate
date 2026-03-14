@@ -26,7 +26,9 @@
                 extend: {
                     colors: {
                         "primary": "#137fec",
-                        "background-light": "#f6f7f8",
+                        "primary-hover": "#0d6efd",
+                        "primary-light": "#EEF6FF",
+                        "background-light": "#F6F7F9",
                         "background-dark": "#101922",
                     },
                     fontFamily: { "display": ["Inter"] },
@@ -46,6 +48,38 @@
         Blazor.addEventListener('enhancedload', function () {
             window.scrollTo(0, 0);
         });
+    </script>
+    <script>
+        window.initChatInput = function (el, dotnetHelper) {
+            if (!el) return;
+            el.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    dotnetHelper.invokeMethodAsync('SendFromJs');
+                }
+            });
+            el.addEventListener('input', function () {
+                el.style.height = 'auto';
+                el.style.height = el.scrollHeight + 'px';
+            });
+        };
+        window.resetTextareaHeight = function (el) {
+            if (!el) return;
+            el.style.height = 'auto';
+        };
+    </script>
+    <script>
+        window.downloadFile = function (filename, content, mimeType) {
+            const blob = new Blob([content], { type: mimeType });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        };
     </script>
 </body>
 

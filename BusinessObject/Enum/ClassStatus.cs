@@ -4,5 +4,5 @@ public enum ClassStatus
 {
     ACTIVE,
     INACTIVE,
-    COMPLETED
+    COMPLETED,
 }

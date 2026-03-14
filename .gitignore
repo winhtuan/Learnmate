@@ -2,7 +2,6 @@
 .claude/
 .agents/
 CLAUDE.md
-learnmate/
 
 # ── Build outputs ─────────────────────────────────────────────────────────────
 [Bb]in/
@@ -38,7 +37,6 @@ artifacts/
 # ── Secrets & environment ─────────────────────────────────────────────────────
 .env
 .env.*
-!.env.example
 appsettings.Development.json
 appsettings.Local.json
 appsettings.json 
@@ -48,6 +46,9 @@ secrets.json
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# ── Docker ────────────────────────────────────────────────────────────────────
+docker-compose.override.yml
 
 # ── Test results ──────────────────────────────────────────────────────────────
 TestResults/

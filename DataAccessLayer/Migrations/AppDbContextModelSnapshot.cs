@@ -589,6 +589,10 @@ namespace DataAccessLayer.Migrations
                         .HasColumnType("text")
                         .HasColumnName("description");
 
+                    b.Property<long?>("FileSizeBytes")
+                        .HasColumnType("bigint")
+                        .HasColumnName("file_size_bytes");
+
                     b.Property<string>("FileType")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -1093,6 +1097,11 @@ namespace DataAccessLayer.Migrations
                     b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("timestamp without time zone")
                         .HasColumnName("deleted_at");
+
+                    b.Property<string>("FileUrl")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("file_url");
 
                     b.Property<decimal?>("Score")
                         .HasColumnType("numeric(5,2)")

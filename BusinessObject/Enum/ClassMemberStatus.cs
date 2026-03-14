@@ -4,5 +4,5 @@ public enum ClassMemberStatus
 {
     PENDING,
     ACTIVE,
-    DROPPED
+    DROPPED,
 }

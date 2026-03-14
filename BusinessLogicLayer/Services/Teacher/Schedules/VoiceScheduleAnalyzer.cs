@@ -29,15 +29,18 @@ public class VoiceScheduleAnalyzer : IVoiceScheduleAnalyzer
             Title = "AI Generated Class",
             StartTime = DateTime.Today.AddHours(9),
             EndTime = DateTime.Today.AddHours(11),
-            IsTrial = false
+            IsTrial = false,
         };
 
         if (string.IsNullOrWhiteSpace(_apiKey) || _apiKey == "YOUR_API_KEY")
         {
-            throw new Exception("Chưa cấu hình GeminiSettings:ApiKey trong appsettings.json. Hệ thống không thể gọi AI API.");
+            throw new Exception(
+                "Chưa cấu hình GeminiSettings:ApiKey trong appsettings.json. Hệ thống không thể gọi AI API."
+            );
         }
 
-        var systemPrompt = $@"
+        var systemPrompt =
+            $@"
 Bạn là một trợ lý AI phân tích ngôn ngữ tự nhiên. 
 Hôm nay là: {DateTime.Now:yyyy-MM-dd HH:mm:ss} (Theo giờ Vietnam).
 Nhiệm vụ của bạn là đọc một chuỗi transcript (ngôn ngữ tự nhiên) mà người dùng nói ra, và trích xuất thông tin để tạo lịch học (Schedule).
@@ -62,20 +65,18 @@ Phải trả về:
         var payload = new
         {
             systemInstruction = new { parts = new[] { new { text = systemPrompt } } },
-            contents = new[]
-            {
-                new { parts = new[] { new { text = transcript } } }
-            },
-            generationConfig = new
-            {
-                responseMimeType = "application/json",
-                temperature = 0.0
-            }
+            contents = new[] { new { parts = new[] { new { text = transcript } } } },
+            generationConfig = new { responseMimeType = "application/json", temperature = 0.0 },
         };
 
-        var requestContent = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
-        var requestUri = $"https://generativelanguage.googleapis.com/v1beta/models/{_model}:generateContent?key={_apiKey}";
-        
+        var requestContent = new StringContent(
+            JsonSerializer.Serialize(payload),
+            Encoding.UTF8,
+            "application/json"
+        );
+        var requestUri =
+            $"https://generativelanguage.googleapis.com/v1beta/models/{_model}:generateContent?key={_apiKey}";
+
         using var requestMessage = new HttpRequestMessage(HttpMethod.Post, requestUri);
         requestMessage.Content = requestContent;
 
@@ -90,12 +91,13 @@ Phải trả về:
             }
 
             using var document = JsonDocument.Parse(content);
-            var resultText = document.RootElement
-                                     .GetProperty("candidates")[0]
-                                     .GetProperty("content")
-                                     .GetProperty("parts")[0]
-                                     .GetProperty("text")
-                                     .GetString()?.Trim();
+            var resultText = document
+                .RootElement.GetProperty("candidates")[0]
+                .GetProperty("content")
+                .GetProperty("parts")[0]
+                .GetProperty("text")
+                .GetString()
+                ?.Trim();
 
             if (!string.IsNullOrEmpty(resultText))
             {

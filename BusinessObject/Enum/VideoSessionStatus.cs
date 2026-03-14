@@ -4,5 +4,5 @@ public enum VideoSessionStatus
 {
     WAITING,
     LIVE,
-    ENDED
+    ENDED,
 }

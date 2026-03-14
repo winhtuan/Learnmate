@@ -1,0 +1,89 @@
+@using LearnmateSolution.Components.Pages.Student.FindTutor.Models
+
+<div class="group flex gap-5 bg-white rounded-xl border @(IsSelected ? "border-[#37352F]" : "border-[#E9E9E7] hover:bg-[#F7F7F5]") transition-all duration-150 p-5 cursor-pointer"
+     @onclick="() => OnSelected.InvokeAsync(Tutor)">
+
+    <!-- Left: Avatar + Rating -->
+    <div class="flex flex-col items-center gap-1.5 shrink-0 w-16">
+        <div class="relative">
+            <div class="size-16 rounded-full bg-[#F1F1EF] bg-cover bg-center @(Tutor.Availability == AvailabilityStatus.FullyBooked ? "grayscale opacity-60" : "")"
+                 style="background-image: url('@Tutor.AvatarUrl')">
+            </div>
+            @if (Tutor.IsVerified)
+            {
+                <div class="absolute -bottom-0.5 -right-0.5 bg-white rounded-full p-0.5" title="Verified Tutor">
+                    <span class="material-symbols-outlined text-[#37352F] text-[14px]" style="font-variation-settings:'FILL' 1">verified</span>
+                </div>
+            }
+        </div>
+        <div class="flex items-center gap-0.5">
+            <span class="material-symbols-outlined text-[#F59E0B] text-[14px]" style="font-variation-settings:'FILL' 1">star</span>
+            <span class="text-xs font-bold text-[#37352F]">@Tutor.Rating.ToString("0.0")</span>
+        </div>
+        <span class="text-[11px] text-[#787774] leading-none">(@Tutor.ReviewCount)</span>
+    </div>
+
+    <!-- Center: Info -->
+    <div class="flex flex-col flex-1 gap-2 min-w-0">
+        <div>
+            <h3 class="text-base font-semibold text-[#37352F] leading-snug">@Tutor.Name</h3>
+            <p class="text-xs text-[#787774] mt-0.5 flex items-center gap-1">
+                <span class="material-symbols-outlined text-[12px]">location_on</span>
+                @Tutor.Location
+            </p>
+        </div>
+
+        <div class="flex flex-wrap gap-1.5">
+            @foreach (var subject in Tutor.Subjects)
+            {
+                <span class="px-2 py-0.5 text-xs bg-[#F1F1EF] text-[#37352F] rounded-md font-medium">@subject</span>
+            }
+        </div>
+
+        <p class="text-sm text-[#787774] line-clamp-2 leading-relaxed">@Tutor.Bio</p>
+
+        @{ var (badgeText, badgeCss) = AvailabilityBadge(Tutor.Availability, Tutor.AvailabilityLabel); }
+        <span class="self-start text-xs px-2 py-0.5 rounded-md font-medium @badgeCss">@badgeText</span>
+    </div>
+
+    <!-- Right: Price + Actions -->
+    <div class="flex flex-col items-end justify-between shrink-0 pl-4 border-l border-[#E9E9E7] min-w-[110px]">
+        <div class="flex flex-col items-end gap-1.5">
+            @if (Tutor.IsSuperTutor)
+            {
+                <div class="bg-[#FEF3C7] text-[#92400E] text-[11px] font-bold px-2.5 py-1 rounded-md flex items-center gap-1">
+                    <span class="material-symbols-outlined text-[13px]" style="font-variation-settings:'FILL' 1">bolt</span>
+                    Super Tutor
+                </div>
+            }
+            <p class="text-xl font-bold text-[#37352F] leading-none">
+                $@Tutor.HourlyRate.ToString("0")<span class="text-xs font-normal text-[#787774]">/hr</span>
+            </p>
+        </div>
+        <div class="flex flex-col gap-2 w-full mt-4">
+            <button class="w-full bg-[#37352F] text-white text-sm font-medium px-3 py-2 rounded-md hover:bg-[#2F2E2B] transition-colors"
+                    @onclick:stopPropagation
+                    @onclick="() => OnSelected.InvokeAsync(Tutor)">
+                Book
+            </button>
+            <button class="w-full border border-[#E9E9E7] text-[#37352F] text-sm font-medium px-3 py-2 rounded-md hover:bg-[#F7F7F5] transition-colors"
+                    @onclick:stopPropagation
+                    @onclick="() => OnSelected.InvokeAsync(Tutor)">
+                View Profile
+            </button>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public TutorListItem Tutor { get; set; } = null!;
+    [Parameter] public bool IsSelected { get; set; }
+    [Parameter] public EventCallback<TutorListItem> OnSelected { get; set; }
+
+    private static (string text, string css) AvailabilityBadge(AvailabilityStatus status, string? label) => status switch
+    {
+        AvailabilityStatus.AvailableToday => ("Available Today", "bg-[#D1FAE5] text-[#065F46]"),
+        AvailabilityStatus.FullyBooked    => ("Fully Booked",    "bg-[#F3F4F6] text-[#6B7280]"),
+        _                                 => (label ?? "Has Slots", "bg-[#FEF3C7] text-[#92400E]"),
+    };
+}

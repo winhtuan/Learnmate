@@ -5,5 +5,5 @@ public enum ScheduleStatus
     SCHEDULED,
     ONGOING,
     COMPLETED,
-    CANCELLED
+    CANCELLED,
 }

@@ -4,5 +4,5 @@ public enum SubmissionStatus
 {
     DRAFT,
     SUBMITTED,
-    GRADED
+    GRADED,
 }

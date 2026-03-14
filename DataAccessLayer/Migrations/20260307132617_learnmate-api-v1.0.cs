@@ -8,15 +8,9 @@ namespace DataAccessLayer.Migrations
     public partial class learnmateapiv10 : Migration
     {
         /// <inheritdoc />
-        protected override void Up(MigrationBuilder migrationBuilder)
-        {
-
-        }
+        protected override void Up(MigrationBuilder migrationBuilder) { }
 
         /// <inheritdoc />
-        protected override void Down(MigrationBuilder migrationBuilder)
-        {
-
-        }
+        protected override void Down(MigrationBuilder migrationBuilder) { }
     }
 }
