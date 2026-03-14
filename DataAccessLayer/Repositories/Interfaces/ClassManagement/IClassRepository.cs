@@ -2,7 +2,7 @@ using BusinessObject.Models;
 
 namespace DataAccessLayer.Repositories.Interfaces;
 
-public interface IClassRepository
+public interface IStudentClassRepository
 {
     /// <summary>Returns all ACTIVE classes the student is enrolled in, with teacher profile and next schedule.</summary>
     Task<IReadOnlyList<Class>> GetEnrolledWithDetailsAsync(
@@ -36,7 +36,11 @@ public interface IClassRepository
     Task<bool> IsEnrolledAsync(long classId, long studentId, CancellationToken ct = default);
 
     /// <summary>Returns an existing submission for a student on an assignment, or null.</summary>
-    Task<Submission?> GetSubmissionAsync(long assignmentId, long studentId, CancellationToken ct = default);
+    Task<Submission?> GetSubmissionAsync(
+        long assignmentId,
+        long studentId,
+        CancellationToken ct = default
+    );
 
     /// <summary>Creates a new submission or updates an existing one.</summary>
     Task<Submission> UpsertSubmissionAsync(Submission submission, CancellationToken ct = default);
@@ -45,5 +49,8 @@ public interface IClassRepository
     Task<Material> CreateMaterialAsync(Material material, CancellationToken ct = default);
 
     /// <summary>Returns all non-cancelled schedules with their VideoSession for a class.</summary>
-    Task<IReadOnlyList<Schedule>> GetSchedulesWithVideosAsync(long classId, CancellationToken ct = default);
+    Task<IReadOnlyList<Schedule>> GetSchedulesWithVideosAsync(
+        long classId,
+        CancellationToken ct = default
+    );
 }

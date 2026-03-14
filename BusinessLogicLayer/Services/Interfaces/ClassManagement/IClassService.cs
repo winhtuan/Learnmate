@@ -3,7 +3,7 @@ using BusinessLogicLayer.DTOs.Class;
 
 namespace BusinessLogicLayer.Services.Interfaces;
 
-public interface IClassService
+public interface IStudentClassService
 {
     Task<ApiResponse<IReadOnlyList<ClassListItemDto>>> GetEnrolledClassesAsync(
         long studentId,
@@ -34,7 +34,11 @@ public interface IClassService
         CancellationToken ct = default
     );
 
-    Task<ApiResponse<bool>> LeaveClassAsync(long classId, long studentId, CancellationToken ct = default);
+    Task<ApiResponse<bool>> LeaveClassAsync(
+        long classId,
+        long studentId,
+        CancellationToken ct = default
+    );
 
     Task<ApiResponse<bool>> SubmitAssignmentAsync(
         long classId,

@@ -7,11 +7,11 @@ using DataAccessLayer.Repositories.Interfaces;
 
 namespace BusinessLogicLayer.Services;
 
-public class ClassService(
-    IClassRepository classRepo,
+public class StudentClassService(
+    IStudentClassRepository classRepo,
     IClassMemberRepository classMemberRepo,
     IFileStorageService fileStorage
-) : IClassService
+) : IStudentClassService
 {
     public async Task<ApiResponse<IReadOnlyList<ClassListItemDto>>> GetEnrolledClassesAsync(
         long studentId,
@@ -216,7 +216,10 @@ public class ClassService(
         };
 
         var saved = await classRepo.CreateMaterialAsync(material, ct);
-        return ApiResponse<ClassMaterialDto>.Ok(MapMaterial(saved), "Material uploaded successfully.");
+        return ApiResponse<ClassMaterialDto>.Ok(
+            MapMaterial(saved),
+            "Material uploaded successfully."
+        );
     }
 
     public async Task<ApiResponse<ClassVideosDto>> GetClassVideosAsync(
@@ -244,9 +247,7 @@ public class ClassService(
             ))
             .ToList();
 
-        var live = items.FirstOrDefault(v =>
-            v.SessionStatus == VideoSessionStatus.LIVE.ToString()
-        );
+        var live = items.FirstOrDefault(v => v.SessionStatus == VideoSessionStatus.LIVE.ToString());
         var recorded = items
             .Where(v => v.SessionStatus == VideoSessionStatus.ENDED.ToString())
             .ToList();
@@ -272,9 +273,7 @@ public class ClassService(
         else
             status = "not_started";
 
-        var totalPoints = a.Questions.Count > 0
-            ? a.Questions.Sum(q => q.Points)
-            : (decimal?)null;
+        var totalPoints = a.Questions.Count > 0 ? a.Questions.Sum(q => q.Points) : (decimal?)null;
 
         return new ClassAssignmentDto(
             Id: a.Id,

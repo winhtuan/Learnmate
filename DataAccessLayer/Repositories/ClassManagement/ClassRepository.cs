@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DataAccessLayer.Repositories;
 
-public class ClassRepository(AppDbContext db) : IClassRepository
+public class StudentClassRepository(AppDbContext db) : IStudentClassRepository
 {
     public async Task<IReadOnlyList<Class>> GetEnrolledWithDetailsAsync(
         long studentId,

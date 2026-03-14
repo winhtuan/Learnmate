@@ -17,7 +17,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IClassMemberRepository, ClassMemberRepository>();
         services.AddScoped<INotificationRepository, NotificationRepository>();
         services.AddScoped<IScheduleRepository, ScheduleRepository>();
-        services.AddScoped<IClassRepository, ClassRepository>();
+        services.AddScoped<IStudentClassRepository, StudentClassRepository>();
         services.AddScoped<ITeacherAssignmentRepository, TeacherAssignmentRepository>();
         services.AddScoped<ITeacherCourseRepository, TeacherCourseRepository>();
         services.AddScoped<ITeacherProfileRepository, TeacherProfileRepository>();
@@ -32,7 +32,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IJwtService, JwtService>();
         services.AddScoped<IDashboardService, DashboardService>();
         services.AddScoped<IStudentDashboardService, StudentDashboardService>();
-        services.AddScoped<IClassService, ClassService>();
+        services.AddScoped<IStudentClassService, StudentClassService>();
 
         // Token blacklist cache
         services.AddMemoryCache();

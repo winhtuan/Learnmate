@@ -8,7 +8,7 @@ namespace LearnmateSolution.Controllers;
 [ApiController]
 [Route("api/classes")]
 [Authorize]
-public class ClassController(IClassService classService) : ControllerBase
+public class ClassController(IStudentClassService classService) : ControllerBase
 {
     private long? UserId =>
         long.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var id) ? id : null;
