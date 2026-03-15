@@ -12,6 +12,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     // ── Identity ─────────────────────────────────────────────────────────────
     public DbSet<User> Users => Set<User>();
     public DbSet<TeacherProfile> TeacherProfiles => Set<TeacherProfile>();
+    public DbSet<TeacherDocument> TeacherDocuments => Set<TeacherDocument>();
     public DbSet<StudentProfile> StudentProfiles => Set<StudentProfile>();
     public DbSet<OtpVerification> OtpVerifications => Set<OtpVerification>();
 

@@ -3,6 +3,7 @@ using System;
 using DataAccessLayer.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace DataAccessLayer.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260315124548_AddTeacherCompliance")]
+    partial class AddTeacherCompliance
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1250,12 +1253,6 @@ namespace DataAccessLayer.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
 
-                    b.Property<string>("Category")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
-                        .HasColumnName("category");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp without time zone")
                         .HasColumnName("created_at");
@@ -1340,11 +1337,6 @@ namespace DataAccessLayer.Migrations
                         .HasColumnType("numeric(12,2)")
                         .HasColumnName("hourly_rate");
 
-                    b.Property<string>("LanguagesSpoken")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)")
-                        .HasColumnName("languages_spoken");
-
                     b.Property<decimal>("RatingAvg")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("numeric(5,2)")
@@ -1364,10 +1356,6 @@ namespace DataAccessLayer.Migrations
                         .HasColumnType("character varying(500)")
                         .HasColumnName("subjects");
 
-                    b.Property<string>("TeachingPhilosophy")
-                        .HasColumnType("text")
-                        .HasColumnName("teaching_philosophy");
-
                     b.Property<int>("TotalRatingCount")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
@@ -1385,10 +1373,6 @@ namespace DataAccessLayer.Migrations
                     b.Property<DateTime?>("VerifiedAt")
                         .HasColumnType("timestamp without time zone")
                         .HasColumnName("verified_at");
-
-                    b.Property<int?>("YearsOfExperience")
-                        .HasColumnType("integer")
-                        .HasColumnName("years_of_experience");
 
                     b.HasKey("Id")
                         .HasName("pk_teacher_profiles");
