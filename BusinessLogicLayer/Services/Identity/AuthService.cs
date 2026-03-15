@@ -13,10 +13,12 @@ public class AuthService(
     IUserRepository userRepo,
     IOtpVerificationRepository otpRepo,
     IStudentProfileRepository studentProfileRepo,
+    ITeacherProfileRepository teacherProfileRepo,
     IJwtService jwtService,
     IOtpService otpService,
     IEmailService emailService,
-    ILogger<AuthService> logger
+    ILogger<AuthService> logger,
+    DataAccessLayer.Data.AppDbContext db
 ) : IAuthService
 {
     private const int MaxOtpAttempts = 5;
@@ -61,29 +63,53 @@ public class AuthService(
             IsActive = false, // remains inactive until email verified
         };
 
-        user = await userRepo.CreateAsync(user);
-
-        if (role == UserRole.STUDENT)
+        using var transaction = await db.Database.BeginTransactionAsync();
+        try
         {
-            await studentProfileRepo.CreateAsync(
-                new StudentProfile
-                {
-                    UserId = user.Id,
-                    FullName = request.FullName ?? request.Email,
-                    DateOfBirth = request.DateOfBirth,
-                }
+            user = await userRepo.CreateAsync(user);
+
+            if (role == UserRole.STUDENT)
+            {
+                await studentProfileRepo.CreateAsync(
+                    new StudentProfile
+                    {
+                        UserId = user.Id,
+                        FullName = request.FullName ?? request.Email,
+                        DateOfBirth = request.DateOfBirth,
+                    }
+                );
+            }
+            else if (role == UserRole.TEACHER)
+            {
+                await teacherProfileRepo.AddAsync(
+                    new TeacherProfile
+                    {
+                        UserId = user.Id,
+                        FullName = request.FullName ?? request.Email,
+                        Status = ComplianceStatus.NONE,
+                        Subjects = "Not Specified", // Placeholder to satisfy constraints
+                        HourlyRate = 1              // Must be > 0 due to DB constraint
+                    }
+                );
+            }
+
+            await SendOtpAsync(user);
+            await transaction.CommitAsync();
+
+            return ApiResponse<RegisterResponse>.Ok(
+                new RegisterResponse(
+                    user.Id,
+                    user.Email,
+                    "Registration successful. Please check your email for the verification code."
+                )
             );
         }
-
-        await SendOtpAsync(user);
-
-        return ApiResponse<RegisterResponse>.Ok(
-            new RegisterResponse(
-                user.Id,
-                user.Email,
-                "Registration successful. Please check your email for the verification code."
-            )
-        );
+        catch (Exception ex)
+        {
+            await transaction.RollbackAsync();
+            logger.LogError(ex, "Registration failed for {Email}", request.Email);
+            return ApiResponse<RegisterResponse>.Fail($"Registration failed: {ex.Message}");
+        }
     }
 
     public async Task<ApiResponse<object?>> VerifyOtpAsync(VerifyOtpRequest request)
@@ -175,6 +201,18 @@ public class AuthService(
 
         var expiryMinutes = 60; // default; JwtService reads from config
 
+        string? fullName = null;
+        if (user.Role == UserRole.TEACHER)
+        {
+            var profile = await teacherProfileRepo.GetByUserIdAsync(user.Id);
+            fullName = profile?.FullName;
+        }
+        else if (user.Role == UserRole.STUDENT)
+        {
+            var profile = await studentProfileRepo.GetByUserIdAsync(user.Id);
+            fullName = profile?.FullName;
+        }
+
         return ApiResponse<LoginResponse>.Ok(new LoginResponse(
             UserId:      user.Id,
             AccessToken: token,
@@ -182,7 +220,8 @@ public class AuthService(
             ExpiresIn:   expiryMinutes * 60,
             Email:       user.Email,
             Role:        user.Role.ToString(),
-            AvatarUrl:   user.AvatarUrl));
+            AvatarUrl:   user.AvatarUrl,
+            FullName:    fullName));
     }
 
     public Task<ApiResponse<object?>> LogoutAsync(string token)

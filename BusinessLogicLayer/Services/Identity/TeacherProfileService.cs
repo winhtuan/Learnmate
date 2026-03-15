@@ -2,6 +2,8 @@ using BCrypt.Net;
 using BusinessLogicLayer.DTOs;
 using BusinessLogicLayer.DTOs.Teacher.Profile;
 using BusinessLogicLayer.Services.Interfaces;
+using BusinessObject.Enum;
+using BusinessObject.Models;
 using DataAccessLayer.Repositories.Interfaces;
 
 namespace BusinessLogicLayer.Services;
@@ -24,9 +26,14 @@ public class TeacherProfileService(
             Bio              = profile.Bio,
             Subjects         = profile.Subjects,
             HourlyRate       = profile.HourlyRate,
+            LanguagesSpoken  = profile.LanguagesSpoken,
+            YearsOfExperience = profile.YearsOfExperience,
+            TeachingPhilosophy = profile.TeachingPhilosophy,
             BankAccount      = profile.BankAccount,
             RatingAvg        = profile.RatingAvg,
-            TotalRatingCount = profile.TotalRatingCount
+            TotalRatingCount = profile.TotalRatingCount,
+            Status           = profile.Status,
+            AdminNotes       = profile.AdminNotes
         };
     }
 
@@ -34,12 +41,26 @@ public class TeacherProfileService(
     {
         var profile = await profileRepo.GetByUserIdAsync(userId);
         if (profile is null)
-            return ApiResponse<object>.Fail("Không tìm thấy hồ sơ giáo viên.");
+        {
+            // Fallback for existing users who registered before the fix
+            profile = new TeacherProfile
+            {
+                UserId = userId,
+                FullName = dto.FullName ?? "",
+                Status = ComplianceStatus.NONE,
+                Subjects = string.IsNullOrWhiteSpace(dto.Subjects) ? "Not Specified" : dto.Subjects,
+                HourlyRate = dto.HourlyRate > 0 ? dto.HourlyRate : 1
+            };
+            await profileRepo.AddAsync(profile);
+        }
 
         profile.FullName    = dto.FullName;
         profile.Bio         = dto.Bio;
         profile.Subjects    = dto.Subjects;
         profile.HourlyRate  = dto.HourlyRate;
+        profile.LanguagesSpoken = dto.LanguagesSpoken;
+        profile.YearsOfExperience = dto.YearsOfExperience;
+        profile.TeachingPhilosophy = dto.TeachingPhilosophy;
         profile.BankAccount = dto.BankAccount;
         profile.AvatarUrl   = dto.AvatarUrl;
 

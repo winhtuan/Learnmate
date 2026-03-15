@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using BusinessObject.Enum;
 
 namespace BusinessLogicLayer.DTOs.Teacher.Profile;
 
@@ -12,9 +13,14 @@ public class TeacherProfileDto
     public string? Bio              { get; set; }
     public string  Subjects         { get; set; } = string.Empty;
     public decimal HourlyRate       { get; set; }
+    public string? LanguagesSpoken  { get; set; }
+    public int?    YearsOfExperience { get; set; }
+    public string? TeachingPhilosophy { get; set; }
     public string? BankAccount      { get; set; }
     public decimal RatingAvg        { get; set; }
     public int     TotalRatingCount { get; set; }
+    public ComplianceStatus Status  { get; set; }
+    public string? AdminNotes       { get; set; }
 }
 
 
@@ -33,6 +39,13 @@ public class UpdateTeacherProfileDto
     [Required(ErrorMessage = "Học phí không được để trống")]
     [Range(1, 10_000_000, ErrorMessage = "Học phí phải lớn hơn 0")]
     public decimal HourlyRate { get; set; }
+
+    [MaxLength(500)]
+    public string? LanguagesSpoken { get; set; }
+
+    public int? YearsOfExperience { get; set; }
+
+    public string? TeachingPhilosophy { get; set; }
 
     [MaxLength(100)]
     public string? BankAccount { get; set; }
