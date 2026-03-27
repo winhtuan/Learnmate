@@ -47,4 +47,25 @@ public class TeacherCourseRepository : ITeacherCourseRepository
             .OrderByDescending(c => c.CreatedAt)
             .ToListAsync(ct);
     }
+
+    public async Task<Material> AddMaterialAsync(Material material, CancellationToken ct = default)
+    {
+        material.CreatedAt = DateTime.UtcNow;
+        material.UpdatedAt = DateTime.UtcNow;
+        db.Materials.Add(material);
+        await db.SaveChangesAsync(ct);
+        return material;
+    }
+
+    public async Task DeleteMaterialAsync(long materialId, long classId, CancellationToken ct = default)
+    {
+        var material = await db.Materials
+            .FirstOrDefaultAsync(m => m.Id == materialId && m.ClassId == classId, ct);
+        if (material is not null)
+        {
+            material.Status = MaterialStatus.HIDDEN;
+            material.UpdatedAt = DateTime.UtcNow;
+            await db.SaveChangesAsync(ct);
+        }
+    }
 }

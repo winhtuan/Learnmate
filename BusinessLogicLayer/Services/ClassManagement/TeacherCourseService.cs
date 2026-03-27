@@ -1,12 +1,25 @@
 using BusinessLogicLayer.DTOs.Teacher.Classes;
 using BusinessLogicLayer.Services.Interfaces;
+using BusinessObject.Enum;
 using BusinessObject.Models;
 using DataAccessLayer.Repositories.Interfaces;
 
 namespace BusinessLogicLayer.Services;
 
-public class TeacherCourseService(ITeacherCourseRepository classRepo) : ITeacherCourseService
+public class TeacherCourseService(
+    ITeacherCourseRepository classRepo,
+    IFileStorageService fileStorage
+) : ITeacherCourseService
 {
+    // ── Allowed file extensions for materials ────────────────────────────────
+    private static readonly HashSet<string> AllowedExtensions = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx",
+        ".jpg", ".jpeg", ".png", ".gif", ".zip", ".rar", ".txt"
+    };
+
+    private const long MaxFileSizeBytes = 50 * 1024 * 1024; // 50 MB
+
     public async Task<long> CreateClassAsync(long teacherId, CreateClassDto dto)
     {
         var cls = new Class
@@ -19,7 +32,7 @@ public class TeacherCourseService(ITeacherCourseRepository classRepo) : ITeacher
             ThumbnailUrl = string.IsNullOrWhiteSpace(dto.ThumbnailUrl)
                 ? $"https://placehold.co/400?text={Uri.EscapeDataString(dto.Subject)}"
                 : dto.ThumbnailUrl.Trim(),
-            Status = BusinessObject.Enum.ClassStatus.ACTIVE
+            Status = ClassStatus.ACTIVE
         };
         var created = await classRepo.CreateAsync(cls);
         return created.Id;
@@ -90,6 +103,7 @@ public class TeacherCourseService(ITeacherCourseRepository classRepo) : ITeacher
                     Description = m.Description,
                     FileUrl     = m.FileUrl,
                     FileType    = m.FileType,
+                    FileSizeBytes = m.FileSizeBytes,
                     Status      = m.Status.ToString(),
                     UploadedAt  = m.CreatedAt.ToLocalTime()
                 })
@@ -120,5 +134,78 @@ public class TeacherCourseService(ITeacherCourseRepository classRepo) : ITeacher
                     : null
             };
         }).ToList();
+    }
+
+    // ── Upload Material ──────────────────────────────────────────────────────
+    public async Task<TeacherMaterialItemDto> UploadMaterialAsync(
+        long classId, long teacherId,
+        string fileName, string title, string? description,
+        Stream fileContent, string contentType, long fileSizeBytes,
+        CancellationToken ct = default)
+    {
+        // Validate file extension
+        var ext = Path.GetExtension(fileName);
+        if (string.IsNullOrEmpty(ext) || !AllowedExtensions.Contains(ext))
+            throw new InvalidOperationException(
+                $"Định dạng file '{ext}' không được hỗ trợ. Chỉ chấp nhận: {string.Join(", ", AllowedExtensions)}");
+
+        // Validate file size
+        if (fileSizeBytes > MaxFileSizeBytes)
+            throw new InvalidOperationException(
+                $"File quá lớn ({fileSizeBytes / 1024 / 1024} MB). Tối đa: {MaxFileSizeBytes / 1024 / 1024} MB");
+
+        // Generate unique object path in MinIO
+        var fileType = ext.TrimStart('.').ToLower();
+        var objectPath = $"materials/{classId}/{Guid.NewGuid():N}{ext.ToLower()}";
+
+        // Upload to cloud storage (MinIO)
+        await fileStorage.UploadAsync(objectPath, fileContent, contentType, ct);
+
+        // Save metadata to DB
+        var material = new Material
+        {
+            ClassId       = classId,
+            UploadedBy    = teacherId,
+            Title         = title.Trim(),
+            Description   = description?.Trim(),
+            FileUrl       = objectPath,
+            FileType      = fileType,
+            FileSizeBytes = fileSizeBytes,
+            Status        = MaterialStatus.ACTIVE
+        };
+
+        var saved = await classRepo.AddMaterialAsync(material, ct);
+
+        return new TeacherMaterialItemDto
+        {
+            Id            = saved.Id,
+            Title         = saved.Title,
+            Description   = saved.Description,
+            FileUrl       = objectPath,
+            FileType      = saved.FileType,
+            FileSizeBytes = saved.FileSizeBytes,
+            Status        = saved.Status.ToString(),
+            UploadedAt    = saved.CreatedAt.ToLocalTime()
+        };
+    }
+
+    // ── Delete Material ──────────────────────────────────────────────────────
+    public async Task DeleteMaterialAsync(long classId, long teacherId, long materialId, CancellationToken ct = default)
+    {
+        // Verify class belongs to teacher
+        var cls = await classRepo.GetTeacherClassDetailAsync(classId, teacherId, ct);
+        if (cls is null)
+            throw new InvalidOperationException("Không tìm thấy lớp học.");
+
+        var material = cls.Materials.FirstOrDefault(m => m.Id == materialId);
+        if (material is null)
+            throw new InvalidOperationException("Không tìm thấy tài liệu.");
+
+        // Delete from cloud storage
+        try { await fileStorage.DeleteAsync(material.FileUrl, ct); }
+        catch { /* file may already be missing */ }
+
+        // Soft-delete in database
+        await classRepo.DeleteMaterialAsync(materialId, classId, ct);
     }
 }
