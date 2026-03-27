@@ -47,6 +47,13 @@ public class Program
         if (Environment.GetEnvironmentVariable("MINIO_USE_SSL") is { } minioSsl)
             builder.Configuration["MinIO:UseSSL"] = minioSsl;
 
+        if (Environment.GetEnvironmentVariable("CLOUDINARY_CLOUD_NAME") is { } cloudinaryName)
+            builder.Configuration["Cloudinary:CloudName"] = cloudinaryName;
+        if (Environment.GetEnvironmentVariable("CLOUDINARY_API_KEY") is { } cloudinaryKey)
+            builder.Configuration["Cloudinary:ApiKey"] = cloudinaryKey;
+        if (Environment.GetEnvironmentVariable("CLOUDINARY_API_SECRET") is { } cloudinarySecret)
+            builder.Configuration["Cloudinary:ApiSecret"] = cloudinarySecret;
+
         // ── Database ──────────────────────────────────────────────────────────
         builder.Services.AddDataAccessLayer(builder.Configuration);
 
@@ -91,12 +98,20 @@ public class Program
             client.Timeout = TimeSpan.FromSeconds(30);
         });
 
-        // ── MinIO file storage ────────────────────────────────────────────────
-        builder.Services.AddOptions<MinioSettings>()
-            .BindConfiguration("MinIO")
+        // ── File Storage (Cloudinary / MinIO) ─────────────────────────────────
+        // Uncomment to use MinIO:
+        // builder.Services.AddOptions<MinioSettings>()
+        //     .BindConfiguration("MinIO")
+        //     .ValidateDataAnnotations()
+        //     .ValidateOnStart();
+        // builder.Services.AddSingleton<IFileStorageService, MinioFileStorageService>();
+
+        // Use Cloudinary:
+        builder.Services.AddOptions<CloudinarySettings>()
+            .BindConfiguration("Cloudinary")
             .ValidateDataAnnotations()
             .ValidateOnStart();
-        builder.Services.AddSingleton<IFileStorageService, MinioFileStorageService>();
+        builder.Services.AddSingleton<IFileStorageService, CloudinaryFileStorageService>();
 
         // ── Auth session (per Blazor circuit) ────────────────────────────────
         builder.Services.AddScoped<UserSessionService>();

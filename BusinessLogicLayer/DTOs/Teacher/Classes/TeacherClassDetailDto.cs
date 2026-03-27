@@ -66,12 +66,13 @@ public class TeacherScheduleItemDto
 // ── Materials ─────────────────────────────────────────────────────────────────
 public class TeacherMaterialItemDto
 {
-    public long     Id          { get; set; }
-    public string   Title       { get; set; } = string.Empty;
-    public string?  Description { get; set; }
-    public string   FileUrl     { get; set; } = string.Empty;
-    public string   FileType    { get; set; } = string.Empty;
-    public string   Status      { get; set; } = string.Empty;
-    public DateTime UploadedAt  { get; set; }
+    public long     Id            { get; set; }
+    public string   Title         { get; set; } = string.Empty;
+    public string?  Description   { get; set; }
+    public string   FileUrl       { get; set; } = string.Empty;
+    public string   FileType      { get; set; } = string.Empty;
+    public long?    FileSizeBytes { get; set; }
+    public string   Status        { get; set; } = string.Empty;
+    public DateTime UploadedAt    { get; set; }
 }
 
