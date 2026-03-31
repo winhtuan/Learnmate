@@ -11,6 +11,7 @@ public interface ITeacherScheduleRepository
     Task<Schedule> CreateScheduleAsync(Schedule schedule);
     Task UpdateScheduleAsync(Schedule schedule);
     Task DeleteScheduleAsync(Schedule schedule);
+    Task<bool> HasOverlappingScheduleAsync(long classId, DateTime startTime, DateTime endTime, long? excludeScheduleId = null);
     
     Task<List<User>> GetClassStudentsAsync(long classId);
     Task<List<Attendance>> GetAttendancesByScheduleAsync(long scheduleId);
