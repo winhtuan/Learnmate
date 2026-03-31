@@ -15,5 +15,7 @@ public class CreateAssignmentDto
 
     public DateTime? DueDate { get; set; }
 
+    public string? FileUrl { get; set; }
+
     public List<CreateAssignmentQuestionDto> Questions { get; set; } = new();
 }

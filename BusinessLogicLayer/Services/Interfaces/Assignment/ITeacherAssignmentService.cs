@@ -9,4 +9,5 @@ public interface ITeacherAssignmentService
     Task<List<AssignmentListItemDto>> GetAssignmentsByTeacherAsync(long teacherId);
     Task<AssignmentDetailDto?> GetAssignmentByIdAsync(long assignmentId);
     Task<ApiResponse<object>> UpdateAssignmentAsync(long assignmentId, UpdateAssignmentDto dto);
+    Task<string> UploadAssignmentFileAsync(Stream fileStream, string fileName, string contentType, CancellationToken ct = default);
 }

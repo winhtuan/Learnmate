@@ -2,6 +2,7 @@
 @using LearnmateSolution.AppState
 @inject NavigationManager NavigationManager
 @inject UserSessionService Session
+@inject IJSRuntime JS
 
 <div class="flex min-h-screen bg-white font-display text-slate-900">
     <!-- Sidebar -->
@@ -103,5 +104,27 @@
         }
         var email = Session.Email;
         return string.IsNullOrEmpty(email) ? "T" : email[0].ToString().ToUpper();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+
+        if (!Session.IsAuthenticated)
+        {
+            var email = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_email");
+            var role = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_role");
+            var token = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_token");
+            var uidStr = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_userid");
+            var fullName = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_fullname");
+            var avatar = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_avatar");
+
+            if (!string.IsNullOrEmpty(email) && !string.IsNullOrEmpty(role) && !string.IsNullOrEmpty(token))
+            {
+                long.TryParse(uidStr, out var uid);
+                Session.SetSession(email, role, token, avatar, uid, fullName);
+                StateHasChanged();
+            }
+        }
     }
 }

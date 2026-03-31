@@ -209,8 +209,9 @@
         var role = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_role");
         var token = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_token");
         var avatar = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_avatar");
+        var fullName = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_fullname");
         if (!string.IsNullOrEmpty(email) && !string.IsNullOrEmpty(role) && !string.IsNullOrEmpty(token))
-            Session.SetSession(email, role, token, avatar);
+            Session.SetSession(email, role, token, avatar, fullName: fullName);
     }
 
     private static string DashboardFor(string? role) => role switch
@@ -252,11 +253,14 @@
                 var userToken = result.Data!.AccessToken;
                 var userAvatar = result.Data!.AvatarUrl;
                 var userId     = result.Data!.UserId;
-                Session.SetSession(userEmail, userRole, userToken, userAvatar);
+                var fullName   = result.Data!.FullName;
+                Session.SetSession(userEmail, userRole, userToken, userAvatar, userId, fullName);
                 await JS.InvokeVoidAsync("sessionStorage.setItem", "lm_email",  userEmail);
                 await JS.InvokeVoidAsync("sessionStorage.setItem", "lm_role",   userRole);
                 await JS.InvokeVoidAsync("sessionStorage.setItem", "lm_token",  userToken);
                 await JS.InvokeVoidAsync("sessionStorage.setItem", "lm_userid", userId.ToString());
+                if (!string.IsNullOrEmpty(fullName))
+                    await JS.InvokeVoidAsync("sessionStorage.setItem", "lm_fullname", fullName);
                 if (!string.IsNullOrEmpty(userAvatar))
                     await JS.InvokeVoidAsync("sessionStorage.setItem",    "lm_avatar", userAvatar);
                 else

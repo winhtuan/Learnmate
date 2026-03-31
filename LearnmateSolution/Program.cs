@@ -43,6 +43,13 @@ public class Program
         if (Environment.GetEnvironmentVariable("CLOUDINARY_API_SECRET") is { } cloudApiSecret)
             builder.Configuration["Cloudinary:ApiSecret"] = cloudApiSecret;
 
+        if (Environment.GetEnvironmentVariable("CLOUDINARY_CLOUD_NAME") is { } cloudinaryName)
+            builder.Configuration["Cloudinary:CloudName"] = cloudinaryName;
+        if (Environment.GetEnvironmentVariable("CLOUDINARY_API_KEY") is { } cloudinaryKey)
+            builder.Configuration["Cloudinary:ApiKey"] = cloudinaryKey;
+        if (Environment.GetEnvironmentVariable("CLOUDINARY_API_SECRET") is { } cloudinarySecret)
+            builder.Configuration["Cloudinary:ApiSecret"] = cloudinarySecret;
+
         // ── Database ──────────────────────────────────────────────────────────
         builder.Services.AddDataAccessLayer(builder.Configuration);
 

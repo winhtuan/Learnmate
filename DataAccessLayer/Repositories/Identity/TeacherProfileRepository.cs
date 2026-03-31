@@ -12,6 +12,12 @@ public class TeacherProfileRepository(AppDbContext db) : ITeacherProfileReposito
             .Include(p => p.User)
             .FirstOrDefaultAsync(p => p.UserId == userId);
 
+    public async Task AddAsync(TeacherProfile profile)
+    {
+        await db.TeacherProfiles.AddAsync(profile);
+        await db.SaveChangesAsync();
+    }
+
     public async Task UpdateAsync(TeacherProfile profile)
     {
         db.TeacherProfiles.Update(profile);

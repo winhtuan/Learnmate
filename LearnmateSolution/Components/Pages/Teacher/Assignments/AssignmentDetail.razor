@@ -1,0 +1,390 @@
+@page "/teacher/classes/{ClassId:long}/assignments/{AssignmentId:long}"
+@rendermode InteractiveServer
+@layout Layout.TeacherLayout
+
+@using BusinessLogicLayer.DTOs.Teacher.Classes
+@using BusinessLogicLayer.Services.Interfaces
+@using LearnmateSolution.AppState
+@inject ITeacherCourseService ClassService
+@inject UserSessionService Session
+@inject NavigationManager Nav
+
+<PageTitle>@(Detail?.Title ?? "Chi tiết bài tập") | LearnMate</PageTitle>
+
+@if (IsLoading)
+{
+    <div class="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+        <span class="material-symbols-outlined animate-spin text-primary text-4xl">progress_activity</span>
+        <p class="text-slate-500 font-medium animate-pulse">Đang tải dữ liệu bài tập...</p>
+    </div>
+}
+else if (Detail is null)
+{
+    <div class="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+        <div class="size-16 rounded-full bg-red-100 flex items-center justify-center text-red-500">
+            <span class="material-symbols-outlined text-3xl">error</span>
+        </div>
+        <p class="text-slate-800 font-medium text-lg">@(string.IsNullOrEmpty(ErrorMessage) ? "Không tìm thấy bài tập" : ErrorMessage)</p>
+        <button @onclick='() => Nav.NavigateTo($"/teacher/classes/{ClassId}")' class="text-primary hover:underline">Quay lại lớp học</button>
+    </div>
+}
+else
+{
+    <!-- Header -->
+    <div class="mb-6 flex items-start gap-4">
+        <button @onclick='() => Nav.NavigateTo($"/teacher/classes/{ClassId}")' 
+                class="mt-1 size-9 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center shrink-0 transition-colors">
+            <span class="material-symbols-outlined text-[20px]">arrow_back</span>
+        </button>
+        <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-3 mb-2 flex-wrap">
+                <h1 class="text-2xl font-bold text-slate-900 truncate">@Detail.Title</h1>
+                @{
+                    var (statusColor, statusBg) = Detail.Status switch
+                    {
+                        "PUBLISHED" => ("text-green-700",  "bg-green-100 border-green-200"),
+                        "DRAFT"     => ("text-slate-600",  "bg-slate-100 border-slate-200"),
+                        "CLOSED"    => ("text-orange-700", "bg-orange-100 border-orange-200"),
+                        _           => ("text-slate-500",  "bg-slate-100 border-slate-200")
+                    };
+                }
+                <span class="text-xs font-semibold px-2.5 py-1 rounded border @statusColor @statusBg">@Detail.Status</span>
+            </div>
+            @if (Detail.DueDate.HasValue)
+            {
+                <p class="text-sm text-slate-500 flex items-center gap-1.5">
+                    <span class="material-symbols-outlined text-[16px]">calendar_today</span>
+                    Hạn nộp: <span class="font-medium text-slate-700">@Detail.DueDate.Value.ToString("dd/MM/yyyy HH:mm")</span>
+                </p>
+            }
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <!-- Left Column: Details -->
+        <div class="lg:col-span-1 space-y-6">
+            <!-- Stats Card -->
+            <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+                <h3 class="font-semibold text-slate-900 mb-4 flex items-center gap-2">
+                    <span class="material-symbols-outlined text-primary text-[20px]">analytics</span>
+                    Thống kê nộp bài
+                </h3>
+                
+                <div class="grid grid-cols-2 gap-3 mb-5">
+                    <div class="bg-slate-50 rounded-xl p-3 border border-slate-100 text-center">
+                        <p class="text-2xl font-bold text-slate-800">@Detail.Submissions.Count</p>
+                        <p class="text-xs text-slate-500 mt-1 uppercase tracking-wider font-medium">Học sinh</p>
+                    </div>
+                    <div class="bg-blue-50 rounded-xl p-3 border border-blue-100 text-center">
+                        <p class="text-2xl font-bold text-blue-700">@Detail.SubmittedCount</p>
+                        <p class="text-xs text-blue-600 mt-1 uppercase tracking-wider font-medium">Đã nộp</p>
+                    </div>
+                </div>
+
+                <div class="space-y-3">
+                    <div class="flex items-center justify-between text-sm">
+                        <span class="text-slate-500 flex items-center gap-1.5">
+                            <span class="material-symbols-outlined text-[16px] text-green-500">check_circle</span>
+                            Đã chấm điểm
+                        </span>
+                        <span class="font-semibold text-slate-700">@Detail.GradedCount / @Detail.SubmittedCount</span>
+                    </div>
+                    <!-- Progress Bar -->
+                    <div class="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                        @{
+                            int progress = Detail.SubmittedCount > 0 ? (Detail.GradedCount * 100) / Detail.SubmittedCount : 0;
+                        }
+                        <div class="h-full bg-green-500" style="width: @progress%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Description Card -->
+            <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+                <h3 class="font-semibold text-slate-900 mb-3 flex items-center gap-2">
+                    <span class="material-symbols-outlined text-primary text-[20px]">description</span>
+                    Mô tả bài tập
+                </h3>
+                <div class="text-sm text-slate-600 whitespace-pre-wrap leading-relaxed">
+                    @(string.IsNullOrWhiteSpace(Detail.Description) ? "Không có mô tả." : Detail.Description)
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Submissions -->
+        <div class="lg:col-span-2">
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm flex flex-col h-full">
+                <div class="p-5 border-b border-slate-100 flex items-center justify-between gap-4">
+                    <h2 class="font-semibold text-slate-900 text-lg">Danh sách bài nộp</h2>
+                    <!-- Optional: Filter or Search could go here -->
+                </div>
+                
+                @if (Detail.Submissions.Count == 0)
+                {
+                    <div class="flex flex-col items-center justify-center p-12 text-center h-full">
+                        <span class="material-symbols-outlined text-slate-200 text-6xl mb-3">group_off</span>
+                        <p class="text-slate-400 font-medium">Lớp chưa có học sinh nào.</p>
+                    </div>
+                }
+                else
+                {
+                    <div class="divide-y divide-slate-100">
+                        @foreach (var sub in Detail.Submissions)
+                        {
+                            bool hasSubmitted = sub.Status == "SUBMITTED" || sub.Status == "GRADED";
+                            bool isGraded = sub.Status == "GRADED";
+                            
+                            <div class="p-4 hover:bg-slate-50 transition-colors">
+                                <div class="flex flex-col sm:flex-row gap-4 sm:items-start">
+                                    
+                                    <!-- Student Info -->
+                                    <div class="flex items-center gap-3 sm:w-1/3 shrink-0">
+                                        <div class="size-10 rounded-full bg-slate-100 flex items-center justify-center overflow-hidden shrink-0 border border-slate-200">
+                                            @if (!string.IsNullOrEmpty(sub.StudentAvatarUrl))
+                                            {
+                                                <img src="@sub.StudentAvatarUrl" alt="@sub.StudentName" class="size-full object-cover" />
+                                            }
+                                            else
+                                            {
+                                                <span class="font-bold text-slate-400">@sub.StudentName.FirstOrDefault()</span>
+                                            }
+                                        </div>
+                                        <div class="min-w-0">
+                                            <p class="text-sm font-semibold text-slate-900 truncate">@sub.StudentName</p>
+                                            @if (hasSubmitted)
+                                            {
+                                                <p class="text-[11px] text-slate-500 flex items-center gap-1 mt-0.5">
+                                                    <span class="material-symbols-outlined text-[12px]">schedule</span>
+                                                    @sub.SubmittedAt?.ToString("dd/MM HH:mm")
+                                                </p>
+                                            }
+                                            else
+                                            {
+                                                <p class="text-[11px] font-medium text-slate-400 mt-0.5">Chưa nộp bài</p>
+                                            }
+                                        </div>
+                                    </div>
+
+                                    <!-- Submission File -->
+                                    <div class="flex-1 min-w-0">
+                                        @if (hasSubmitted && !string.IsNullOrEmpty(sub.FileUrl))
+                                        {
+                                            <a href="@sub.FileUrl" target="_blank" download
+                                               class="inline-flex items-center gap-2 max-w-full px-3 py-2 rounded-lg bg-blue-50 hover:bg-blue-100 border border-blue-100 transition-colors group">
+                                                <span class="material-symbols-outlined text-blue-500 text-[18px]">description</span>
+                                                <span class="text-sm font-medium text-blue-700 truncate group-hover:underline">
+                                                    @(sub.FileName ?? "TaiLieuHocSinh")
+                                                </span>
+                                            </a>
+                                        }
+                                    </div>
+
+                                    <!-- Grading Action -->
+                                    <div class="sm:w-32 shrink-0 flex items-center justify-end">
+                                        @if (!hasSubmitted)
+                                        {
+                                            <span class="px-2 py-1 rounded bg-slate-100 text-slate-500 text-xs font-semibold uppercase">Thiếu</span>
+                                        }
+                                        else
+                                        {
+                                            <button @onclick="() => OpenGradingModal(sub)" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border font-medium text-sm transition-all focus:ring-2 focus:ring-offset-1 @(isGraded ? "bg-green-50 border-green-200 text-green-700 hover:bg-green-100 focus:ring-green-500" : "bg-white border-primary text-primary hover:bg-primary hover:text-white focus:ring-primary")">
+                                                @if (isGraded)
+                                                {
+                                                    <span class="font-bold">@sub.Score?.ToString("0.##")</span>
+                                                    <span class="text-green-600/60 font-medium">/ 10</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="material-symbols-outlined text-[16px]">edit_document</span>
+                                                    <span>Chấm điểm</span>
+                                                }
+                                            </button>
+                                        }
+                                    </div>
+                                    
+                                </div>
+                                
+                                <!-- Render Feedback Inline if exists -->
+                                @if (isGraded && !string.IsNullOrWhiteSpace(sub.FeedbackComment))
+                                {
+                                    <div class="mt-3 ml-[52px] sm:ml-[33%] pl-4 border-l-2 border-green-200">
+                                        <p class="text-xs font-medium text-slate-400 mb-0.5 uppercase tracking-wide">Nhận xét</p>
+                                        <p class="text-sm text-slate-600 italic">"@sub.FeedbackComment"</p>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Grading Modal -->
+@if (ShowGradingModal && SelectedSubmission != null)
+{
+    <div class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
+            <!-- Header -->
+            <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                <div>
+                    <h3 class="font-bold text-slate-900">Chấm điểm bài nộp</h3>
+                    <p class="text-xs text-slate-500 mt-0.5">Học sinh: <span class="font-semibold text-slate-700">@SelectedSubmission.StudentName</span></p>
+                </div>
+                <button @onclick="CloseGradingModal" class="size-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors">
+                    <span class="material-symbols-outlined text-[20px]">close</span>
+                </button>
+            </div>
+            
+            <!-- Body -->
+            <div class="p-6 space-y-5">
+                <!-- Score Input -->
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1.5">Điểm (Hệ số 10) <span class="text-red-500">*</span></label>
+                    <div class="relative flex items-center">
+                        <input type="number" step="0.5" min="0" max="10" @bind="EditScore"
+                               class="w-full pl-4 pr-12 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-medium focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all shadow-inner" 
+                               placeholder="VD: 8.5" />
+                        <span class="absolute right-4 text-slate-400 font-semibold select-none">/ 10</span>
+                    </div>
+                </div>
+
+                <!-- Feedback Input -->
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1.5">Nhận xét (Tùy chọn)</label>
+                    <textarea @bind="EditFeedback" rows="4"
+                              class="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all shadow-inner resize-none"
+                              placeholder="Nhập nhận xét của giáo viên cho bài làm này..."></textarea>
+                </div>
+                
+                @if (!string.IsNullOrEmpty(ErrorMessage))
+                {
+                    <div class="p-3 rounded-lg bg-red-50 text-red-600 text-sm flex items-start gap-2 border border-red-100">
+                        <span class="material-symbols-outlined text-[18px] shrink-0">error</span>
+                        <p>@ErrorMessage</p>
+                    </div>
+                }
+            </div>
+
+            <!-- Footer -->
+            <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-3">
+                <button @onclick="CloseGradingModal" class="px-4 py-2 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-200 transition-colors">
+                    Hủy
+                </button>
+                <button @onclick="SaveGrade" disabled="@IsSaving" 
+                        class="flex items-center gap-2 px-5 py-2 rounded-xl bg-primary hover:bg-blue-600 text-white text-sm font-medium transition-all focus:ring-4 focus:ring-primary/30 disabled:opacity-50 shadow-sm">
+                    @if (IsSaving)
+                    {
+                        <span class="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>
+                    }
+                    else
+                    {
+                        <span class="material-symbols-outlined text-[18px]">save</span>
+                    }
+                    Lưu điểm
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public long ClassId { get; set; }
+    
+    [Parameter]
+    public long AssignmentId { get; set; }
+
+    private TeacherAssignmentFullDetailDto? Detail;
+    private bool IsLoading = true;
+    
+    // Grading Modal State
+    private bool ShowGradingModal = false;
+    private TeacherSubmissionItemDto? SelectedSubmission;
+    private decimal? EditScore;
+    private string? EditFeedback;
+    private bool IsSaving = false;
+    private string? ErrorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAssignment();
+    }
+
+    private async Task LoadAssignment()
+    {
+        IsLoading = true;
+        try
+        {
+            Detail = await ClassService.GetAssignmentDetailAsync(AssignmentId, ClassId, Session.UserId);
+            if (Detail == null) 
+            {
+                ErrorMessage = "Dữ liệu trả về từ Server là Rỗng (Không tìm thấy trên CSDL).";
+            }
+        }
+        catch (Exception ex)
+        {
+            Detail = null;
+            ErrorMessage = "Lỗi hệ thống: " + ex.Message;
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    private void OpenGradingModal(TeacherSubmissionItemDto submission)
+    {
+        SelectedSubmission = submission;
+        EditScore = submission.Score;
+        EditFeedback = submission.FeedbackComment;
+        ErrorMessage = null;
+        ShowGradingModal = true;
+    }
+
+    private void CloseGradingModal()
+    {
+        ShowGradingModal = false;
+        SelectedSubmission = null;
+    }
+
+    private async Task SaveGrade()
+    {
+        if (SelectedSubmission == null) return;
+        
+        if (EditScore == null || EditScore < 0 || EditScore > 10)
+        {
+            ErrorMessage = "Điểm phải nằm trong khoảng từ 0 đến 10.";
+            return;
+        }
+
+        IsSaving = true;
+        ErrorMessage = null;
+        
+        try
+        {
+            await ClassService.GradeSubmissionAsync(SelectedSubmission.Id, Session.UserId, EditScore.Value, EditFeedback);
+            
+            // Update UI locally to avoid full reload
+            SelectedSubmission.Score = EditScore.Value;
+            SelectedSubmission.FeedbackComment = EditFeedback;
+            if (SelectedSubmission.Status != "GRADED")
+            {
+                SelectedSubmission.Status = "GRADED";
+                if (Detail != null) Detail.GradedCount++;
+            }
+            
+            CloseGradingModal();
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = ex.Message;
+        }
+        finally
+        {
+            IsSaving = false;
+        }
+    }
+}

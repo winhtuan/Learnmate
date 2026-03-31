@@ -1,3 +1,4 @@
+using BusinessObject.Enum;
 using BusinessObject.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -26,6 +27,7 @@ internal sealed class TeacherProfileConfiguration : IEntityTypeConfiguration<Tea
         builder.Property(p => p.RatingAvg).HasColumnType("numeric(5,2)");
         builder.Property(p => p.RatingAvg).HasDefaultValue(0m);
         builder.Property(p => p.TotalRatingCount).HasDefaultValue(0);
+        builder.Property(p => p.Status).HasConversion<string>().HasDefaultValue(ComplianceStatus.PENDING);
 
         builder.ToTable(t =>
         {
@@ -38,6 +40,21 @@ internal sealed class TeacherProfileConfiguration : IEntityTypeConfiguration<Tea
             .WithOne(u => u.TeacherProfile)
             .HasForeignKey<TeacherProfile>(p => p.UserId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        builder
+            .HasMany(p => p.Documents)
+            .WithOne(d => d.TeacherProfile)
+            .HasForeignKey(d => d.TeacherProfileId)
+            .OnDelete(DeleteBehavior.Cascade);
+    }
+}
+
+// ─── teacher_documents ───────────────────────────────────────────────────────
+internal sealed class TeacherDocumentConfiguration : IEntityTypeConfiguration<TeacherDocument>
+{
+    public void Configure(EntityTypeBuilder<TeacherDocument> builder)
+    {
+        builder.HasIndex(d => d.TeacherProfileId);
     }
 }
 

@@ -7,6 +7,7 @@ public record LoginResponse(
     int    ExpiresIn,
     string Email,
     string Role,
-    string? AvatarUrl
+    string? AvatarUrl,
+    string? FullName = null
 );
 

@@ -34,8 +34,9 @@ public record ClassAssignmentDto(
     decimal? Score,
     int? TotalQuestions,
     decimal? TotalPoints,
-    string? FeedbackComment,
-    decimal? FeedbackScore
+    string? FileUrl = null,
+    string? FeedbackComment = null,
+    decimal? FeedbackScore = null
 );
 
 public record ClassScheduleItemDto(

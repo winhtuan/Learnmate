@@ -198,7 +198,7 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        long teacherId = Session.UserId > 0 ? Session.UserId : 2;
+        long teacherId = Session.UserId > 0 ? Session.UserId : 1; 
         try { AllClasses = await ClassService.GetTeacherClassesAsync(teacherId); }
         catch { }
         finally { IsLoading = false; }

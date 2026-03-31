@@ -2,6 +2,18 @@ using BusinessObject.Enum;
 
 namespace BusinessLogicLayer.DTOs.Teacher.Classes;
 
+/// <summary>Result từ tìm kiếm học sinh theo email trước khi thêm vào lớp.</summary>
+public class StudentSearchResultDto
+{
+    public long    UserId      { get; set; }
+    public string  FullName    { get; set; } = string.Empty;
+    public string  Email       { get; set; } = string.Empty;
+    public string? AvatarUrl   { get; set; }
+    public string? GradeLevel  { get; set; }
+    public bool    AlreadyInClass { get; set; }
+}
+
+
 // ── Class Detail ──────────────────────────────────────────────────────────────
 public class TeacherClassDetailDto
 {
@@ -66,12 +78,13 @@ public class TeacherScheduleItemDto
 // ── Materials ─────────────────────────────────────────────────────────────────
 public class TeacherMaterialItemDto
 {
-    public long     Id          { get; set; }
-    public string   Title       { get; set; } = string.Empty;
-    public string?  Description { get; set; }
-    public string   FileUrl     { get; set; } = string.Empty;
-    public string   FileType    { get; set; } = string.Empty;
-    public string   Status      { get; set; } = string.Empty;
-    public DateTime UploadedAt  { get; set; }
+    public long     Id            { get; set; }
+    public string   Title         { get; set; } = string.Empty;
+    public string?  Description   { get; set; }
+    public string   FileUrl       { get; set; } = string.Empty;
+    public string   FileType      { get; set; } = string.Empty;
+    public long?    FileSizeBytes { get; set; }
+    public string   Status        { get; set; } = string.Empty;
+    public DateTime UploadedAt    { get; set; }
 }
 
