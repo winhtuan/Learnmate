@@ -21,4 +21,23 @@ public sealed record TutorListItem(
     string[] AvailableSlots
 );
 
+public sealed record ClassListItem(
+    long ClassId,
+    string ClassName,
+    string? Description,
+    string Subject,
+    string ScheduleSummary,   // e.g. "Mon/Wed/Fri  18:00–20:00", "" nếu chưa có
+    int EnrolledCount,
+    int MaxStudents,
+    // Thông tin gia sư — dùng cho QuickView, booking, chat
+    long TeacherId,
+    string TeacherName,
+    string TeacherAvatarUrl,
+    double Rating,
+    int ReviewCount,
+    string[] Subjects,
+    decimal HourlyRate,
+    string Bio
+);
+
 public enum AvailabilityStatus { AvailableToday, NextSlot, FullyBooked }
