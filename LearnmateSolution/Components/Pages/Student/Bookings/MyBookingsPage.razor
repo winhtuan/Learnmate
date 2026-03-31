@@ -1,0 +1,191 @@
+@page "/student/bookings"
+@layout ClassLayout
+@rendermode InteractiveServer
+@using BusinessLogicLayer.DTOs
+@using BusinessLogicLayer.DTOs.Tutor
+@using LearnmateSolution.Components.Layout
+@using LearnmateSolution.Components.Pages.Student.Class.Components.Shared
+@inject NavigationManager Nav
+@inject UserSessionService Session
+@inject IJSRuntime JS
+@inject IHttpClientFactory HttpClientFactory
+
+<PageTitle>My Bookings - LearnMate</PageTitle>
+
+<div class="space-y-6 max-w-screen-xl mx-auto">
+    <Breadcrumb Items="@([new("Dashboard", "/student-dashboard"), new("My Bookings")])" />
+
+    <div class="flex items-center justify-between">
+        <h1 class="text-2xl font-bold text-slate-900">My Bookings</h1>
+        <a href="/student/find-tutor"
+           class="flex items-center gap-2 px-4 py-2 bg-[#37352F] hover:bg-[#37352F]/90 text-white rounded-xl text-sm font-semibold transition-colors">
+            <span class="material-symbols-outlined text-[18px]">add</span>
+            Book a Tutor
+        </a>
+    </div>
+
+    @if (!_ready)
+    {
+        <div class="flex items-center justify-center h-64 text-slate-400">
+            <svg class="animate-spin h-8 w-8 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+            </svg>
+            <span class="text-sm font-medium">Loading...</span>
+        </div>
+    }
+    else if (_bookings.Count == 0)
+    {
+        <div class="flex flex-col items-center justify-center py-24 text-slate-400">
+            <span class="material-symbols-outlined text-6xl mb-4">event_busy</span>
+            <p class="text-lg font-semibold text-slate-600 mb-1">No bookings yet</p>
+            <p class="text-sm mb-6">Find a tutor and send your first booking request.</p>
+            <a href="/student/find-tutor"
+               class="px-5 py-2.5 bg-[#37352F] text-white rounded-xl text-sm font-semibold hover:bg-[#37352F]/90 transition-colors">
+                Find a Tutor
+            </a>
+        </div>
+    }
+    else
+    {
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            @foreach (var b in _bookings)
+            {
+                var (badgeText, badgeCss) = StatusBadge(b.Status);
+                <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 flex flex-col gap-4">
+
+                    <!-- Teacher info -->
+                    <div class="flex items-center gap-3">
+                        <div class="size-12 rounded-full bg-indigo-100 flex items-center justify-center shrink-0 overflow-hidden">
+                            @if (!string.IsNullOrEmpty(b.TeacherAvatarUrl))
+                            {
+                                <img src="@b.TeacherAvatarUrl" alt="@b.TeacherName" class="size-12 object-cover rounded-full" />
+                            }
+                            else
+                            {
+                                <span class="text-indigo-600 font-bold text-base">@Initials(b.TeacherName)</span>
+                            }
+                        </div>
+                        <div class="min-w-0">
+                            <p class="font-bold text-slate-900 truncate">@b.TeacherName</p>
+                            <p class="text-xs text-slate-500">Requested @b.CreatedAtLocal.ToString("MMM d, yyyy")</p>
+                        </div>
+                        <span class="ml-auto shrink-0 text-xs font-semibold px-2.5 py-1 rounded-full @badgeCss">@badgeText</span>
+                    </div>
+
+                    <!-- Time slot -->
+                    <div class="flex items-start gap-2 bg-slate-50 rounded-xl px-4 py-3">
+                        <span class="material-symbols-outlined text-slate-400 text-[18px] mt-0.5">schedule</span>
+                        <div class="text-sm">
+                            <p class="font-semibold text-slate-800">@b.RequestedStartTimeLocal.ToString("dddd, MMMM d, yyyy")</p>
+                            <p class="text-slate-500 mt-0.5">@b.RequestedStartTimeLocal.ToString("h:mm tt") – @b.RequestedEndTimeLocal.ToString("h:mm tt")</p>
+                        </div>
+                    </div>
+
+                    <!-- Note -->
+                    @if (!string.IsNullOrEmpty(b.Note))
+                    {
+                        <div class="flex items-start gap-2 text-sm text-slate-600">
+                            <span class="material-symbols-outlined text-slate-400 text-[16px] mt-0.5">notes</span>
+                            <p class="leading-relaxed line-clamp-2">@b.Note</p>
+                        </div>
+                    }
+
+                    <!-- Cancel button (PENDING only) -->
+                    @if (b.Status == "PENDING")
+                    {
+                        <button @onclick="() => CancelAsync(b.Id)"
+                                disabled="@(_cancellingId == b.Id)"
+                                class="mt-auto w-full py-2 border border-rose-200 text-rose-600 hover:bg-rose-50 rounded-xl text-sm font-semibold transition-colors disabled:opacity-60 disabled:cursor-not-allowed">
+                            @(_cancellingId == b.Id ? "Cancelling..." : "Cancel Request")
+                        </button>
+                    }
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private bool _ready;
+    private List<BookingRequestDto> _bookings = [];
+    private long? _cancellingId;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+
+        if (!Session.IsAuthenticated)
+        {
+            var email = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_email");
+            var role  = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_role");
+            var token = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_token");
+            if (!string.IsNullOrEmpty(email) && !string.IsNullOrEmpty(role) && !string.IsNullOrEmpty(token))
+                Session.SetSession(email, role, token);
+        }
+
+        if (!Session.IsAuthenticated) { Nav.NavigateTo("/login", replace: true); return; }
+        if (Session.Role != "STUDENT") { Nav.NavigateTo("/", replace: true); return; }
+
+        await LoadAsync();
+        _ready = true;
+        StateHasChanged();
+    }
+
+    private async Task LoadAsync()
+    {
+        try
+        {
+            var client = HttpClientFactory.CreateClient("learnmate");
+            client.BaseAddress = new Uri(Nav.BaseUri);
+            client.DefaultRequestHeaders.Authorization =
+                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", Session.AccessToken);
+
+            var resp = await client.GetFromJsonAsync<ApiResponse<IReadOnlyList<BookingRequestDto>>>("api/bookings/my");
+            _bookings = resp?.Data?.ToList() ?? [];
+        }
+        catch
+        {
+            _bookings = [];
+        }
+    }
+
+    private async Task CancelAsync(long bookingId)
+    {
+        _cancellingId = bookingId;
+        try
+        {
+            var client = HttpClientFactory.CreateClient("learnmate");
+            client.BaseAddress = new Uri(Nav.BaseUri);
+            client.DefaultRequestHeaders.Authorization =
+                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", Session.AccessToken);
+
+            var resp = await client.DeleteAsync($"api/bookings/{bookingId}");
+            if (resp.IsSuccessStatusCode)
+            {
+                var idx = _bookings.FindIndex(b => b.Id == bookingId);
+                if (idx >= 0)
+                    _bookings[idx] = _bookings[idx] with { Status = "CANCELLED" };
+            }
+        }
+        finally
+        {
+            _cancellingId = null;
+            StateHasChanged();
+        }
+    }
+
+    private static string Initials(string name) =>
+        string.Concat(name.Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                          .Take(2)
+                          .Select(w => char.ToUpper(w[0])));
+
+    private static (string text, string css) StatusBadge(string status) => status switch
+    {
+        "PENDING"   => ("Pending",   "bg-amber-100 text-amber-700"),
+        "ACCEPTED"  => ("Accepted",  "bg-emerald-100 text-emerald-700"),
+        "DECLINED"  => ("Declined",  "bg-rose-100 text-rose-700"),
+        "CANCELLED" => ("Cancelled", "bg-slate-100 text-slate-500"),
+        _           => (status,      "bg-slate-100 text-slate-500"),
+    };
+}

@@ -34,6 +34,9 @@ public static class ClassSeed
         SeedClassMembers(m);
         SeedSchedules(m);
         SeedAssignments(m);
+        SeedAssignmentQuestions(m);
+        SeedSubmissions(m);
+        SeedFeedbacks(m);
         SeedMaterials(m);
         SeedNotifications(m);
     }
@@ -190,6 +193,90 @@ public static class ClassSeed
                     UpdatedAt = Now,
                 }
             );
+    }
+
+    // ── Assignment Questions ──────────────────────────────────────────────────
+    private static void SeedAssignmentQuestions(ModelBuilder m)
+    {
+        m.Entity<AssignmentQuestion>().HasData(
+            new AssignmentQuestion
+            {
+                Id = 1,
+                AssignmentId = 1, // Lab 1: MAUI Navigation
+                Content = "Triển khai Shell Navigation giữa ít nhất 3 màn hình.",
+                Type = QuestionType.ESSAY,
+                Order = 1,
+                Points = 5m,
+                CreatedAt = Now,
+                UpdatedAt = Now,
+            },
+            new AssignmentQuestion
+            {
+                Id = 2,
+                AssignmentId = 1,
+                Content = "Truyền dữ liệu giữa các trang bằng QueryProperty hoặc constructor injection.",
+                Type = QuestionType.ESSAY,
+                Order = 2,
+                Points = 5m,
+                CreatedAt = Now,
+                UpdatedAt = Now,
+            },
+            new AssignmentQuestion
+            {
+                Id = 3,
+                AssignmentId = 2, // Lab 1: Unity Scene
+                Content = "Tạo scene Unity với đầy đủ ánh sáng, Plane, Rigidbody và Collider.",
+                Type = QuestionType.ESSAY,
+                Order = 1,
+                Points = 10m,
+                CreatedAt = Now,
+                UpdatedAt = Now,
+            }
+        );
+    }
+
+    // ── Submissions ───────────────────────────────────────────────────────────
+    private static void SeedSubmissions(ModelBuilder m)
+    {
+        m.Entity<Submission>().HasData(
+            new Submission
+            {
+                Id = 1,
+                AssignmentId = 1, // Lab 1: MAUI Navigation — đã chấm
+                StudentId = 3,
+                Status = SubmissionStatus.GRADED,
+                Score = 8.5m,
+                SubmittedAt = new DateTime(2026, 3, 14, 10, 0, 0, DateTimeKind.Utc),
+                CreatedAt = new DateTime(2026, 3, 14, 10, 0, 0, DateTimeKind.Utc),
+                UpdatedAt = new DateTime(2026, 3, 15, 8, 0, 0, DateTimeKind.Utc),
+            },
+            new Submission
+            {
+                Id = 2,
+                AssignmentId = 2, // Lab 1: Unity Scene — đã nộp, chưa chấm
+                StudentId = 3,
+                Status = SubmissionStatus.SUBMITTED,
+                SubmittedAt = new DateTime(2026, 3, 14, 15, 30, 0, DateTimeKind.Utc),
+                CreatedAt = new DateTime(2026, 3, 14, 15, 30, 0, DateTimeKind.Utc),
+                UpdatedAt = new DateTime(2026, 3, 14, 15, 30, 0, DateTimeKind.Utc),
+            }
+        );
+    }
+
+    // ── Feedbacks ─────────────────────────────────────────────────────────────
+    private static void SeedFeedbacks(ModelBuilder m)
+    {
+        m.Entity<Feedback>().HasData(
+            new Feedback
+            {
+                Id = 1,
+                SubmissionId = 1,
+                Score = 8.5m,
+                Comment = "Bài làm tốt! Navigation giữa các màn hình hoạt động đúng yêu cầu. Tuy nhiên, cần cải thiện phần truyền dữ liệu — nên dùng QueryProperty thay vì singleton. Tiếp tục cố gắng nhé!",
+                CreatedAt = new DateTime(2026, 3, 15, 8, 0, 0, DateTimeKind.Utc),
+                UpdatedAt = new DateTime(2026, 3, 15, 8, 0, 0, DateTimeKind.Utc),
+            }
+        );
     }
 
     // ── Materials ─────────────────────────────────────────────────────────────

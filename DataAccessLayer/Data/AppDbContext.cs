@@ -44,6 +44,13 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<Notification> Notifications => Set<Notification>();
     public DbSet<Report> Reports => Set<Report>();
 
+    // ── Tutor Booking ────────────────────────────────────────────────────────
+    public DbSet<TutorBookingRequest> TutorBookingRequests => Set<TutorBookingRequest>();
+
+    // ── Messaging ────────────────────────────────────────────────────────────
+    public DbSet<Conversation> Conversations => Set<Conversation>();
+    public DbSet<Message> Messages => Set<Message>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

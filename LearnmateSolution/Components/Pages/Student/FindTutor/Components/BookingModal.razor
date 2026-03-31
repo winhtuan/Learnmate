@@ -1,0 +1,150 @@
+@using BusinessLogicLayer.DTOs
+@using BusinessLogicLayer.DTOs.Tutor
+@inject IHttpClientFactory HttpClientFactory
+@inject NavigationManager Nav
+@inject UserSessionService Session
+
+<!-- Backdrop -->
+<div class="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm" @onclick="OnClose"></div>
+
+<!-- Modal -->
+<div class="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md flex flex-col" @onclick:stopPropagation>
+
+        <!-- Header -->
+        <div class="flex items-center justify-between px-6 py-5 border-b border-slate-100">
+            <div>
+                <h2 class="text-lg font-bold text-slate-900">Book a Session</h2>
+                <p class="text-sm text-slate-400 mt-0.5">with <span class="font-semibold text-indigo-600">@TeacherName</span></p>
+            </div>
+            <button @onclick="OnClose" class="p-2 rounded-full hover:bg-indigo-50 text-slate-400 hover:text-indigo-600 transition-colors">
+                <span class="material-symbols-outlined text-[20px]">close</span>
+            </button>
+        </div>
+
+        <!-- Body -->
+        <div class="px-6 py-5 flex flex-col gap-4">
+
+            <!-- Date -->
+            <div class="flex flex-col gap-1.5">
+                <label class="text-sm font-semibold text-slate-700">Date</label>
+                <input type="date" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-colors"
+                       value="@_date" min="@DateTime.Today.ToString("yyyy-MM-dd")"
+                       @onchange="e => _date = e.Value?.ToString() ?? _date" />
+            </div>
+
+            <!-- Time range -->
+            <div class="grid grid-cols-2 gap-3">
+                <div class="flex flex-col gap-1.5">
+                    <label class="text-sm font-semibold text-slate-700">Start time</label>
+                    <input type="time" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-colors"
+                           value="@_startTime"
+                           @onchange="e => _startTime = e.Value?.ToString() ?? _startTime" />
+                </div>
+                <div class="flex flex-col gap-1.5">
+                    <label class="text-sm font-semibold text-slate-700">End time</label>
+                    <input type="time" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-colors"
+                           value="@_endTime"
+                           @onchange="e => _endTime = e.Value?.ToString() ?? _endTime" />
+                </div>
+            </div>
+
+            <!-- Note -->
+            <div class="flex flex-col gap-1.5">
+                <label class="text-sm font-semibold text-slate-700">Note <span class="font-normal text-slate-400">(optional)</span></label>
+                <textarea class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-colors resize-none"
+                          rows="3" maxlength="1000" placeholder="Describe what you'd like to work on..."
+                          @bind="_note"></textarea>
+            </div>
+
+            <!-- Error -->
+            @if (!string.IsNullOrEmpty(_errorMessage))
+            {
+                <div class="flex items-center gap-2 px-4 py-3 bg-rose-50 border border-rose-200 rounded-xl text-sm text-rose-700">
+                    <span class="material-symbols-outlined text-[16px]">error</span>
+                    @_errorMessage
+                </div>
+            }
+        </div>
+
+        <!-- Footer -->
+        <div class="flex gap-3 px-6 py-4 border-t border-slate-100">
+            <button @onclick="OnClose" disabled="@_submitting"
+                    class="flex-1 py-2.5 border border-slate-200 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-colors disabled:opacity-60">
+                Cancel
+            </button>
+            <button @onclick="SubmitAsync" disabled="@_submitting"
+                    class="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-semibold transition-colors disabled:opacity-60 disabled:cursor-not-allowed shadow-sm shadow-indigo-200">
+                @(_submitting ? "Sending..." : "Send Request")
+            </button>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public long TeacherId { get; set; }
+    [Parameter] public string TeacherName { get; set; } = "";
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public EventCallback<string> OnBooked { get; set; }
+
+    private string _date      = DateTime.Today.AddDays(1).ToString("yyyy-MM-dd");
+    private string _startTime = "09:00";
+    private string _endTime   = "10:00";
+    private string _note      = "";
+    private bool   _submitting;
+    private string _errorMessage = "";
+
+    private async Task SubmitAsync()
+    {
+        _errorMessage = "";
+
+        if (string.IsNullOrWhiteSpace(_date))
+        { _errorMessage = "Please select a date."; return; }
+
+        if (!DateTime.TryParse($"{_date}T{_startTime}:00", out var start) ||
+            !DateTime.TryParse($"{_date}T{_endTime}:00", out var end))
+        { _errorMessage = "Invalid date or time."; return; }
+
+        if (start >= end)
+        { _errorMessage = "End time must be after start time."; return; }
+
+        if (start <= DateTime.Now)
+        { _errorMessage = "Booking time must be in the future."; return; }
+
+        _submitting = true;
+        try
+        {
+            var client = HttpClientFactory.CreateClient("learnmate");
+            client.BaseAddress = new Uri(Nav.BaseUri);
+            client.DefaultRequestHeaders.Authorization =
+                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", Session.AccessToken);
+
+            var dto = new CreateBookingRequestDto
+            {
+                TeacherId            = TeacherId,
+                RequestedStartTime   = start.ToUniversalTime(),
+                RequestedEndTime     = end.ToUniversalTime(),
+                Note                 = string.IsNullOrWhiteSpace(_note) ? null : _note.Trim(),
+            };
+
+            var resp = await client.PostAsJsonAsync($"api/tutors/{TeacherId}/book", dto);
+            if (resp.IsSuccessStatusCode)
+            {
+                await OnBooked.InvokeAsync("Your booking request has been sent!");
+            }
+            else
+            {
+                var body = await resp.Content.ReadFromJsonAsync<ApiResponse<BookingRequestDto>>();
+                _errorMessage = body?.Message ?? "Failed to send booking request.";
+            }
+        }
+        catch
+        {
+            _errorMessage = "Failed to send booking request. Please check your connection.";
+        }
+        finally
+        {
+            _submitting = false;
+        }
+    }
+}

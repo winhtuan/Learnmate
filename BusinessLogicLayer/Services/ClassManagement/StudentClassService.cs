@@ -296,7 +296,9 @@ public class StudentClassService(
             Score: sub?.Score,
             TotalQuestions: a.Questions.Count > 0 ? a.Questions.Count : null,
             TotalPoints: totalPoints,
-            FileUrl: resolvedFileUrl
+            FileUrl: resolvedFileUrl,
+            FeedbackComment: sub?.Feedback?.Comment,
+            FeedbackScore: sub?.Feedback?.Score
         );
     }
 

@@ -28,7 +28,7 @@ public sealed class CloudinaryFileStorageService : IFileStorageService
         string contentType,
         CancellationToken ct = default)
     {
-        // For materials/documents, Cloudinary works best with ResourceType.Raw. 
+        // For materials/documents, Cloudinary works best with ResourceType.Raw.
         // For raw files, the PublicId MUST include the extension.
         // Also, Cloudinary automatically creates folders if there are slashes in the PublicId.
         var uploadParams = new RawUploadParams

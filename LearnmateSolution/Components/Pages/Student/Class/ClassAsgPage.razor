@@ -193,6 +193,12 @@
     {
         var dueLabel = a.DueDateLocal is { } d ? d.ToString("MMMM d, yyyy 'at' h:mm tt") : "No due date";
 
+        string? feedbackScoreDisplay = null;
+        if (a.FeedbackScore is { } fs)
+            feedbackScoreDisplay = a.TotalPoints is { } tp
+                ? $"{fs:0.#} / {tp:0.#} pts"
+                : $"{fs:0.#} pts";
+
         var resources = new List<AssignmentResource>();
         if (!string.IsNullOrEmpty(a.FileUrl))
         {
@@ -208,20 +214,22 @@
         }
 
         return new AssignmentDetail(
-            Id:               a.Id,
-            ClassId:          Id,
-            Title:            a.Title,
-            Type:             "Assignment",
-            DueDate:          dueLabel,
-            Points:           a.TotalPoints is { } tp ? $"{tp:0.#} pts" : "",
-            SubmissionStatus: a.SubmissionStatus,
-            Instructions:     new AssignmentInstructions(
+            Id:                   a.Id,
+            ClassId:              Id,
+            Title:                a.Title,
+            Type:                 "Assignment",
+            DueDate:              dueLabel,
+            Points:               a.TotalPoints is { } tpts ? $"{tpts:0.#} pts" : "",
+            SubmissionStatus:     a.SubmissionStatus,
+            Instructions:         new AssignmentInstructions(
                 Text:  a.Description ?? "No description provided.",
                 Items: []
             ),
-            Resources:        resources,
-            UploadText:       "Upload your submission",
-            UploadSubtext:    "PDF, DOCX, or ZIP up to 50 MB"
+            Resources:            resources,
+            UploadText:           "Upload your submission",
+            UploadSubtext:        "PDF, DOCX, or ZIP up to 50 MB",
+            FeedbackComment:      a.FeedbackComment,
+            FeedbackScoreDisplay: feedbackScoreDisplay
         );
     }
 

@@ -74,6 +74,23 @@
                 <span class="material-symbols-outlined text-emerald-500 text-4xl mb-2">check_circle</span>
                 <p class="text-sm font-bold text-emerald-700">Assignment Submitted</p>
             </div>
+
+            @if (Assignment.SubmissionStatus == "graded" && Assignment.FeedbackScoreDisplay is not null)
+            {
+                <div class="mt-5">
+                    <h3 class="font-bold text-slate-900 mb-3">Teacher Feedback</h3>
+                    <div class="rounded-2xl border border-indigo-100 bg-indigo-50 p-5 space-y-3">
+                        <div class="flex items-center gap-2">
+                            <span class="material-symbols-outlined text-indigo-500 text-[20px]">star</span>
+                            <span class="text-lg font-extrabold text-indigo-700">@Assignment.FeedbackScoreDisplay</span>
+                        </div>
+                        @if (!string.IsNullOrEmpty(Assignment.FeedbackComment))
+                        {
+                            <p class="text-sm text-slate-700 leading-relaxed">@Assignment.FeedbackComment</p>
+                        }
+                    </div>
+                </div>
+            }
         }
         else
         {

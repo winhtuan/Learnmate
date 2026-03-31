@@ -96,6 +96,7 @@ public class StudentClassRepository(AppDbContext db) : IStudentClassRepository
             .Include(a =>
                 a.Submissions.Where(s => s.StudentId == studentId && s.DeletedAt == null).Take(1)
             )
+            .ThenInclude(s => s.Feedback)
             .ToListAsync(ct);
 
         return assignments.Select(a => (a, a.Submissions.FirstOrDefault())).ToList();
