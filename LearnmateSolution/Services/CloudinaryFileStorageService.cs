@@ -28,22 +28,35 @@ public sealed class CloudinaryFileStorageService : IFileStorageService
         string contentType,
         CancellationToken ct = default)
     {
-        // For materials/documents, Cloudinary works best with ResourceType.Raw.
-        // For raw files, the PublicId MUST include the extension.
-        // Also, Cloudinary automatically creates folders if there are slashes in the PublicId.
-        var uploadParams = new RawUploadParams
+        bool isImage = contentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase)
+                    || objectPath.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase)
+                    || objectPath.EndsWith(".png", StringComparison.OrdinalIgnoreCase)
+                    || objectPath.EndsWith(".jpeg", StringComparison.OrdinalIgnoreCase);
+
+        if (isImage)
         {
-            File = new FileDescription(objectPath, content),
-            PublicId = objectPath, // e.g. "materials/1/doc.pdf"
-            Overwrite = true
-        };
-
-        var result = await _cloudinary.UploadAsync(uploadParams);
-
-        if (result.Error != null)
-            throw new InvalidOperationException($"Cloudinary upload failed: {result.Error.Message}");
-
-        return objectPath;
+            var imgParams = new ImageUploadParams
+            {
+                File = new FileDescription(objectPath, content),
+                PublicId = objectPath.Contains('.') ? objectPath.Substring(0, objectPath.LastIndexOf('.')) : objectPath, 
+                Overwrite = true
+            };
+            var imgResult = await _cloudinary.UploadAsync(imgParams);
+            if (imgResult.Error != null) throw new InvalidOperationException($"Cloudinary upload failed: {imgResult.Error.Message}");
+            return imgResult.SecureUrl.ToString();
+        }
+        else
+        {
+            var rawParams = new RawUploadParams
+            {
+                File = new FileDescription(objectPath, content),
+                PublicId = objectPath,
+                Overwrite = true
+            };
+            var rawResult = await _cloudinary.UploadAsync(rawParams);
+            if (rawResult.Error != null) throw new InvalidOperationException($"Cloudinary upload failed: {rawResult.Error.Message}");
+            return objectPath;
+        }
     }
 
     public async Task<string> UploadImageAsync(
@@ -90,10 +103,22 @@ public sealed class CloudinaryFileStorageService : IFileStorageService
         int expirySeconds = 604800,
         CancellationToken ct = default)
     {
-        // Build direct Cloudinary URL for the raw file
-        // Cloudinary raw files are accessible via: https://res.cloudinary.com/{cloud}/raw/upload/{public_id}.{ext}
+        // If the objectPath is already a full http/https URL, return it directly
+        if (objectPath.StartsWith("http://") || objectPath.StartsWith("https://"))
+        {
+            return Task.FromResult(objectPath);
+        }
+
+        bool isImage = objectPath.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase)
+                    || objectPath.EndsWith(".png", StringComparison.OrdinalIgnoreCase)
+                    || objectPath.EndsWith(".jpeg", StringComparison.OrdinalIgnoreCase)
+                    || objectPath.EndsWith(".webp", StringComparison.OrdinalIgnoreCase)
+                    || objectPath.EndsWith(".gif", StringComparison.OrdinalIgnoreCase);
+
+        var resourceType = isImage ? "image" : "raw";
+
         var url = _cloudinary.Api.UrlImgUp
-            .ResourceType("raw")
+            .ResourceType(resourceType)
             .BuildUrl(objectPath);
 
         return Task.FromResult(url);
