@@ -45,6 +45,19 @@ public sealed class MinioFileStorageService : IFileStorageService
         return objectPath;
     }
 
+    /// <summary>MinIO has no image pipeline — upload as raw and return presigned URL.</summary>
+    public async Task<string> UploadImageAsync(
+        string folder,
+        string publicId,
+        Stream content,
+        string contentType,
+        CancellationToken ct = default)
+    {
+        var objectPath = $"{folder}/{publicId}";
+        await UploadAsync(objectPath, content, contentType, ct);
+        return await GetUrlAsync(objectPath, ct: ct);
+    }
+
     public async Task DeleteAsync(string objectPath, CancellationToken ct = default)
     {
         var args = new RemoveObjectArgs().WithBucket(_bucket).WithObject(objectPath);
