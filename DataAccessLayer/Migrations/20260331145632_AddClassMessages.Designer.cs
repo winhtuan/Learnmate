@@ -3,6 +3,7 @@ using System;
 using DataAccessLayer.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace DataAccessLayer.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260331145632_AddClassMessages")]
+    partial class AddClassMessages
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1002,15 +1005,6 @@ namespace DataAccessLayer.Migrations
                         .HasColumnType("numeric(12,2)")
                         .HasColumnName("amount");
 
-                    b.Property<string>("BankCode")
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
-                        .HasColumnName("bank_code");
-
-                    b.Property<long?>("BookingId")
-                        .HasColumnType("bigint")
-                        .HasColumnName("booking_id");
-
                     b.Property<long>("ClassId")
                         .HasColumnType("bigint")
                         .HasColumnName("class_id");
@@ -1022,10 +1016,6 @@ namespace DataAccessLayer.Migrations
                     b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("timestamp without time zone")
                         .HasColumnName("deleted_at");
-
-                    b.Property<DateTime?>("ExpiredAt")
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("expired_at");
 
                     b.Property<long?>("InvoiceId")
                         .HasColumnType("bigint")
@@ -1054,16 +1044,6 @@ namespace DataAccessLayer.Migrations
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp without time zone")
                         .HasColumnName("updated_at");
-
-                    b.Property<string>("VnpTransactionNo")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)")
-                        .HasColumnName("vnp_transaction_no");
-
-                    b.Property<string>("VnpTxnRef")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)")
-                        .HasColumnName("vnp_txn_ref");
 
                     b.HasKey("Id")
                         .HasName("pk_payments");
@@ -1888,15 +1868,6 @@ namespace DataAccessLayer.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
 
-                    b.Property<string>("CancelReason")
-                        .HasMaxLength(1000)
-                        .HasColumnType("character varying(1000)")
-                        .HasColumnName("cancel_reason");
-
-                    b.Property<long?>("ClassId")
-                        .HasColumnType("bigint")
-                        .HasColumnName("class_id");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp without time zone")
                         .HasColumnName("created_at");
@@ -1909,10 +1880,6 @@ namespace DataAccessLayer.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)")
                         .HasColumnName("note");
-
-                    b.Property<DateTime?>("PaymentDeadline")
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("payment_deadline");
 
                     b.Property<DateTime>("RequestedEndTime")
                         .HasColumnType("timestamp without time zone")

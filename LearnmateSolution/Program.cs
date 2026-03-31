@@ -117,6 +117,13 @@ public class Program
             .ValidateOnStart();
         builder.Services.AddSingleton<IFileStorageService, CloudinaryFileStorageService>();
 
+        // ── VNPay Settings ────────────────────────────────────────────────────
+        builder.Services.AddOptions<VnPaySettings>()
+            .BindConfiguration("VnPay");
+
+        // ── Booking Expiry Background Service ─────────────────────────────────
+        builder.Services.AddHostedService<BookingExpiryBackgroundService>();
+
         // ── Auth session (per Blazor circuit) ────────────────────────────────
         builder.Services.AddScoped<UserSessionService>();
 

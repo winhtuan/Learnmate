@@ -1,0 +1,145 @@
+@startuml user_account_state_diagram
+
+title User Account State Diagram - LearnMate Platform
+note top
+  **System:** User status management for Student, Teacher, and Admin accounts
+  **Key Field:** User.IsActive (boolean) + User.DeletedAt (nullable DateTime)
+end note
+
+[*] --> Creating: CreateUserAsync(\nNewUserRequestDto request)
+
+note on the right of Creating
+  **CREATING STATE**
+  Trigger: Admin creates new user
+  Actions:
+    1. Email validated (unique check)
+    2. Password hashed with BCrypt
+    3. Create User entity with IsActive = true
+    4. Create StudentProfile or TeacherProfile
+    5. Persist to database
+  Duration: Immediate transition
+  Exit: → Active
+end note
+
+Creating --> Active: User.IsActive = true\n(Successfully Created)
+
+Active --> Blocked: ChangeUserStatusAsync(\nuserid, isActive=false, reason)\n\nReasons:\n• Teacher Violation\n• Account Abuse\n• Policy Breach\n• Compliance Rejection\n• Payment Default
+
+note on the right of Active
+  **ACTIVE STATE**
+  User.IsActive = true
+  User.DeletedAt = null
+  
+  Capabilities:
+    ✅ Can login to system
+    ✅ Full access based on role
+    ✅ Can access classes
+    ✅ Can submit assignments
+    ✅ Can make payments
+    ✅ Can participate in sessions
+  
+  For TEACHER:
+    ✅ Can create classes
+    ✅ Can grade submissions
+    ✅ Can receive payments
+  
+  For STUDENT:
+    ✅ Can enroll in classes
+    ✅ Can view materials
+    ✅ Can submit assignments
+  
+  Duration: Unlimited (until blocked/deleted)
+end note
+
+Blocked --> Active: ChangeUserStatusAsync(\nuserId, isActive=true, unblockReason)\n\nReasons:\n• Appeal Approved\n• Temporary Block Expired\n• Verification Completed\n• Manual Admin Override
+
+note on the left of Blocked
+  **BLOCKED STATE**
+  User.IsActive = false
+  User.DeletedAt = null
+  
+  Restrictions:
+    ❌ Cannot login
+    ❌ Cannot access any features
+    ❌ Session authentication fails
+    ❌ Cannot perform any actions
+  
+  Data Preserved:
+    ✓ All user data intact
+    ✓ Classes and assignments preserved
+    ✓ Payment history retained
+  
+  For TEACHER:
+    ❌ Cannot create classes
+    ❌ Cannot grade submissions
+    ❌ Existing classes frozen
+  
+  For STUDENT:
+    ❌ Cannot access enrolled classes
+    ❌ Cannot submit assignments
+    ❌ Cannot make payments
+  
+  Block Reason: Stored in database notes
+  Duration: Until admin unblocks
+end note
+
+Active --> SoftDeleted: DeleteUserAsync(userId)\nuser.DeletedAt = DateTime.UtcNow()
+
+Blocked --> SoftDeleted: DeleteUserAsync(userId)\nuser.DeletedAt = DateTime.UtcNow()
+
+note on the right of SoftDeleted
+  **SOFT DELETED STATE**
+  User.IsActive = false (or true)
+  User.DeletedAt ≠ null (timestamp set)
+  
+  Characteristics:
+    • Record NOT physically removed
+    • Hidden from user lists
+    • Cannot login anymore
+    • Cannot be restored via automatic process
+    • Requires admin manual query
+  
+  Data:
+    ✓ User record preserved
+    ✓ All relations intact
+    ✓ Payment history retained
+    ✓ Assignment history retained
+  
+  Compliance:
+    ✓ GDPR requirement (audit trail)
+    ✓ Financial records maintained
+    ✓ Class history preserved
+    ✓ Payment dispute evidence
+  
+  SQL Query Pattern:
+    WHERE deleted_at IS NULL  (normal users)
+    WHERE deleted_at IS NOT NULL  (deleted users)
+  
+  Duration: Permanent (unless manually restored)
+end note
+
+SoftDeleted --> [*]: Account Fully Archived
+
+note on the bottom of [*]
+  **KEY IMPLEMENTATION DETAILS:**
+  
+  1. User Entity (BusinessObject/Models/Identity/User.cs):
+     - public bool IsActive { get; set; } = true;
+     - public DateTime? DeletedAt { get; set; }  // From SoftDeletableEntity base
+  
+  2. Service Method (BusinessLogicLayer/Services/UserManagementService.cs):
+     - ChangeUserStatusAsync(long userId, bool isActive, string reason, string notes)
+     - DeleteUserAsync(long userId)
+  
+  3. Database (PostgreSQL - users table):
+     - Column: is_active BOOLEAN DEFAULT true
+     - Column: deleted_at TIMESTAMPTZ NULL
+     - Column: updated_at TIMESTAMPTZ AUTO_UPDATE
+  
+  4. UI (LearnmateSolution/Components/Pages/Admin/Admin_UserManagement.razor):
+     - Modals: Block, Unblock, Delete
+     - Validations: Reason required, Name confirmation for delete
+     - Filters: Show by role and status
+end note
+
+@enduml

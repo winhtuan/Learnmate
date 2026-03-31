@@ -1,0 +1,12 @@
+﻿  Determining projects to restore...
+  All projects are up-to-date for restore.
+  BusinessObject -> D:\K├¼7\PRN222\Learn_mate_BE\Learnmate\BusinessObject\bin\Debug\net8.0\BusinessObject.dll
+  DataAccessLayer -> D:\K├¼7\PRN222\Learn_mate_BE\Learnmate\DataAccessLayer\bin\Debug\net8.0\DataAccessLayer.dll
+  BusinessLogicLayer -> D:\K├¼7\PRN222\Learn_mate_BE\Learnmate\BusinessLogicLayer\bin\Debug\net8.0\BusinessLogicLayer.dll
+  LearnmateSolution -> D:\K├¼7\PRN222\Learn_mate_BE\Learnmate\LearnmateSolution\bin\Debug\net8.0\LearnmateSolution.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:01.89

@@ -16,7 +16,17 @@ public class ChatHub : Hub
         await Clients.OthersInGroup($"conv_{conversationId}")
             .SendAsync("UserTyping", true);
 
-    public async Task StopTyping(long conversationId) =>
-        await Clients.OthersInGroup($"conv_{conversationId}")
-            .SendAsync("UserTyping", false);
+    public async Task JoinClassConversation(long classId) =>
+        await Groups.AddToGroupAsync(Context.ConnectionId, $"class_{classId}");
+
+    public async Task LeaveClassConversation(long classId) =>
+        await Groups.RemoveFromGroupAsync(Context.ConnectionId, $"class_{classId}");
+
+    public async Task StartClassTyping(long classId, string userName) =>
+        await Clients.OthersInGroup($"class_{classId}")
+            .SendAsync("ClassUserTyping", userName, true);
+
+    public async Task StopClassTyping(long classId, string userName) =>
+        await Clients.OthersInGroup($"class_{classId}")
+            .SendAsync("ClassUserTyping", userName, false);
 }

@@ -6,6 +6,7 @@
 @using BusinessLogicLayer.Services.Interfaces
 @using BusinessObject.Enum
 @using LearnmateSolution.AppState
+@using LearnmateSolution.Components.Shared
 @using Microsoft.AspNetCore.Components.Forms
 @inject ITeacherCourseService ClassService
 @inject IFileStorageService FileStorage
@@ -123,6 +124,10 @@ else
             </div>
         </div>
         <div class="flex items-center gap-2">
+            <button @onclick="() => IsChatDrawerOpen = true"
+                    class="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-amber-50 text-amber-600 hover:bg-amber-100 text-sm font-medium transition-colors shadow-sm border border-amber-200">
+                <span class="material-symbols-outlined text-[18px]">forum</span>Thảo luận
+            </button>
             <a href="/teacher/classes/@ClassId/edit"
                class="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-slate-200 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors">
                 <span class="material-symbols-outlined text-[18px]">settings</span>Cài đặt
@@ -133,6 +138,8 @@ else
             </button>
         </div>
     </div>
+
+    <ClassChatDrawer @bind-IsOpen="IsChatDrawerOpen" ClassId="ClassId" />
 
     <!-- ── Stats Cards ─────────────────────────────────────────────────────── -->
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-7">
@@ -804,6 +811,7 @@ else
     private TeacherClassDetailDto? Detail;
     private bool IsLoading = true;
     private string ActiveTab = "students";
+    private bool IsChatDrawerOpen = false;
 
     // ── Add Student Modal state ───────────────────────────────────────────────
     private bool                  ShowAddStudentModal;

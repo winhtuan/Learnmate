@@ -1,0 +1,191 @@
+@page "/payment/vnpay-return"
+@layout LearnmateSolution.Components.Layout.ClassLayout
+@rendermode InteractiveServer
+@using BusinessLogicLayer.DTOs
+@using BusinessLogicLayer.DTOs.Payment
+@inject NavigationManager Nav
+@inject UserSessionService Session
+@inject IJSRuntime JS
+@inject IHttpClientFactory HttpClientFactory
+
+<PageTitle>Kết quả thanh toán | LearnMate</PageTitle>
+
+<div class="max-w-lg mx-auto flex flex-col items-center justify-center min-h-[60vh] py-16 px-4">
+    @if (_loading)
+    {
+        <div class="flex flex-col items-center gap-4 text-slate-400">
+            <span class="material-symbols-outlined animate-spin text-5xl text-primary">progress_activity</span>
+            <p class="text-base font-semibold">Đang xác nhận thanh toán...</p>
+        </div>
+    }
+    else if (_result is null)
+    {
+        <div class="flex flex-col items-center gap-4 text-slate-400">
+            <span class="material-symbols-outlined text-5xl">error_outline</span>
+            <p class="text-base font-semibold">Không thể xử lý kết quả thanh toán</p>
+            <a href="/student/bookings" class="mt-2 px-5 py-2.5 bg-primary text-white text-sm font-bold rounded-xl hover:bg-blue-600 transition-colors">
+                Quay lại lịch đặt học
+            </a>
+        </div>
+    }
+    else if (_result.Success)
+    {
+        <!-- SUCCESS STATE -->
+        <div class="w-full bg-white rounded-3xl border border-emerald-100 shadow-xl overflow-hidden">
+            <!-- Green header -->
+            <div class="bg-gradient-to-br from-emerald-400 to-green-500 py-10 flex flex-col items-center gap-3 text-white">
+                <div class="size-20 rounded-full bg-white/20 flex items-center justify-center ring-4 ring-white/30">
+                    <span class="material-symbols-outlined text-[44px]">check_circle</span>
+                </div>
+                <h2 class="text-2xl font-black">Thanh toán thành công!</h2>
+                <p class="text-white/80 text-sm font-medium">Bạn đã được tự động thêm vào lớp học</p>
+            </div>
+
+            <!-- Details -->
+            <div class="p-8 space-y-4">
+                <DetailRow Icon="receipt_long"    Label="Mã giao dịch"   Value="@_result.VnpTxnRef" />
+                @if (!string.IsNullOrEmpty(_result.TransactionNo))
+                {
+                    <DetailRow Icon="tag"             Label="Mã VNPay"       Value="@_result.TransactionNo" />
+                }
+                @if (!string.IsNullOrEmpty(_result.BankCode))
+                {
+                    <DetailRow Icon="account_balance" Label="Ngân hàng"      Value="@_result.BankCode" />
+                }
+                <DetailRow Icon="payments"        Label="Số tiền"        Value="@_result.Amount.ToString("N0") đ" Highlight="true" />
+
+                <div class="pt-4 flex flex-col gap-3">
+                    @if (_classId.HasValue)
+                    {
+                        <a href="/classes/@_classId"
+                           class="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold transition-all shadow-md shadow-emerald-200">
+                            <span class="material-symbols-outlined text-[20px]">school</span>
+                            Vào lớp học ngay
+                        </a>
+                    }
+                    <a href="/student/bookings"
+                       class="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold transition-colors">
+                        <span class="material-symbols-outlined text-[20px]">list_alt</span>
+                        Xem lịch đặt học
+                    </a>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <!-- FAILURE STATE -->
+        <div class="w-full bg-white rounded-3xl border border-red-100 shadow-xl overflow-hidden">
+            <!-- Red header -->
+            <div class="bg-gradient-to-br from-red-400 to-rose-500 py-10 flex flex-col items-center gap-3 text-white">
+                <div class="size-20 rounded-full bg-white/20 flex items-center justify-center ring-4 ring-white/30">
+                    <span class="material-symbols-outlined text-[44px]">cancel</span>
+                </div>
+                <h2 class="text-2xl font-black">Thanh toán thất bại</h2>
+                <p class="text-white/80 text-sm font-medium">@_result.Message</p>
+            </div>
+
+            <div class="p-8 space-y-4">
+                <DetailRow Icon="receipt_long" Label="Mã giao dịch" Value="@_result.VnpTxnRef" />
+                @if (!string.IsNullOrEmpty(_result.BankCode))
+                {
+                    <DetailRow Icon="account_balance" Label="Ngân hàng" Value="@_result.BankCode" />
+                }
+
+                <!-- Info: có thể thử lại -->
+                <div class="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 flex items-start gap-2 text-sm text-amber-700">
+                    <span class="material-symbols-outlined text-[18px] shrink-0 mt-0.5">info</span>
+                    <p>Bạn có thể thử thanh toán lại nếu còn trong thời hạn. Booking vẫn đang ở trạng thái <strong>Chờ thanh toán</strong>.</p>
+                </div>
+
+                <div class="pt-4 flex flex-col gap-3">
+                    <a href="/student/bookings"
+                       class="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold transition-all">
+                        <span class="material-symbols-outlined text-[20px]">refresh</span>
+                        Thử thanh toán lại
+                    </a>
+                    <a href="/student-dashboard"
+                       class="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold transition-colors">
+                        <span class="material-symbols-outlined text-[20px]">home</span>
+                        Về trang chủ
+                    </a>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@* Helper sub-component *@
+<div style="display:none">
+    @* Placeholder for DetailRow; inlined below in code *@
+</div>
+
+@code {
+    private bool _loading = true;
+    private PaymentResultDto? _result;
+    private long? _classId;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+
+        // Restore session
+        if (!Session.IsAuthenticated)
+        {
+            var email = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_email");
+            var role  = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_role");
+            var token = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_token");
+            var uid   = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_userid");
+            var av    = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_avatar");
+            var fn    = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_fullname");
+            if (!string.IsNullOrEmpty(token))
+                Session.SetSession(email!, role!, token, av, long.TryParse(uid, out var id) ? id : 0, fn);
+        }
+
+        // Call backend to process return params
+        try
+        {
+            var queryString = new Uri(Nav.Uri).Query;
+            var apiUrl      = $"api/payment/vnpay-return-api{queryString}";
+            
+            var client = HttpClientFactory.CreateClient("learnmate");
+            client.BaseAddress = new Uri(Nav.BaseUri);
+            if (!string.IsNullOrEmpty(Session.AccessToken))
+                client.DefaultRequestHeaders.Authorization =
+                    new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", Session.AccessToken);
+
+            var resp = await client.GetFromJsonAsync<ApiResponse<PaymentResultDto>>(apiUrl);
+            _result  = resp?.Data;
+
+            // Try to get class ID for the booking
+            if (_result?.Success == true && long.TryParse(_result.BookingId, out var bId))
+            {
+                _classId = await GetClassIdForBookingAsync(bId);
+            }
+        }
+        catch { }
+
+        _loading = false;
+        StateHasChanged();
+    }
+
+    private async Task<long?> GetClassIdForBookingAsync(long bookingId)
+    {
+        try
+        {
+            var client = HttpClientFactory.CreateClient("learnmate");
+            client.BaseAddress = new Uri(Nav.BaseUri);
+            if (!string.IsNullOrEmpty(Session.AccessToken))
+                client.DefaultRequestHeaders.Authorization =
+                    new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", Session.AccessToken);
+
+            var resp = await client.GetFromJsonAsync<ApiResponse<IReadOnlyList<BookingPaymentSummaryDto>>>("api/bookings/my/payment");
+            var booking = resp?.Data?.FirstOrDefault(b => b.BookingId == bookingId);
+            return booking?.ClassId;
+        }
+        catch { return null; }
+    }
+}
+
+@* Simple detail row partial *@
+@* Used inline since Blazor can't truly have nested components in same file *@
