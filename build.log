@@ -3,20 +3,10 @@
   BusinessObject -> D:\K├¼7\PRN222\Learn_mate_BE\Learnmate\BusinessObject\bin\Debug\net8.0\BusinessObject.dll
   DataAccessLayer -> D:\K├¼7\PRN222\Learn_mate_BE\Learnmate\DataAccessLayer\bin\Debug\net8.0\DataAccessLayer.dll
   BusinessLogicLayer -> D:\K├¼7\PRN222\Learn_mate_BE\Learnmate\BusinessLogicLayer\bin\Debug\net8.0\BusinessLogicLayer.dll
-D:\K├¼7\PRN222\Learn_mate_BE\Learnmate\LearnmateSolution\Components\Shared\ClassChatDrawer.razor(300,75): error CS1061: 'UserSessionService' does not contain a definition for 'Name' and no accessible extension method 'Name' accepting a first argument of type 'UserSessionService' could be found (are you missing a using directive or an assembly reference?) [D:\K├¼7\PRN222\Learn_mate_BE\Learnmate\LearnmateSolution\LearnmateSolution.csproj]
-D:\K├¼7\PRN222\Learn_mate_BE\Learnmate\LearnmateSolution\Components\Shared\ClassChatDrawer.razor(334,79): error CS1061: 'UserSessionService' does not contain a definition for 'Name' and no accessible extension method 'Name' accepting a first argument of type 'UserSessionService' could be found (are you missing a using directive or an assembly reference?) [D:\K├¼7\PRN222\Learn_mate_BE\Learnmate\LearnmateSolution\LearnmateSolution.csproj]
-D:\K├¼7\PRN222\Learn_mate_BE\Learnmate\LearnmateSolution\Components\Shared\ClassChatDrawer.razor(342,78): error CS1061: 'UserSessionService' does not contain a definition for 'Name' and no accessible extension method 'Name' accepting a first argument of type 'UserSessionService' could be found (are you missing a using directive or an assembly reference?) [D:\K├¼7\PRN222\Learn_mate_BE\Learnmate\LearnmateSolution\LearnmateSolution.csproj]
-D:\K├¼7\PRN222\Learn_mate_BE\Learnmate\LearnmateSolution\Components\Pages\Student\Class\Components\ClassList\ClassCard.razor(124,18): warning CS0414: The field 'ClassCard._leaving' is assigned but its value is never used [D:\K├¼7\PRN222\Learn_mate_BE\Learnmate\LearnmateSolution\LearnmateSolution.csproj]
-D:\K├¼7\PRN222\Learn_mate_BE\Learnmate\LearnmateSolution\Components\Pages\Teacher\Dashboard.razor(261,18): warning CS0414: The field 'Dashboard.IsLoading' is assigned but its value is never used [D:\K├¼7\PRN222\Learn_mate_BE\Learnmate\LearnmateSolution\LearnmateSolution.csproj]
+  LearnmateSolution -> D:\K├¼7\PRN222\Learn_mate_BE\Learnmate\LearnmateSolution\bin\Debug\net8.0\LearnmateSolution.dll
 
-Build FAILED.
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
 
-D:\K├¼7\PRN222\Learn_mate_BE\Learnmate\LearnmateSolution\Components\Pages\Student\Class\Components\ClassList\ClassCard.razor(124,18): warning CS0414: The field 'ClassCard._leaving' is assigned but its value is never used [D:\K├¼7\PRN222\Learn_mate_BE\Learnmate\LearnmateSolution\LearnmateSolution.csproj]
-D:\K├¼7\PRN222\Learn_mate_BE\Learnmate\LearnmateSolution\Components\Pages\Teacher\Dashboard.razor(261,18): warning CS0414: The field 'Dashboard.IsLoading' is assigned but its value is never used [D:\K├¼7\PRN222\Learn_mate_BE\Learnmate\LearnmateSolution\LearnmateSolution.csproj]
-D:\K├¼7\PRN222\Learn_mate_BE\Learnmate\LearnmateSolution\Components\Shared\ClassChatDrawer.razor(300,75): error CS1061: 'UserSessionService' does not contain a definition for 'Name' and no accessible extension method 'Name' accepting a first argument of type 'UserSessionService' could be found (are you missing a using directive or an assembly reference?) [D:\K├¼7\PRN222\Learn_mate_BE\Learnmate\LearnmateSolution\LearnmateSolution.csproj]
-D:\K├¼7\PRN222\Learn_mate_BE\Learnmate\LearnmateSolution\Components\Shared\ClassChatDrawer.razor(334,79): error CS1061: 'UserSessionService' does not contain a definition for 'Name' and no accessible extension method 'Name' accepting a first argument of type 'UserSessionService' could be found (are you missing a using directive or an assembly reference?) [D:\K├¼7\PRN222\Learn_mate_BE\Learnmate\LearnmateSolution\LearnmateSolution.csproj]
-D:\K├¼7\PRN222\Learn_mate_BE\Learnmate\LearnmateSolution\Components\Shared\ClassChatDrawer.razor(342,78): error CS1061: 'UserSessionService' does not contain a definition for 'Name' and no accessible extension method 'Name' accepting a first argument of type 'UserSessionService' could be found (are you missing a using directive or an assembly reference?) [D:\K├¼7\PRN222\Learn_mate_BE\Learnmate\LearnmateSolution\LearnmateSolution.csproj]
-    2 Warning(s)
-    3 Error(s)
-
-Time Elapsed 00:00:04.16
+Time Elapsed 00:00:01.89

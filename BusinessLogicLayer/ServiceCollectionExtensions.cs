@@ -2,6 +2,7 @@ using BusinessLogicLayer.Services;
 using BusinessLogicLayer.Services.Dashboard;
 using BusinessLogicLayer.Services.Interfaces;
 using BusinessLogicLayer.Services.Interfaces.Dashboard;
+using BusinessLogicLayer.Settings;
 using DataAccessLayer.Repositories;
 using DataAccessLayer.Repositories.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
@@ -26,6 +27,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ITeacherDocumentRepository, TeacherDocumentRepository>();
         services.AddScoped<IReportRepository, ReportRepository>();
         services.AddScoped<ITutorBookingRepository, TutorBookingRepository>();
+        services.AddScoped<IPaymentRepository, PaymentRepository>();
         services.AddScoped<IConversationRepository, DataAccessLayer.Repositories.System.ConversationRepository>();
         services.AddScoped<DataAccessLayer.Repositories.Interfaces.ClassManagement.IClassMessageRepository, DataAccessLayer.Repositories.ClassManagement.ClassMessageRepository>();
         services.AddScoped<DataAccessLayer.Repositories.Interfaces.Teacher.Schedules.ITeacherScheduleRepository, DataAccessLayer.Repositories.Teacher.Schedules.TeacherScheduleRepository>();
@@ -51,6 +53,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ITutorService, TutorService>();
         services.AddScoped<IMessagingService, BusinessLogicLayer.Services.System.MessagingService>();
         services.AddScoped<BusinessLogicLayer.Services.Interfaces.ClassManagement.IClassMessageService, BusinessLogicLayer.Services.ClassManagement.ClassMessageService>();
+        services.AddSingleton<IVnPayService, VnPayService>();
+        services.AddScoped<IPaymentService, PaymentService>();
 
         // Token blacklist cache
         services.AddMemoryCache();

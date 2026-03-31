@@ -1,0 +1,15 @@
+@* Reusable detail row for payment result page *@
+<div class="flex items-center justify-between py-3 border-b border-slate-100 last:border-0">
+    <div class="flex items-center gap-2 text-slate-500 text-sm font-medium">
+        <span class="material-symbols-outlined text-[18px]">@Icon</span>
+        @Label
+    </div>
+    <span class="text-sm @(Highlight ? "text-xl font-black text-slate-900" : "font-semibold text-slate-900") text-right">@Value</span>
+</div>
+
+@code {
+    [Parameter] public string Icon    { get; set; } = "info";
+    [Parameter] public string Label   { get; set; } = "";
+    [Parameter] public string Value   { get; set; } = "";
+    [Parameter] public bool   Highlight { get; set; } = false;
+}

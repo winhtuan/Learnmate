@@ -14,6 +14,9 @@ public class Payment : SoftDeletableEntity
 
     public long? InvoiceId { get; set; }
 
+    /// <summary>Booking Request liên kết (nếu thanh toán từ booking)</summary>
+    public long? BookingId { get; set; }
+
     [Required]
     public decimal Amount { get; set; }
 
@@ -23,7 +26,22 @@ public class Payment : SoftDeletableEntity
     [Required]
     public PaymentStatus Status { get; set; } = PaymentStatus.PENDING;
 
+    /// <summary>Mã giao dịch unique gửi sang VNPay (vnp_TxnRef)</summary>
+    [MaxLength(100)]
+    public string? VnpTxnRef { get; set; }
+
+    /// <summary>Mã giao dịch VNPay trả về (vnp_TransactionNo)</summary>
+    [MaxLength(100)]
+    public string? VnpTransactionNo { get; set; }
+
+    /// <summary>Thông tin ngân hàng thanh toán</summary>
+    [MaxLength(50)]
+    public string? BankCode { get; set; }
+
     public DateTime? PaidAt { get; set; }
+
+    /// <summary>Thời hạn thanh toán (used for expiry)</summary>
+    public DateTime? ExpiredAt { get; set; }
 
     // Navigation properties
     [ForeignKey("StudentId")]
