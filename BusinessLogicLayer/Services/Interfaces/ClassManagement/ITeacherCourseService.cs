@@ -5,6 +5,10 @@ namespace BusinessLogicLayer.Services.Interfaces;
 public interface ITeacherCourseService
 {
     Task<long> CreateClassAsync(long teacherId, CreateClassDto dto);
+
+    Task<TeacherAssignmentFullDetailDto?> GetAssignmentDetailAsync(long assignmentId, long classId, long teacherId, CancellationToken ct = default);
+    Task GradeSubmissionAsync(long submissionId, long teacherId, decimal score, string? feedback, CancellationToken ct = default);
+
     Task<TeacherClassDetailDto?> GetTeacherClassDetailAsync(long classId, long teacherId, CancellationToken ct = default);
     Task<List<TeacherClassListItemDto>> GetTeacherClassesAsync(long teacherId, CancellationToken ct = default);
 

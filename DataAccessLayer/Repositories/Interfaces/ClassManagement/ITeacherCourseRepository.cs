@@ -9,4 +9,7 @@ public interface ITeacherCourseRepository
     Task<IReadOnlyList<Class>> GetByTeacherIdAsync(long teacherId, CancellationToken ct = default);
     Task<Material> AddMaterialAsync(Material material, CancellationToken ct = default);
     Task DeleteMaterialAsync(long materialId, long classId, CancellationToken ct = default);
+
+    Task<Assignment?> GetAssignmentDetailAsync(long assignmentId, long classId, long teacherId, CancellationToken ct = default);
+    Task<Submission?> GradeSubmissionAsync(long submissionId, long teacherId, decimal score, string? feedback, CancellationToken ct = default);
 }

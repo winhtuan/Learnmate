@@ -68,4 +68,44 @@ public class TeacherCourseRepository : ITeacherCourseRepository
             await db.SaveChangesAsync(ct);
         }
     }
+
+    public async Task<Assignment?> GetAssignmentDetailAsync(long assignmentId, long classId, long teacherId, CancellationToken ct = default)
+    {
+        return await db.Assignments
+            .Include(a => a.Class)
+            .Include(a => a.Submissions.Where(s => !s.DeletedAt.HasValue))
+                .ThenInclude(s => s.Student)
+                .ThenInclude(u => u.StudentProfile)
+            .Include(a => a.Submissions)
+                .ThenInclude(s => s.Feedback)
+            .FirstOrDefaultAsync(a => a.Id == assignmentId && a.ClassId == classId && a.Class.TeacherId == teacherId && !a.DeletedAt.HasValue, ct);
+    }
+
+    public async Task<Submission?> GradeSubmissionAsync(long submissionId, long teacherId, decimal score, string? feedback, CancellationToken ct = default)
+    {
+        var submission = await db.Submissions
+            .Include(s => s.Assignment)
+                .ThenInclude(a => a.Class)
+            .Include(s => s.Feedback)
+            .FirstOrDefaultAsync(s => s.Id == submissionId && s.Assignment.Class.TeacherId == teacherId, ct);
+
+        if (submission is null)
+            return null;
+
+        submission.Score = score;
+
+        if (submission.Feedback is null)
+            submission.Feedback = new Feedback { Comment = feedback, Score = score };
+        else
+        {
+            submission.Feedback.Comment = feedback;
+            submission.Feedback.Score = score;
+        }
+
+        submission.Status = SubmissionStatus.GRADED;
+        submission.UpdatedAt = DateTime.UtcNow;
+
+        await db.SaveChangesAsync(ct);
+        return submission;
+    }
 }
