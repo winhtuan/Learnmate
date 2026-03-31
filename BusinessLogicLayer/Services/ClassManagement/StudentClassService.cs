@@ -66,7 +66,8 @@ public class StudentClassService(
                     MapAssignmentAsync(a, a.Submissions.FirstOrDefault())
                 )),
             UpcomingSchedules: cls.Schedules.Select(MapSchedule).ToList(),
-            RecentMaterials: await Task.WhenAll(cls.Materials.Select(MapMaterialAsync))
+            RecentMaterials: await Task.WhenAll(cls.Materials.Select(MapMaterialAsync)),
+            MeetingLink: cls.MeetingLink
         );
 
         return ApiResponse<ClassDetailDto>.Ok(dto);
@@ -304,8 +305,8 @@ public class StudentClassService(
         new(
             Id: s.Id,
             Title: s.Title,
-            StartTimeLocal: s.StartTime.ToLocalTime(),
-            EndTimeLocal: s.EndTime.ToLocalTime(),
+            StartTimeLocal: s.StartTime,
+            EndTimeLocal: s.EndTime,
             Type: s.Type.ToString(),
             Status: s.Status.ToString()
         );

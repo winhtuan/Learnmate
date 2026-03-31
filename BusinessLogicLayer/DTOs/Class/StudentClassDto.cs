@@ -22,7 +22,8 @@ public record ClassDetailDto(
     string TeacherSubjects,
     IReadOnlyList<ClassAssignmentDto> ActiveAssignments,
     IReadOnlyList<ClassScheduleItemDto> UpcomingSchedules,
-    IReadOnlyList<ClassMaterialDto> RecentMaterials
+    IReadOnlyList<ClassMaterialDto> RecentMaterials,
+    string? MeetingLink = null
 );
 
 public record ClassAssignmentDto(
