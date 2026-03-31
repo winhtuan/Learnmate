@@ -1,115 +1,189 @@
 @page "/student/bookings"
-@layout ClassLayout
+@layout LearnmateSolution.Components.Layout.ClassLayout
 @rendermode InteractiveServer
 @using BusinessLogicLayer.DTOs
-@using BusinessLogicLayer.DTOs.Tutor
-@using LearnmateSolution.Components.Layout
-@using LearnmateSolution.Components.Pages.Student.Class.Components.Shared
+@using BusinessLogicLayer.DTOs.Payment
 @inject NavigationManager Nav
 @inject UserSessionService Session
 @inject IJSRuntime JS
 @inject IHttpClientFactory HttpClientFactory
 
-<PageTitle>My Bookings - LearnMate</PageTitle>
+<PageTitle>Lịch đặt học | LearnMate</PageTitle>
 
-<div class="space-y-6 max-w-screen-xl mx-auto">
-    <Breadcrumb Items="@([new("Dashboard", "/student-dashboard"), new("My Bookings")])" />
-
+<div class="max-w-screen-lg mx-auto space-y-6">
+    <!-- Header -->
     <div class="flex items-center justify-between">
-        <h1 class="text-2xl font-bold text-slate-900">My Bookings</h1>
-        <a href="/student/find-tutor"
-           class="flex items-center gap-2 px-4 py-2 bg-[#37352F] hover:bg-[#37352F]/90 text-white rounded-xl text-sm font-semibold transition-colors">
-            <span class="material-symbols-outlined text-[18px]">add</span>
-            Book a Tutor
-        </a>
+        <div>
+            <h1 class="text-2xl font-bold text-slate-900">Lịch đặt học</h1>
+            <p class="text-slate-500 text-sm mt-1">Quản lý các yêu cầu đặt lịch học và thanh toán khoá học.</p>
+        </div>
+        <div class="size-10 rounded-full bg-amber-50 border border-amber-200 flex items-center justify-center">
+            <span class="material-symbols-outlined text-amber-600 text-[20px]">calendar_month</span>
+        </div>
     </div>
 
     @if (!_ready)
     {
-        <div class="flex items-center justify-center h-64 text-slate-400">
-            <svg class="animate-spin h-8 w-8 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-            </svg>
-            <span class="text-sm font-medium">Loading...</span>
+        <div class="flex items-center justify-center h-60 text-slate-400">
+            <span class="material-symbols-outlined animate-spin text-3xl mr-3">progress_activity</span>
+            <span class="text-sm font-medium">Đang tải...</span>
         </div>
     }
     else if (_bookings.Count == 0)
     {
-        <div class="flex flex-col items-center justify-center py-24 text-slate-400">
-            <span class="material-symbols-outlined text-6xl mb-4">event_busy</span>
-            <p class="text-lg font-semibold text-slate-600 mb-1">No bookings yet</p>
-            <p class="text-sm mb-6">Find a tutor and send your first booking request.</p>
-            <a href="/student/find-tutor"
-               class="px-5 py-2.5 bg-[#37352F] text-white rounded-xl text-sm font-semibold hover:bg-[#37352F]/90 transition-colors">
-                Find a Tutor
+        <div class="flex flex-col items-center justify-center py-20 bg-white rounded-2xl border border-slate-100 shadow-sm text-slate-400">
+            <span class="material-symbols-outlined text-5xl mb-3 text-slate-300">event_available</span>
+            <p class="text-base font-semibold">Chưa có lịch đặt học nào</p>
+            <p class="text-sm mt-1">Tìm giáo viên và đặt lịch học ngay hôm nay!</p>
+            <a href="/find-tutor" class="mt-5 px-5 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-blue-600 transition-colors shadow-sm shadow-primary/20">
+                Tìm giáo viên
             </a>
         </div>
     }
     else
     {
-        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+        <!-- Booking list -->
+        <div class="space-y-4">
             @foreach (var b in _bookings)
             {
-                var (badgeText, badgeCss) = StatusBadge(b.Status);
-                <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 flex flex-col gap-4">
+                var (statusColor, statusBg, statusLabel, statusIcon) = GetStatusStyle(b.Status);
+                var isAwaitingPayment = b.Status == "AWAITING_PAYMENT" && b.CanPay;
+                var deadlineExpired   = b.PaymentDeadlineLocal.HasValue && b.PaymentDeadlineLocal < DateTime.Now;
 
-                    <!-- Teacher info -->
-                    <div class="flex items-center gap-3">
-                        <div class="size-12 rounded-full bg-indigo-100 flex items-center justify-center shrink-0 overflow-hidden">
-                            @if (!string.IsNullOrEmpty(b.TeacherAvatarUrl))
+                <div class="bg-white rounded-2xl border @(isAwaitingPayment ? "border-amber-300 ring-2 ring-amber-100" : "border-slate-100") shadow-sm overflow-hidden transition-all hover:shadow-md">
+                    <!-- Card top: status bar -->
+                    <div class="h-1 @statusBg"></div>
+
+                    <div class="p-5 flex flex-col sm:flex-row items-start gap-5">
+                        <!-- Teacher avatar -->
+                        <div class="size-14 rounded-2xl bg-slate-100 flex items-center justify-center shrink-0 border border-slate-200 overflow-hidden shadow-sm">
+                            @if (!string.IsNullOrEmpty(b.TeacherAvatar))
                             {
-                                <img src="@b.TeacherAvatarUrl" alt="@b.TeacherName" class="size-12 object-cover rounded-full" />
+                                <img src="@b.TeacherAvatar" alt="Avatar" class="size-14 object-cover rounded-2xl" />
                             }
                             else
                             {
-                                <span class="text-indigo-600 font-bold text-base">@Initials(b.TeacherName)</span>
+                                <span class="text-slate-600 font-black text-xl">@Initials(b.TeacherName)</span>
                             }
                         </div>
-                        <div class="min-w-0">
-                            <p class="font-bold text-slate-900 truncate">@b.TeacherName</p>
-                            <p class="text-xs text-slate-500">Requested @b.CreatedAtLocal.ToString("MMM d, yyyy")</p>
+
+                        <!-- Info -->
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-start justify-between gap-2 flex-wrap">
+                                <div>
+                                    <p class="text-base font-bold text-slate-900">@b.TeacherName</p>
+                                    @if (!string.IsNullOrEmpty(b.ClassName))
+                                    {
+                                        <p class="text-sm text-slate-500 flex items-center gap-1 mt-0.5">
+                                            <span class="material-symbols-outlined text-[15px]">class</span>
+                                            @b.ClassName
+                                        </p>
+                                    }
+                                </div>
+                                <span class="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold @statusBg @statusColor border border-current/20">
+                                    <span class="material-symbols-outlined text-[14px]">@statusIcon</span>
+                                    @statusLabel
+                                </span>
+                            </div>
+
+                            <!-- Time info -->
+                            <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-slate-600">
+                                <div class="flex items-center gap-1.5">
+                                    <span class="material-symbols-outlined text-[16px] text-slate-400">schedule</span>
+                                    @b.RequestedStartTimeLocal.ToString("dd/MM/yyyy HH:mm") — @b.RequestedEndTimeLocal.ToString("HH:mm")
+                                </div>
+                                <div class="flex items-center gap-1.5">
+                                    <span class="material-symbols-outlined text-[16px] text-slate-400">today</span>
+                                    Đặt lúc: @b.CreatedAtLocal.ToString("dd/MM/yyyy HH:mm")
+                                </div>
+                            </div>
+
+                            <!-- Payment deadline -->
+                            @if (b.Status == "AWAITING_PAYMENT" && b.PaymentDeadlineLocal.HasValue)
+                            {
+                                <div class="mt-3 flex items-center gap-2 @(deadlineExpired ? "text-red-500" : "text-amber-600") text-sm font-semibold bg-amber-50 rounded-xl px-3 py-2 border border-amber-200">
+                                    <span class="material-symbols-outlined text-[18px]">@(deadlineExpired ? "timer_off" : "timer")</span>
+                                    @if (deadlineExpired)
+                                    {
+                                        <span>Đã hết thời hạn thanh toán</span>
+                                    }
+                                    else
+                                    {
+                                        <span>Hạn thanh toán: <strong>@b.PaymentDeadlineLocal.Value.ToString("dd/MM/yyyy HH:mm")</strong></span>
+                                        <CountdownTimer Deadline="b.PaymentDeadlineLocal.Value" />
+                                    }
+                                </div>
+                            }
+
+                            <!-- Cancel reason -->
+                            @if (!string.IsNullOrEmpty(b.CancelReason))
+                            {
+                                <div class="mt-3 flex items-start gap-2 text-sm text-red-600 bg-red-50 rounded-xl px-3 py-2 border border-red-100">
+                                    <span class="material-symbols-outlined text-[18px] shrink-0 mt-0.5">info</span>
+                                    <span>@b.CancelReason</span>
+                                </div>
+                            }
                         </div>
-                        <span class="ml-auto shrink-0 text-xs font-semibold px-2.5 py-1 rounded-full @badgeCss">@badgeText</span>
+
+                        <!-- Action section -->
+                        <div class="flex flex-col items-end gap-3 shrink-0">
+                            @if (b.Amount.HasValue)
+                            {
+                                <div class="text-right">
+                                    <p class="text-xs text-slate-400 font-medium">Học phí</p>
+                                    <p class="text-xl font-black text-slate-900">@b.Amount.Value.ToString("N0")<span class="text-sm font-semibold">đ</span></p>
+                                </div>
+                            }
+
+                            @if (isAwaitingPayment)
+                            {
+                                <button class="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-sm font-bold transition-all shadow-sm shadow-amber-300 disabled:opacity-50"
+                                        disabled="@(_payingBookingId == b.BookingId)"
+                                        @onclick="() => PayAsync(b)">
+                                    @if (_payingBookingId == b.BookingId)
+                                    {
+                                        <span class="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>
+                                        <span>Đang xử lý...</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="material-symbols-outlined text-[18px]">payment</span>
+                                        <span>Thanh toán ngay</span>
+                                    }
+                                </button>
+                            }
+                            else if (b.Status == "BOOKING_SUCCESS" && b.ClassId.HasValue)
+                            {
+                                <a href="/classes/@b.ClassId" class="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-bold transition-all shadow-sm">
+                                    <span class="material-symbols-outlined text-[18px]">school</span>
+                                    Vào lớp học
+                                </a>
+                            }
+                        </div>
                     </div>
-
-                    <!-- Time slot -->
-                    <div class="flex items-start gap-2 bg-slate-50 rounded-xl px-4 py-3">
-                        <span class="material-symbols-outlined text-slate-400 text-[18px] mt-0.5">schedule</span>
-                        <div class="text-sm">
-                            <p class="font-semibold text-slate-800">@b.RequestedStartTimeLocal.ToString("dddd, MMMM d, yyyy")</p>
-                            <p class="text-slate-500 mt-0.5">@b.RequestedStartTimeLocal.ToString("h:mm tt") – @b.RequestedEndTimeLocal.ToString("h:mm tt")</p>
-                        </div>
-                    </div>
-
-                    <!-- Note -->
-                    @if (!string.IsNullOrEmpty(b.Note))
-                    {
-                        <div class="flex items-start gap-2 text-sm text-slate-600">
-                            <span class="material-symbols-outlined text-slate-400 text-[16px] mt-0.5">notes</span>
-                            <p class="leading-relaxed line-clamp-2">@b.Note</p>
-                        </div>
-                    }
-
-                    <!-- Cancel button (PENDING only) -->
-                    @if (b.Status == "PENDING")
-                    {
-                        <button @onclick="() => CancelAsync(b.Id)"
-                                disabled="@(_cancellingId == b.Id)"
-                                class="mt-auto w-full py-2 border border-rose-200 text-rose-600 hover:bg-rose-50 rounded-xl text-sm font-semibold transition-colors disabled:opacity-60 disabled:cursor-not-allowed">
-                            @(_cancellingId == b.Id ? "Cancelling..." : "Cancel Request")
-                        </button>
-                    }
                 </div>
             }
+        </div>
+    }
+
+    <!-- Error toast -->
+    @if (!string.IsNullOrEmpty(_errorMsg))
+    {
+        <div class="fixed bottom-6 right-6 flex items-center gap-3 bg-red-600 text-white px-5 py-4 rounded-2xl shadow-xl z-50 animate-fade-in">
+            <span class="material-symbols-outlined text-[20px]">error</span>
+            <span class="text-sm font-medium">@_errorMsg</span>
+            <button @onclick="() => _errorMsg = null" class="ml-2 hover:opacity-70 transition-opacity">
+                <span class="material-symbols-outlined text-[18px]">close</span>
+            </button>
         </div>
     }
 </div>
 
 @code {
     private bool _ready;
-    private List<BookingRequestDto> _bookings = [];
-    private long? _cancellingId;
+    private List<BookingPaymentSummaryDto> _bookings = [];
+    private long? _payingBookingId;
+    private string? _errorMsg;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -117,75 +191,97 @@
 
         if (!Session.IsAuthenticated)
         {
-            var email = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_email");
-            var role  = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_role");
-            var token = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_token");
-            if (!string.IsNullOrEmpty(email) && !string.IsNullOrEmpty(role) && !string.IsNullOrEmpty(token))
-                Session.SetSession(email, role, token);
+            var email    = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_email");
+            var role     = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_role");
+            var token    = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_token");
+            var uidStr   = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_userid");
+            var avatar   = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_avatar");
+            var fullName = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_fullname");
+            if (!string.IsNullOrEmpty(token))
+            {
+                var uid = long.TryParse(uidStr, out var id) ? id : 0;
+                Session.SetSession(email!, role!, token, avatar, uid, fullName);
+            }
         }
 
         if (!Session.IsAuthenticated) { Nav.NavigateTo("/login", replace: true); return; }
         if (Session.Role != "STUDENT") { Nav.NavigateTo("/", replace: true); return; }
 
-        await LoadAsync();
+        await LoadBookingsAsync();
         _ready = true;
         StateHasChanged();
     }
 
-    private async Task LoadAsync()
+    private async Task LoadBookingsAsync()
     {
         try
         {
-            var client = HttpClientFactory.CreateClient("learnmate");
-            client.BaseAddress = new Uri(Nav.BaseUri);
-            client.DefaultRequestHeaders.Authorization =
-                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", Session.AccessToken);
-
-            var resp = await client.GetFromJsonAsync<ApiResponse<IReadOnlyList<BookingRequestDto>>>("api/bookings/my");
-            _bookings = resp?.Data?.ToList() ?? [];
+            var client = CreateClient();
+            var resp   = await client.GetFromJsonAsync<ApiResponse<IReadOnlyList<BookingPaymentSummaryDto>>>("api/bookings/my/payment");
+            _bookings  = resp?.Data?.ToList() ?? [];
         }
-        catch
-        {
-            _bookings = [];
-        }
+        catch { _bookings = []; }
     }
 
-    private async Task CancelAsync(long bookingId)
+    private async Task PayAsync(BookingPaymentSummaryDto booking)
     {
-        _cancellingId = bookingId;
+        _payingBookingId = booking.BookingId;
+        _errorMsg        = null;
+        StateHasChanged();
+
         try
         {
-            var client = HttpClientFactory.CreateClient("learnmate");
-            client.BaseAddress = new Uri(Nav.BaseUri);
-            client.DefaultRequestHeaders.Authorization =
-                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", Session.AccessToken);
+            var client = CreateClient();
+            var body   = new { BookingId = booking.BookingId };
+            var resp   = await client.PostAsJsonAsync("api/payment/initiate", body);
+            var result = await resp.Content.ReadFromJsonAsync<ApiResponse<string>>();
 
-            var resp = await client.DeleteAsync($"api/bookings/{bookingId}");
-            if (resp.IsSuccessStatusCode)
+            if (result?.Success == true && !string.IsNullOrEmpty(result.Data))
             {
-                var idx = _bookings.FindIndex(b => b.Id == bookingId);
-                if (idx >= 0)
-                    _bookings[idx] = _bookings[idx] with { Status = "CANCELLED" };
+                // Redirect sang cổng thanh toán VNPay
+                await JS.InvokeVoidAsync("open", result.Data, "_self");
             }
+            else
+            {
+                _errorMsg = result?.Message ?? "Không thể khởi tạo thanh toán.";
+            }
+        }
+        catch (Exception ex)
+        {
+            _errorMsg = $"Lỗi kết nối: {ex.Message}";
         }
         finally
         {
-            _cancellingId = null;
+            _payingBookingId = null;
             StateHasChanged();
         }
     }
 
-    private static string Initials(string name) =>
-        string.Concat(name.Split(' ', StringSplitOptions.RemoveEmptyEntries)
-                          .Take(2)
-                          .Select(w => char.ToUpper(w[0])));
-
-    private static (string text, string css) StatusBadge(string status) => status switch
+    private HttpClient CreateClient()
     {
-        "PENDING"   => ("Pending",   "bg-amber-100 text-amber-700"),
-        "ACCEPTED"  => ("Accepted",  "bg-emerald-100 text-emerald-700"),
-        "DECLINED"  => ("Declined",  "bg-rose-100 text-rose-700"),
-        "CANCELLED" => ("Cancelled", "bg-slate-100 text-slate-500"),
-        _           => (status,      "bg-slate-100 text-slate-500"),
+        var client = HttpClientFactory.CreateClient("learnmate");
+        client.BaseAddress = new Uri(Nav.BaseUri);
+        client.DefaultRequestHeaders.Authorization =
+            new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", Session.AccessToken);
+        return client;
+    }
+
+    private static string Initials(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name)) return "G";
+        return string.Concat(name.Split(' ', StringSplitOptions.RemoveEmptyEntries)
+            .Take(2).Select(p => char.ToUpper(p[0])));
+    }
+
+    private static (string color, string bg, string label, string icon) GetStatusStyle(string status) => status switch
+    {
+        "PENDING"           => ("text-slate-600",  "bg-slate-100",   "Chờ giáo viên duyệt", "hourglass_empty"),
+        "AWAITING_PAYMENT"  => ("text-amber-700",  "bg-amber-500",   "Chờ thanh toán",       "payment"),
+        "PAYMENT_SUCCESS"   => ("text-blue-700",   "bg-blue-500",    "Đã thanh toán",         "verified"),
+        "BOOKING_SUCCESS"   => ("text-emerald-700","bg-emerald-500", "Đặt lịch thành công",   "check_circle"),
+        "DECLINED"          => ("text-red-700",    "bg-red-400",     "Bị từ chối",            "cancel"),
+        "CANCELLED"         => ("text-slate-600",  "bg-slate-300",   "Đã huỷ",               "block"),
+        "EXPIRED"           => ("text-orange-700", "bg-orange-400",  "Hết hạn thanh toán",    "timer_off"),
+        _                   => ("text-slate-600",  "bg-slate-100",   status,                  "info"),
     };
 }
