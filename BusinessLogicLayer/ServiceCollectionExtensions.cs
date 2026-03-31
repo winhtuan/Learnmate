@@ -1,5 +1,7 @@
 using BusinessLogicLayer.Services;
+using BusinessLogicLayer.Services.Dashboard;
 using BusinessLogicLayer.Services.Interfaces;
+using BusinessLogicLayer.Services.Interfaces.Dashboard;
 using DataAccessLayer.Repositories;
 using DataAccessLayer.Repositories.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
@@ -37,6 +39,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IJwtService, JwtService>();
         services.AddScoped<IDashboardService, DashboardService>();
         services.AddScoped<IStudentDashboardService, StudentDashboardService>();
+        services.AddScoped<ITeacherDashboardService, TeacherDashboardService>();
         services.AddScoped<IStudentClassService, StudentClassService>();
         services.AddScoped<BusinessLogicLayer.Services.Interfaces.Teacher.Schedules.ITeacherScheduleService, BusinessLogicLayer.Services.Teacher.Schedules.TeacherScheduleService>();
         services.AddScoped<BusinessLogicLayer.Services.Interfaces.Teacher.Schedules.IVoiceScheduleAnalyzer, BusinessLogicLayer.Services.Teacher.Schedules.VoiceScheduleAnalyzer>();

@@ -28,6 +28,9 @@ public class Class : SoftDeletableEntity
     [MaxLength(500)]
     public string? ThumbnailUrl { get; set; } = "https://placehold.co/400?text=Course";
 
+    [MaxLength(500)]
+    public string? MeetingLink { get; set; }
+
     // Navigation properties
     [ForeignKey("TeacherId")]
     public User Teacher { get; set; } = null!;

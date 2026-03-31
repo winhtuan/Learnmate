@@ -24,6 +24,7 @@ public class TeacherClassDetailDto
     public ClassStatus Status         { get; set; }
     public int         MaxStudents    { get; set; }
     public string?     ThumbnailUrl   { get; set; }
+    public string?     MeetingLink    { get; set; }
     public DateTime    CreatedAt      { get; set; }
 
     // Stats
