@@ -1,3 +1,11 @@
+@using LearnmateSolution.AppState
+@using BusinessLogicLayer.Services.Interfaces
+@inject UserSessionService Session
+@inject IAuthService AuthService
+@inject NavigationManager Nav
+@inject IJSRuntime JS
+@rendermode InteractiveServer
+
 <div class="flex flex-col h-full bg-white border-r border-slate-200 w-64 transition-all duration-300">
     <!-- Logo Section -->
     <div class="p-6 flex items-center gap-3">
@@ -60,9 +68,10 @@
             <span class="material-symbols-outlined text-[22px]">settings</span>
             <span>Settings</span>
         </NavLink>
-        <button class="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg text-red-500 hover:bg-red-50 transition-all mt-1">
+        <button @onclick="HandleLogout"
+                class="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg text-red-500 hover:bg-red-50 transition-all mt-1">
             <span class="material-symbols-outlined text-[22px]">logout</span>
-            <span>Logout</span>
+            <span>Đăng xuất</span>
         </button>
     </div>
 </div>
@@ -73,3 +82,45 @@
         color: #137fec !important;
     }
 </style>
+
+@code {
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        if (!Session.IsAuthenticated)
+        {
+            var email  = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_email");
+            var role   = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_role");
+            var token  = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_token");
+            var avatar = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_avatar");
+            if (!string.IsNullOrEmpty(email) && !string.IsNullOrEmpty(role) && !string.IsNullOrEmpty(token))
+            {
+                Session.SetSession(email, role, token, avatar);
+                StateHasChanged();
+            }
+        }
+    }
+
+    private async Task HandleLogout()
+    {
+        // 1. Blacklist JWT token trên backend
+        if (!string.IsNullOrEmpty(Session.AccessToken))
+        {
+            try { await AuthService.LogoutAsync(Session.AccessToken); }
+            catch { /* fail-safe: tiếp tục dù backend lỗi */ }
+        }
+
+        // 2. Xóa in-memory session
+        Session.Clear();
+
+        // 3. Xóa toàn bộ sessionStorage
+        await JS.InvokeVoidAsync("sessionStorage.removeItem", "lm_email");
+        await JS.InvokeVoidAsync("sessionStorage.removeItem", "lm_role");
+        await JS.InvokeVoidAsync("sessionStorage.removeItem", "lm_token");
+        await JS.InvokeVoidAsync("sessionStorage.removeItem", "lm_avatar");
+        await JS.InvokeVoidAsync("sessionStorage.removeItem", "lm_userid");
+
+        // 4. Redirect về trang login
+        Nav.NavigateTo("/login", replace: true);
+    }
+}

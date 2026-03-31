@@ -46,6 +46,34 @@ public sealed class CloudinaryFileStorageService : IFileStorageService
         return objectPath;
     }
 
+    public async Task<string> UploadImageAsync(
+        string folder,
+        string publicId,
+        Stream content,
+        string contentType,
+        CancellationToken ct = default)
+    {
+        var uploadParams = new ImageUploadParams
+        {
+            File        = new FileDescription(publicId, content),
+            PublicId    = publicId,
+            Folder      = folder,
+            Overwrite   = true,
+            // Auto-crop & format for avatars: square 400×400, WebP output
+            Transformation = new Transformation()
+                .Width(400).Height(400).Crop("fill").Gravity("face")
+                .FetchFormat("auto").Quality("auto")
+        };
+
+        var result = await _cloudinary.UploadAsync(uploadParams);
+
+        if (result.Error != null)
+            throw new InvalidOperationException($"Cloudinary image upload failed: {result.Error.Message}");
+
+        // SecureUrl = permanent HTTPS CDN URL — no presign needed
+        return result.SecureUrl.ToString();
+    }
+
     public async Task DeleteAsync(string objectPath, CancellationToken ct = default)
     {
         // For raw files, the publicId to delete MUST include the extension
