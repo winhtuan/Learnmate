@@ -25,7 +25,6 @@ public class TeacherCourseRepository : ITeacherCourseRepository
     public async Task<Class?> GetTeacherClassDetailAsync(long classId, long teacherId, CancellationToken ct = default)
     {
         return await db.Classes
-            .AsNoTracking()
             .Where(c => c.Id == classId && c.TeacherId == teacherId && c.DeletedAt == null)
             .Include(c => c.ClassMembers.Where(m => m.Status == ClassMemberStatus.ACTIVE))
                 .ThenInclude(m => m.Student).ThenInclude(u => u.StudentProfile)
@@ -107,5 +106,12 @@ public class TeacherCourseRepository : ITeacherCourseRepository
 
         await db.SaveChangesAsync(ct);
         return submission;
+    }
+
+    public async Task<Class> UpdateAsync(Class cls)
+    {
+        db.Classes.Update(cls);
+        await db.SaveChangesAsync();
+        return cls;
     }
 }

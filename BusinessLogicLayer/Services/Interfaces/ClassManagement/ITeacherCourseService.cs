@@ -11,6 +11,7 @@ public interface ITeacherCourseService
 
     Task<TeacherClassDetailDto?> GetTeacherClassDetailAsync(long classId, long teacherId, CancellationToken ct = default);
     Task<List<TeacherClassListItemDto>> GetTeacherClassesAsync(long teacherId, CancellationToken ct = default);
+    Task<bool> UpdateMeetingLinkAsync(long classId, long teacherId, string? meetingLink);
 
     /// <summary>Search a user by email to preview before adding.</summary>
     Task<StudentSearchResultDto?> SearchStudentByEmailAsync(string email, long classId);

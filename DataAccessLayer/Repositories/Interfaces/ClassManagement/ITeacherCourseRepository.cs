@@ -12,4 +12,5 @@ public interface ITeacherCourseRepository
 
     Task<Assignment?> GetAssignmentDetailAsync(long assignmentId, long classId, long teacherId, CancellationToken ct = default);
     Task<Submission?> GradeSubmissionAsync(long submissionId, long teacherId, decimal score, string? feedback, CancellationToken ct = default);
+    Task<Class> UpdateAsync(Class cls);
 }

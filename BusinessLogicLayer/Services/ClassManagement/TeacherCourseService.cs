@@ -34,6 +34,7 @@ public class TeacherCourseService(
             ThumbnailUrl = string.IsNullOrWhiteSpace(dto.ThumbnailUrl)
                 ? $"https://placehold.co/400?text={Uri.EscapeDataString(dto.Subject)}"
                 : dto.ThumbnailUrl.Trim(),
+            MeetingLink = dto.MeetingLink?.Trim(),
             Status = ClassStatus.ACTIVE
         };
         var created = await classRepo.CreateAsync(cls);
@@ -54,6 +55,7 @@ public class TeacherCourseService(
             Status          = cls.Status,
             MaxStudents     = cls.MaxStudents,
             ThumbnailUrl    = cls.ThumbnailUrl,
+            MeetingLink     = cls.MeetingLink,
             CreatedAt       = cls.CreatedAt,
             TotalStudents   = studentCount,
             TotalAssignments = cls.Assignments.Count,
@@ -134,6 +136,7 @@ public class TeacherCourseService(
                 StudentCount   = c.ClassMembers.Count,
                 MaxStudents    = c.MaxStudents,
                 ThumbnailUrl   = c.ThumbnailUrl,
+                MeetingLink    = c.MeetingLink,
                 CreatedAt      = c.CreatedAt,
                 NextSessionUtc = next?.StartTime,
                 ScheduleLabel  = next is not null
@@ -336,5 +339,15 @@ public class TeacherCourseService(
         var s = await classRepo.GradeSubmissionAsync(submissionId, teacherId, score, feedback, ct);
         if (s is null)
             throw new InvalidOperationException("Không tìm thấy bài tập hoặc bạn không có quyền chấm bài này.");
+    }
+
+    public async Task<bool> UpdateMeetingLinkAsync(long classId, long teacherId, string? meetingLink)
+    {
+        var cls = await classRepo.GetTeacherClassDetailAsync(classId, teacherId);
+        if (cls is null) return false;
+
+        cls.MeetingLink = meetingLink?.Trim();
+        await classRepo.UpdateAsync(cls);
+        return true;
     }
 }
