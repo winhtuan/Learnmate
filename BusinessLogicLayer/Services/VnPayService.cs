@@ -36,14 +36,35 @@ public class VnPayService(IOptions<VnPaySettings> options) : IVnPayService
             ["vnp_ExpireDate"] = now.AddMinutes(15).ToString("yyyyMMddHHmmss"),
         };
 
-        // Tạo raw hash string (key=value&key=value, đã sort theo tên key)
-        var rawData = string.Join("&", queryParams.Select(kv =>
-            $"{WebUtility.UrlEncode(kv.Key)}={WebUtility.UrlEncode(kv.Value)}"));
+        var hashData = new StringBuilder();
+        var query    = new StringBuilder();
 
-        var secureHash = HmacSha512(_settings.HashSecret, rawData);
+        foreach (var kv in queryParams)
+        {
+            if (string.IsNullOrEmpty(kv.Value)) continue;
+
+            // Build hash data: key=UrlEncode(value)
+            hashData.Append(kv.Key);
+            hashData.Append('=');
+            hashData.Append(WebUtility.UrlEncode(kv.Value));
+
+            // Build query: UrlEncode(key)=UrlEncode(value)
+            query.Append(WebUtility.UrlEncode(kv.Key));
+            query.Append('=');
+            query.Append(WebUtility.UrlEncode(kv.Value));
+
+            hashData.Append('&');
+            query.Append('&');
+        }
+
+        // Remove last '&'
+        if (hashData.Length > 0) hashData.Remove(hashData.Length - 1, 1);
+        if (query.Length > 0)    query.Remove(query.Length - 1, 1);
+
+        var secureHash = HmacSha512(_settings.HashSecret, hashData.ToString());
 
         // Tạo URL thanh toán
-        var paymentUrl = $"{_settings.PaymentUrl}?{rawData}&vnp_SecureHash={secureHash}";
+        var paymentUrl = $"{_settings.PaymentUrl}?{query}&vnp_SecureHash={secureHash}";
         return paymentUrl;
     }
 
@@ -58,10 +79,20 @@ public class VnPayService(IOptions<VnPaySettings> options) : IVnPayService
             sorted[kv.Key] = kv.Value;
         }
 
-        var rawData = string.Join("&", sorted.Select(kv =>
-            $"{WebUtility.UrlEncode(kv.Key)}={WebUtility.UrlEncode(kv.Value)}"));
+        var hashData = new StringBuilder();
+        foreach (var kv in sorted)
+        {
+            if (string.IsNullOrEmpty(kv.Value)) continue;
 
-        var expectedHash = HmacSha512(_settings.HashSecret, rawData);
+            hashData.Append(kv.Key);
+            hashData.Append('=');
+            hashData.Append(WebUtility.UrlEncode(kv.Value));
+            hashData.Append('&');
+        }
+
+        if (hashData.Length > 0) hashData.Remove(hashData.Length - 1, 1);
+
+        var expectedHash = HmacSha512(_settings.HashSecret, hashData.ToString());
         return string.Equals(expectedHash, receivedHash, StringComparison.OrdinalIgnoreCase);
     }
 
