@@ -39,6 +39,9 @@ public class TutorBookingRequest : SoftDeletableEntity
     // Sau khi teacher ACCEPTED, hệ thống tạo Class 1-1 và gán vào đây
     public long? ResultClassId { get; set; }
 
+    [ForeignKey("ClassId")]
+    public Class? LinkedClass { get; set; }
+
     [ForeignKey("StudentId")]
     public User Student { get; set; } = null!;
 

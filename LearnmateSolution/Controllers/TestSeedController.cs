@@ -13,7 +13,7 @@ public class TestSeedController(AppDbContext db) : ControllerBase
     [HttpGet("seed")]
     public async Task<IActionResult> Seed()
     {
-        // 1. Create Teacher
+        // 1. Get/Create Teacher
         var teacherEmail = "teacher@learnmate.vn";
         var teacher = await db.Users.FirstOrDefaultAsync(u => u.Email == teacherEmail);
         if (teacher == null)
@@ -29,21 +29,26 @@ public class TestSeedController(AppDbContext db) : ControllerBase
             };
             db.Users.Add(teacher);
             await db.SaveChangesAsync();
-
-            db.TeacherProfiles.Add(new TeacherProfile
-            {
-                UserId = teacher.Id,
-                FullName = "Teacher LearnMate",
-                HourlyRate = 250000,
-                Subjects = "Math, Science",
-                Status = ComplianceStatus.APPROVED,
-                Bio = "Experienced tutor for all levels.",
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
-            });
         }
 
-        // 2. Create Student
+        var teacherProfile = await db.TeacherProfiles.FirstOrDefaultAsync(p => p.UserId == teacher.Id);
+        if (teacherProfile == null)
+        {
+            teacherProfile = new TeacherProfile { UserId = teacher.Id };
+            db.TeacherProfiles.Add(teacherProfile);
+        }
+        
+        teacherProfile.FullName = "Nguyen Van A";
+        teacherProfile.HourlyRate = 250000;
+        teacherProfile.Subjects = "Math, Science";
+        teacherProfile.Status = ComplianceStatus.APPROVED;
+        teacherProfile.Bio = "Experienced tutor for all levels.";
+        teacherProfile.CreatedAt = DateTime.UtcNow;
+        teacherProfile.UpdatedAt = DateTime.UtcNow;
+        
+        await db.SaveChangesAsync();
+
+        // 2. Get/Create Student
         var studentEmail = "student@learnmate.vn";
         var student = await db.Users.FirstOrDefaultAsync(u => u.Email == studentEmail);
         if (student == null)
@@ -59,26 +64,33 @@ public class TestSeedController(AppDbContext db) : ControllerBase
             };
             db.Users.Add(student);
             await db.SaveChangesAsync();
+        }
 
+        var studentProfile = await db.StudentProfiles.FirstOrDefaultAsync(p => p.UserId == student.Id);
+        if (studentProfile == null)
+        {
             db.StudentProfiles.Add(new StudentProfile
             {
                 UserId = student.Id,
-                FullName = "Student LearnMate",
+                FullName = "Nguyen Minh Tuan",
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             });
+            await db.SaveChangesAsync();
         }
 
-        // 3. Create a Class for the teacher
-        var testClass = await db.Classes.FirstOrDefaultAsync(c => c.TeacherId == teacher.Id && c.Name == "Lớp học thử nghiệm VNPay");
+        // 3. Create a Class for the teacher (Fixing missing Subject)
+        var testClass = await db.Classes.FirstOrDefaultAsync(c => c.TeacherId == teacher.Id && c.Name == "Lớp Toán Nâng Cao VNPay");
         if (testClass == null)
         {
             testClass = new Class
             {
                 TeacherId = teacher.Id,
-                Name = "Lớp học thử nghiệm VNPay",
+                Name = "Lớp Toán Nâng Cao VNPay",
                 Description = "Lớp học dùng để test luồng thanh toán VNPay",
+                Subject = "Math", // FIX: Added required field
                 Status = ClassStatus.ACTIVE,
+                MaxStudents = 1,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };
@@ -87,26 +99,39 @@ public class TestSeedController(AppDbContext db) : ControllerBase
         }
 
         // 4. Create a Booking Request with AWAITING_PAYMENT
-        var existingBooking = await db.TutorBookingRequests.FirstOrDefaultAsync(b => b.StudentId == student.Id && b.Status == BookingRequestStatus.AWAITING_PAYMENT);
-        if (existingBooking == null)
+        // Clear old test bookings to avoid duplicates if re-running
+        var oldBookings = await db.TutorBookingRequests
+            .Where(b => b.StudentId == student.Id && b.TeacherId == teacher.Id && b.Status == BookingRequestStatus.AWAITING_PAYMENT)
+            .ToListAsync();
+        if (oldBookings.Any())
         {
-            var booking = new TutorBookingRequest
-            {
-                StudentId = student.Id,
-                TeacherId = teacher.Id,
-                RequestedStartTime = DateTime.UtcNow.AddDays(1),
-                RequestedEndTime = DateTime.UtcNow.AddDays(1).AddHours(2),
-                Status = BookingRequestStatus.AWAITING_PAYMENT,
-                ClassId = testClass.Id, // Student sẽ join class này sau khi thanh toán
-                PaymentDeadline = DateTime.UtcNow.AddHours(24),
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow,
-                Note = "Test booking for VNPay payment flow"
-            };
-            db.TutorBookingRequests.Add(booking);
-            await db.SaveChangesAsync();
+             db.TutorBookingRequests.RemoveRange(oldBookings);
+             await db.SaveChangesAsync();
         }
 
-        return Ok(new { Message = "Seed data successful", Student = studentEmail, Teacher = teacherEmail, Password = "123" });
+        var booking = new TutorBookingRequest
+        {
+            StudentId = student.Id,
+            TeacherId = teacher.Id,
+            RequestedStartTime = DateTime.UtcNow.AddDays(1),
+            RequestedEndTime = DateTime.UtcNow.AddDays(1).AddHours(2),
+            Status = BookingRequestStatus.AWAITING_PAYMENT,
+            ClassId = testClass.Id, // Linking to the class we created
+            PaymentDeadline = DateTime.UtcNow.AddHours(24),
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow,
+            Note = "Gói học Toán cấp tốc 2h - Thanh toán qua VNPay"
+        };
+        db.TutorBookingRequests.Add(booking);
+        await db.SaveChangesAsync();
+
+        return Ok(new { 
+            Message = "Seed data successful", 
+            Student = studentEmail, 
+            Teacher = teacherEmail, 
+            ClassId = testClass.Id,
+            BookingId = booking.Id,
+            Deadline = booking.PaymentDeadline
+        });
     }
 }

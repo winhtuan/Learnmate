@@ -48,6 +48,7 @@ public class TutorBookingRepository(AppDbContext db) : ITutorBookingRepository
             .AsNoTracking()
             .Where(r => r.StudentId == studentId && r.DeletedAt == null)
             .Include(r => r.Teacher).ThenInclude(t => t.TeacherProfile)
+            .Include(r => r.LinkedClass)
             .Include(r => r.ResultClass)
             .OrderByDescending(r => r.CreatedAt)
             .ToListAsync(ct);

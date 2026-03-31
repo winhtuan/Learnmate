@@ -18,7 +18,7 @@ public class PaymentService(
     ILogger<PaymentService> logger
 ) : IPaymentService
 {
-    private const decimal HourlyRateFallback = 200_000m; // VND fallback nếu chưa set hourly rate
+    private const decimal HourlyRateFallback = 100_000m; // Tăng lên 100k cho thực tế
 
     // ─── Initiate Payment ────────────────────────────────────────────────────
 
@@ -44,10 +44,8 @@ public class PaymentService(
         if (existingPayment?.Status == PaymentStatus.COMPLETED)
             return ApiResponse<string>.Fail("Booking này đã được thanh toán.");
 
-        // Tính số tiền: dựa vào số giờ * hourly rate của teacher
-        var duration = booking.RequestedEndTime - booking.RequestedStartTime;
-        var hourlyRate = booking.Teacher.TeacherProfile?.HourlyRate ?? HourlyRateFallback;
-        var amount = Math.Max((decimal)duration.TotalHours * hourlyRate, 1000m); // tối thiểu 1,000đ
+        // Tính số tiền: dựa vào số giờ * hourly rate của teacher (Dùng chung phương thức Calculate)
+        var amount = CalculateBookingAmount(booking);
 
         // Tạo unique transaction ref
         var vnpTxnRef = $"{bookingId}-{DateTime.UtcNow.Ticks}";
@@ -218,21 +216,19 @@ public class PaymentService(
             var canPay = b.Status == BookingRequestStatus.AWAITING_PAYMENT
                       && (!b.PaymentDeadline.HasValue || b.PaymentDeadline > DateTime.UtcNow);
 
-            // Tính amount (giờ * hourly rate)
+            // Tính amount đồng nhất giữa UI và Payment
             decimal? amount = null;
             if (b.Status == BookingRequestStatus.AWAITING_PAYMENT || b.Status == BookingRequestStatus.PAYMENT_SUCCESS || b.Status == BookingRequestStatus.BOOKING_SUCCESS)
             {
-                var duration   = b.RequestedEndTime - b.RequestedStartTime;
-                var hourlyRate = b.Teacher.TeacherProfile?.HourlyRate ?? HourlyRateFallback;
-                amount = Math.Round((decimal)duration.TotalHours * hourlyRate, 0);
+                amount = CalculateBookingAmount(b);
             }
 
             return new BookingPaymentSummaryDto(
                 BookingId:                b.Id,
-                TeacherName:              b.Teacher.TeacherProfile?.FullName ?? b.Teacher.Email,
-                TeacherAvatar:            b.Teacher.TeacherProfile?.AvatarUrl ?? b.Teacher.AvatarUrl,
+                TeacherName:              b.Teacher?.TeacherProfile?.FullName ?? b.Teacher?.Email ?? "Unknown",
+                TeacherAvatar:            b.Teacher?.TeacherProfile?.AvatarUrl ?? b.Teacher?.AvatarUrl,
                 Status:                   b.Status.ToString(),
-                ClassName:                b.ResultClass?.Name,
+                ClassName:                b.LinkedClass?.Name ?? b.ResultClass?.Name,
                 ClassId:                  b.ClassId ?? b.ResultClassId,
                 Amount:                   amount,
                 RequestedStartTimeLocal:  b.RequestedStartTime.ToLocalTime(),
@@ -245,6 +241,16 @@ public class PaymentService(
         }).ToList();
 
         return ApiResponse<IReadOnlyList<BookingPaymentSummaryDto>>.Ok(dtos);
+    }
+
+    private decimal CalculateBookingAmount(TutorBookingRequest b)
+    {
+        var duration = b.RequestedEndTime - b.RequestedStartTime;
+        var hourlyRate = b.Teacher?.TeacherProfile?.HourlyRate ?? HourlyRateFallback;
+        var rawAmount = (decimal)duration.TotalHours * hourlyRate;
+        
+        // Làm tròn và đảm bảo tối thiểu 10,000đ để VNPay không lỗi
+        return Math.Max(Math.Round(rawAmount, 0), 10_000m);
     }
 
     // ─── Private: Finalize success ───────────────────────────────────────────
