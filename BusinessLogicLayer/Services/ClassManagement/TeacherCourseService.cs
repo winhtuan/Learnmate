@@ -8,6 +8,8 @@ namespace BusinessLogicLayer.Services;
 
 public class TeacherCourseService(
     ITeacherCourseRepository classRepo,
+    IStudentClassMemberRepository memberRepo,
+    IUserRepository userRepo,
     IFileStorageService fileStorage
 ) : ITeacherCourseService
 {
@@ -141,7 +143,68 @@ public class TeacherCourseService(
         }).ToList();
     }
 
+    // ── Student Management ────────────────────────────────────────────────────
+    public async Task<StudentSearchResultDto?> SearchStudentByEmailAsync(string email, long classId)
+    {
+        var user = await userRepo.GetByEmailAsync(email.Trim().ToLower());
+        if (user is null) return null;
+
+        var existing = await memberRepo.GetMemberAsync(classId, user.Id);
+        return new StudentSearchResultDto
+        {
+            UserId         = user.Id,
+            FullName       = user.StudentProfile?.FullName ?? user.Email,
+            Email          = user.Email,
+            AvatarUrl      = user.AvatarUrl,
+            GradeLevel     = user.StudentProfile?.GradeLevel,
+            AlreadyInClass = existing is not null && existing.Status == ClassMemberStatus.ACTIVE
+        };
+    }
+
+    public async Task<string?> AddStudentToClassAsync(
+        long classId, long teacherId, string studentEmail)
+    {
+        var cls = await classRepo.GetTeacherClassDetailAsync(classId, teacherId);
+        if (cls is null) return "Không tìm thấy lớp học.";
+
+        var user = await userRepo.GetByEmailAsync(studentEmail.Trim().ToLower());
+        if (user is null) return "Không tìm thấy tài khoản với email này.";
+
+        var activeCount = cls.ClassMembers.Count(m => m.Status == ClassMemberStatus.ACTIVE);
+        if (activeCount >= cls.MaxStudents)
+            return $"Lớp đã đủ sĩ số ({cls.MaxStudents} học sinh).";
+
+        var existing = await memberRepo.GetMemberAsync(classId, user.Id);
+        if (existing is not null)
+        {
+            if (existing.Status == ClassMemberStatus.ACTIVE)
+                return "Học sinh này đã có trong lớp.";
+            existing.Status   = ClassMemberStatus.ACTIVE;
+            existing.JoinedAt = DateTime.UtcNow;
+            await memberRepo.AddToClassAsync(existing);
+            return null;
+        }
+
+        await memberRepo.AddToClassAsync(new ClassMember
+        {
+            ClassId   = classId,
+            StudentId = user.Id,
+            Status    = ClassMemberStatus.ACTIVE,
+            JoinedAt  = DateTime.UtcNow
+        });
+        return null;
+    }
+
+    public async Task<bool> RemoveStudentFromClassAsync(
+        long classId, long teacherId, long studentId)
+    {
+        var cls = await classRepo.GetTeacherClassDetailAsync(classId, teacherId);
+        if (cls is null) return false;
+        return await memberRepo.RemoveFromClassAsync(classId, studentId);
+    }
+
     // ── Upload Material ──────────────────────────────────────────────────────
+
     public async Task<TeacherMaterialItemDto> UploadMaterialAsync(
         long classId, long teacherId,
         string fileName, string title, string? description,

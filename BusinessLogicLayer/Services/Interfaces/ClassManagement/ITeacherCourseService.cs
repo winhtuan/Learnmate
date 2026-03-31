@@ -12,6 +12,15 @@ public interface ITeacherCourseService
     Task<TeacherClassDetailDto?> GetTeacherClassDetailAsync(long classId, long teacherId, CancellationToken ct = default);
     Task<List<TeacherClassListItemDto>> GetTeacherClassesAsync(long teacherId, CancellationToken ct = default);
 
+    /// <summary>Search a user by email to preview before adding.</summary>
+    Task<StudentSearchResultDto?> SearchStudentByEmailAsync(string email, long classId);
+
+    /// <summary>Add a student (by email) to the class. Returns error message or null on success.</summary>
+    Task<string?> AddStudentToClassAsync(long classId, long teacherId, string studentEmail);
+
+    /// <summary>Remove a student from the class.</summary>
+    Task<bool> RemoveStudentFromClassAsync(long classId, long teacherId, long studentId);
+
     /// <summary>
     /// Upload a file (PDF/Word/etc.) to cloud storage and save material metadata to DB.
     /// Returns the new material DTO.
