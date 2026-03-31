@@ -14,6 +14,7 @@ public class TeacherClassListItemDto
     public int         StudentCount   { get; set; }
     public int         MaxStudents    { get; set; }
     public string?     ThumbnailUrl   { get; set; }
+    public string?     MeetingLink    { get; set; }
     public DateTime    CreatedAt      { get; set; }
     public DateTime?   NextSessionUtc { get; set; }
     public string?     ScheduleLabel  { get; set; }
@@ -37,5 +38,6 @@ public class CreateClassDto
     public int MaxStudents { get; set; } = 30;
 
     public string? ThumbnailUrl { get; set; }
+    public string? MeetingLink { get; set; }
 }
 

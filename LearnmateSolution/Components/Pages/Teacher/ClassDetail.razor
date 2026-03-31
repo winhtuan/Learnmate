@@ -42,6 +42,48 @@ else
         <span class="text-slate-700 font-medium truncate max-w-[200px]">@Detail.Name</span>
     </nav>
 
+    <!-- ── Meeting Link Management ────────────────────────────────────────── -->
+    <div class="bg-white border @(string.IsNullOrEmpty(Detail.MeetingLink) ? "border-amber-200 bg-amber-50/20" : "border-slate-200") rounded-xl shadow-sm p-4 mb-6 transition-all">
+        <div class="flex items-center justify-between gap-4 flex-wrap">
+            <div class="flex items-center gap-3">
+                <div class="size-10 rounded-full @(string.IsNullOrEmpty(Detail.MeetingLink) ? "bg-amber-100 text-amber-600" : "bg-primary/10 text-primary") flex items-center justify-center shrink-0">
+                    <span class="material-symbols-outlined text-[24px]">videocam</span>
+                </div>
+                <div>
+                    <h3 class="text-sm font-bold text-slate-900">Google Meet Link</h3>
+                    @if (isEditingMeetLink)
+                    {
+                        <div class="mt-2 flex items-center gap-2 max-w-sm">
+                            <input @bind="tempMeetLink" 
+                                   placeholder="Dán link Meet vào đây..."
+                                   class="flex-1 px-3 py-1.5 border border-slate-300 rounded-lg text-sm outline-none transition-all" />
+                            <button @onclick="SaveMeetLink" disabled="@isSavingMeetLink"
+                                    class="px-4 py-1.5 bg-primary text-white text-sm font-bold rounded-lg hover:bg-blue-600 transition-all opacity-100">
+                                @(isSavingMeetLink ? "..." : "Lưu")
+                            </button>
+                        </div>
+                    }
+                    else
+                    {
+                        @if (string.IsNullOrEmpty(Detail.MeetingLink))
+                        {
+                            <p class="text-xs text-amber-600">Chưa cài đặt link dạy học.</p>
+                        }
+                        else
+                        {
+                            <a href="@Detail.MeetingLink" target="_blank" class="text-xs text-primary font-medium hover:underline">@Detail.MeetingLink</a>
+                        }
+                    }
+                </div>
+            </div>
+            
+            <button @onclick="() => isEditingMeetLink = !isEditingMeetLink" 
+                    class="px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-bold text-slate-700 hover:bg-white transition-all">
+                @(isEditingMeetLink ? "Hủy" : (string.IsNullOrEmpty(Detail.MeetingLink) ? "Cài đặt link" : "Sửa link"))
+            </button>
+        </div>
+    </div>
+
     <!-- ── Header ─────────────────────────────────────────────────────────── -->
     <div class="flex items-start justify-between gap-4 mb-6 flex-wrap">
         <div class="flex items-center gap-4">
@@ -778,6 +820,41 @@ else
         try { Detail = await ClassService.GetTeacherClassDetailAsync(ClassId, teacherId); }
         catch { }
         finally { IsLoading = false; }
+    }
+
+    // ── Meeting Link Methods ────────────────────────────────────────────────
+    private bool isEditingMeetLink;
+    private string? tempMeetLink;
+    private bool isSavingMeetLink;
+
+    private void StartEditingMeetLink()
+    {
+        tempMeetLink = Detail?.MeetingLink;
+        isEditingMeetLink = true;
+    }
+
+    private async Task SaveMeetLink()
+    {
+        if (Detail == null) return;
+        isSavingMeetLink = true;
+        try
+        {
+            long teacherId = Session.UserId > 0 ? Session.UserId : 2;
+            var success = await ClassService.UpdateMeetingLinkAsync(ClassId, teacherId, tempMeetLink);
+            if (success)
+            {
+                Detail.MeetingLink = tempMeetLink;
+                isEditingMeetLink = false;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error saving meet link: {ex.Message}");
+        }
+        finally
+        {
+            isSavingMeetLink = false;
+        }
     }
 
     // ── Add Student Modal Methods ──────────────────────────────────────────

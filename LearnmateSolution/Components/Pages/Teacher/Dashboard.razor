@@ -1,13 +1,20 @@
 @page "/teacher/dashboard"
 @layout Layout.TeacherLayout
+@using BusinessLogicLayer.Services.Interfaces.Dashboard
+@using BusinessLogicLayer.DTOs.Teacher.Dashboard
+@using LearnmateSolution.AppState
+@inject ITeacherDashboardService DashboardService
+@inject UserSessionService Session
+@inject IJSRuntime JS
+@inject NavigationManager Nav
 @rendermode InteractiveServer
 
 <PageTitle>Teacher Dashboard | LearnMate</PageTitle>
 
 <!-- Page Heading -->
 <div class="mb-8">
-    <h1 class="text-3xl font-bold tracking-tight text-slate-900 mb-1">Good Morning, Sarah</h1>
-    <p class="text-slate-500 font-normal">Here is your daily overview and schedule.</p>
+    <h1 class="text-3xl font-bold tracking-tight text-slate-900 mb-1">Chào buổi sáng, @(Session.Email?.Split('@')[0] ?? "Teacher")</h1>
+    <p class="text-slate-500 font-normal">Đây là tổng quan hàng ngày và lịch dạy của bạn.</p>
 </div>
 
 <!-- Metrics Grid -->
@@ -15,50 +22,47 @@
     <!-- Total Classes -->
     <div class="bg-white border border-slate-200 rounded-lg p-5 flex flex-col justify-between shadow-sm">
         <div class="flex items-center justify-between mb-4">
-            <span class="text-sm font-medium text-slate-500">Total Classes</span>
+            <span class="text-sm font-medium text-slate-500">Lớp đang dạy</span>
             <span class="material-symbols-outlined text-slate-400 text-[20px]">class</span>
         </div>
-        <p class="text-3xl font-bold text-slate-900 tracking-tight">12</p>
+        <p class="text-3xl font-bold text-slate-900 tracking-tight">@DashboardData?.ActiveClassesCount</p>
         <div class="mt-2 text-xs text-slate-400 flex items-center gap-1">
-            <span class="text-green-500 font-medium">+2</span> this week
+            <span class="text-green-500 font-medium">Hoạt động</span>
         </div>
     </div>
     <!-- Active Students -->
     <div class="bg-white border border-slate-200 rounded-lg p-5 flex flex-col justify-between shadow-sm">
         <div class="flex items-center justify-between mb-4">
-            <span class="text-sm font-medium text-slate-500">Active Students</span>
+            <span class="text-sm font-medium text-slate-500">Tổng học sinh</span>
             <span class="material-symbols-outlined text-slate-400 text-[20px]">groups</span>
         </div>
-        <p class="text-3xl font-bold text-slate-900 tracking-tight">45</p>
+        <p class="text-3xl font-bold text-slate-900 tracking-tight">@DashboardData?.TotalStudentsCount</p>
         <div class="mt-2 text-xs text-slate-400 flex items-center gap-1">
-            <span class="text-green-500 font-medium">+5%</span> vs last month
+            <span class="text-green-500 font-medium">Học sinh</span> đang tham gia
         </div>
     </div>
-    <!-- Hours Taught -->
+    <!-- Pending Assignments -->
     <div class="bg-white border border-slate-200 rounded-lg p-5 flex flex-col justify-between shadow-sm">
         <div class="flex items-center justify-between mb-4">
-            <span class="text-sm font-medium text-slate-500">Hours Taught</span>
-            <span class="material-symbols-outlined text-slate-400 text-[20px]">schedule</span>
+            <span class="text-sm font-medium text-slate-500">Bài tập chờ chấm</span>
+            <span class="material-symbols-outlined text-slate-400 text-[20px]">assignment_turned_in</span>
         </div>
-        <p class="text-3xl font-bold text-slate-900 tracking-tight">120h</p>
+        <p class="text-3xl font-bold text-slate-900 tracking-tight">@DashboardData?.PendingAssignmentsCount</p>
         <div class="mt-2 text-xs text-slate-400">
-            Target: 140h
+             Cần đánh giá
         </div>
     </div>
-    <!-- Pending Requests -->
+    <!-- Monthly Earnings -->
     <div class="bg-white border border-slate-200 rounded-lg p-5 flex flex-col justify-between shadow-sm">
         <div class="flex items-center justify-between mb-4">
-            <span class="text-sm font-medium text-slate-500">Pending Requests</span>
-            <span class="material-symbols-outlined text-slate-400 text-[20px]">person_add</span>
+            <span class="text-sm font-medium text-slate-500">Thu nhập tạm tính</span>
+            <span class="material-symbols-outlined text-slate-400 text-[20px]">payments</span>
         </div>
         <div class="flex items-baseline gap-2">
-            <p class="text-3xl font-bold text-slate-900 tracking-tight">3</p>
-            <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-orange-100 text-orange-800">
-                Action needed
-            </span>
+            <p class="text-3xl font-bold text-slate-900 tracking-tight">@DashboardData?.MonthlyEarnings.ToString("N0") <span class="text-sm font-medium">đ</span></p>
         </div>
         <div class="mt-2 text-xs text-slate-400">
-            Trial class requests
+            Tháng này
         </div>
     </div>
 </div>
@@ -72,64 +76,95 @@
             <button class="text-sm font-medium text-primary hover:text-blue-600 transition-colors">View Calendar</button>
         </div>
 
-        <!-- Active Class Card -->
-        <div class="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
-            <div class="p-6">
-                <div class="flex items-start justify-between gap-4">
-                    <div>
-                        <div class="inline-flex items-center gap-2 px-2.5 py-1 rounded-md bg-green-100 text-green-700 text-[10px] font-bold uppercase tracking-wider mb-3">
-                            <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-                            Live Now
-                        </div>
-                        <h4 class="text-2xl font-bold text-slate-900 mb-1">Advanced Mathematics</h4>
-                        <p class="text-slate-500 text-sm mb-4">09:00 AM - 10:00 AM • Chapter 4: Calculus</p>
-                        <div class="flex items-center gap-2 mb-6">
-                            <div class="flex -space-x-2">
-                                @for(int i=1; i<=3; i++) {
-                                    <div class="size-8 rounded-full border-2 border-white bg-slate-100 overflow-hidden">
-                                        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=@(i+10)" alt="Student" />
-                                    </div>
-                                }
+        @if (CurrentSession != null)
+        {
+            <!-- Active Class Card -->
+            <div class="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
+                <div class="p-6">
+                    <div class="flex items-start justify-between gap-4">
+                        <div>
+                            <div class="inline-flex items-center gap-2 px-2.5 py-1 rounded-md bg-green-100 text-green-700 text-[10px] font-bold uppercase tracking-wider mb-3">
+                                <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                                Đang diễn ra
                             </div>
-                            <span class="text-xs text-slate-500 font-medium">+ 12 students</span>
+                            <h4 class="text-2xl font-bold text-slate-900 mb-1">@CurrentSession.ClassName</h4>
+                            <p class="text-slate-500 text-sm mb-4">@CurrentSession.StartTime.ToString("HH:mm") - @CurrentSession.EndTime.ToString("HH:mm") • @CurrentSession.Subject</p>
+                            <div class="flex items-center gap-2 mb-6">
+                                <div class="flex -space-x-2">
+                                    @for(int i=1; i<=3; i++) {
+                                        <div class="size-8 rounded-full border-2 border-white bg-slate-100 overflow-hidden">
+                                            <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=@(CurrentSession.ClassId + i)" alt="Student" />
+                                        </div>
+                                    }
+                                </div>
+                                <span class="text-xs text-slate-500 font-medium">Lớp học trực tuyến</span>
+                            </div>
+                        </div>
+                        <div class="hidden sm:block w-32 h-32 rounded-lg bg-slate-100 bg-cover bg-center"
+                             style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCZJ4w-amJ0LH885zpI4kfHJ0NHxpnMXtnDLUqFZKKA7p0kBKUcbRkES_T-850yW9SKI_inXYjuGifDLUkL0eu7lK5bFAc-ZUZxmcMle4EpnsSH0LhsXvjyr_y_tuGmXt4vCWp7h7UXy1sh4-ZJQB0Yw2TxcrwUbNdCYQe_jFckFS-Hi5McQ9H6Sb4BoDBL7ZUgCGRw226Y_zdgiIiWz-rsBPoi8tlzcrPNg1MLljDxmql-C0eofBwZYPhmBtOplk9zNG7P9dN1pns');">
                         </div>
                     </div>
-                    <div class="hidden sm:block w-32 h-32 rounded-lg bg-slate-100 bg-cover bg-center"
-                         style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCZJ4w-amJ0LH885zpI4kfHJ0NHxpnMXtnDLUqFZKKA7p0kBKUcbRkES_T-850yW9SKI_inXYjuGifDLUkL0eu7lK5bFAc-ZUZxmcMle4EpnsSH0LhsXvjyr_y_tuGmXt4vCWp7h7UXy1sh4-ZJQB0Yw2TxcrwUbNdCYQe_jFckFS-Hi5McQ9H6Sb4BoDBL7ZUgCGRw226Y_zdgiIiWz-rsBPoi8tlzcrPNg1MLljDxmql-C0eofBwZYPhmBtOplk9zNG7P9dN1pns');">
+                    <div class="flex flex-wrap gap-3 mt-2">
+                        @if (!string.IsNullOrEmpty(CurrentSession.MeetingLink))
+                        {
+                            <a href="@CurrentSession.MeetingLink" target="_blank" class="flex items-center justify-center gap-2 bg-primary hover:bg-blue-600 text-white font-medium px-5 py-2.5 rounded-lg transition-all shadow-sm no-underline">
+                                <span class="material-symbols-outlined text-[20px]">videocam</span>
+                                Tham gia dạy (Google Meet)
+                            </a>
+                        }
+                        else
+                        {
+                            <button disabled title="Chưa cài đặt link" class="flex items-center justify-center gap-2 bg-slate-100 text-slate-400 font-medium px-5 py-2.5 rounded-lg transition-all cursor-not-allowed">
+                                <span class="material-symbols-outlined text-[20px]">videocam_off</span>
+                                Chưa cài đặt Meet Link
+                            </button>
+                        }
+                        
+                        <button class="flex items-center justify-center gap-2 bg-white border border-slate-200 text-slate-700 font-medium px-4 py-2.5 rounded-lg hover:bg-slate-50 transition-colors">
+                            <span class="material-symbols-outlined text-[20px]">content_copy</span>
+                            Sao chép link
+                        </button>
                     </div>
-                </div>
-                <div class="flex flex-wrap gap-3 mt-2">
-                    <button class="flex items-center justify-center gap-2 bg-primary hover:bg-blue-600 text-white font-medium px-5 py-2.5 rounded-lg transition-all shadow-sm">
-                        <span class="material-symbols-outlined text-[20px]">videocam</span>
-                        Join Video Call
-                    </button>
-                    <button class="flex items-center justify-center gap-2 bg-white border border-slate-200 text-slate-700 font-medium px-4 py-2.5 rounded-lg hover:bg-slate-50 transition-colors">
-                        <span class="material-symbols-outlined text-[20px]">content_copy</span>
-                        Copy Link
-                    </button>
-                    <button class="flex items-center justify-center gap-2 bg-white border border-slate-200 text-slate-700 font-medium px-4 py-2.5 rounded-lg hover:bg-slate-50 transition-colors ml-auto">
-                        <span class="material-symbols-outlined text-[20px]">more_horiz</span>
-                    </button>
                 </div>
             </div>
-        </div>
+        }
 
         <!-- Upcoming Classes -->
         <div class="flex flex-col gap-3">
-            <p class="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-1">Up Next</p>
-            @foreach (var item in UpcomingClasses)
+            <p class="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-1">Tiết dạy tiếp theo</p>
+            @if (DashboardData?.UpcomingSessions.Any() == true)
             {
-                <div class="group flex items-center justify-between bg-white border border-slate-200 rounded-lg p-4 hover:border-primary/50 transition-colors cursor-pointer shadow-sm">
-                    <div class="flex items-center gap-4">
-                        <div class="flex flex-col items-center justify-center w-14 h-14 rounded-lg bg-slate-50 border border-slate-100 text-slate-600">
-                            <span class="text-xs font-bold uppercase">@item.Time</span>
-                            <span class="text-[10px] opacity-60">@item.AmPm</span>
+                @foreach (var item in DashboardData.UpcomingSessions)
+                {
+                    <div class="group flex items-center justify-between bg-white border border-slate-200 rounded-lg p-4 hover:border-primary/50 transition-colors cursor-pointer shadow-sm">
+                        <div class="flex items-center gap-4">
+                            <div class="flex flex-col items-center justify-center w-16 h-14 rounded-lg bg-slate-50 border border-slate-100 text-slate-600">
+                                <span class="text-xs font-bold uppercase">@item.StartTime.ToString("HH:mm")</span>
+                                <span class="text-[10px] opacity-60">@item.StartTime.ToString("dd/MM")</span>
+                            </div>
+                            <div>
+                                <h5 class="font-bold text-slate-900 group-hover:text-primary transition-colors">@item.ClassName</h5>
+                                <p class="text-xs text-slate-500">@item.Subject • @item.Type</p>
+                                @if (!string.IsNullOrEmpty(item.MeetingLink))
+                                {
+                                    <a href="@item.MeetingLink" target="_blank" class="inline-flex items-center gap-1 text-[11px] font-bold text-primary mt-2 hover:underline no-underline">
+                                        <span class="material-symbols-outlined text-[14px]">videocam</span>
+                                        JOIN GOOGLE MEET
+                                    </a>
+                                }
+                            </div>
                         </div>
-                        <div>
-                            <h5 class="font-bold text-slate-900 group-hover:text-primary transition-colors">@item.Title</h5>
-                            <p class="text-xs text-slate-500">@item.Info</p>
-                        </div>
+                        <button class="text-primary opacity-0 group-hover:opacity-100 transition-opacity">
+                            <span class="material-symbols-outlined">chevron_right</span>
+                        </button>
                     </div>
+                }
+            }
+            else
+            {
+                <div class="py-12 bg-slate-50 border border-dashed border-slate-200 rounded-lg flex flex-col items-center justify-center text-slate-400">
+                    <span class="material-symbols-outlined text-4xl mb-2">calendar_today</span>
+                    <p class="text-sm">Không có tiết dạy sắp tới</p>
                 </div>
             }
         </div>
@@ -222,20 +257,43 @@
 </div>
 
 @code {
-    private List<ScheduleItem> UpcomingClasses = new()
+    private TeacherDashboardDataDto? DashboardData;
+    private bool IsLoading = true;
+    private UpcomingSessionDto? CurrentSession => DashboardData?.UpcomingSessions.FirstOrDefault(s => s.StartTime <= DateTime.Now.AddMinutes(5) && s.EndTime >= DateTime.Now);
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        new("11:00", "AM", "Physics 101: Mechanics", "Lecture Hall A • 45 Students"),
-        new("02:00", "PM", "Geometry Consultation", "1-on-1 • Alex M."),
-        new("04:30", "PM", "Staff Meeting", "Weekly Sync • Online")
-    };
+        if (firstRender)
+        {
+            // Load session if not already loaded (for SSR hydration)
+            if (!Session.IsAuthenticated)
+            {
+                var email = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_email");
+                var role  = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_role");
+                var token = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_token");
+                var avatar = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_avatar");
+                var userIdStr = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_userid");
+                
+                if (!string.IsNullOrEmpty(email) && !string.IsNullOrEmpty(token) && long.TryParse(userIdStr, out var userId))
+                {
+                    Session.SetSession(email, role ?? "Teacher", token, avatar, userId);
+                }
+            }
+
+            if (Session.UserId > 0)
+            {
+                DashboardData = await DashboardService.GetDashboardDataAsync(Session.UserId);
+            }
+            
+            IsLoading = false;
+            StateHasChanged();
+        }
+    }
 
     private List<ActivityItem> Activities = new()
     {
-        new("Sarah J.", "submitted", "Algebra Homework", "10 minutes ago", "https://api.dicebear.com/7.x/avataaars/svg?seed=SarahJ"),
-        new("Mr. Robinson", "sent a message", "(Parent)", "45 minutes ago", "https://api.dicebear.com/7.x/avataaars/svg?seed=Robinson"),
-        new("Mike T.", "requested", "a trial class", "3 hours ago", "https://api.dicebear.com/7.x/avataaars/svg?seed=Mike")
+        new("Hệ thống", "thông báo", "Dashboard đã sẵn sàng", "Vừa xong", "https://api.dicebear.com/7.x/avataaars/svg?seed=LearnMate")
     };
 
-    public record ScheduleItem(string Time, string AmPm, string Title, string Info);
     public record ActivityItem(string User, string Action, string Target, string Time, string Avatar);
 }
