@@ -1,0 +1,30 @@
+@rendermode InteractiveServer
+@using LearnmateSolution.AppState
+@inject ToastService ToastService
+@implements IDisposable
+
+<div class="fixed top-6 right-6 z-[9999] flex flex-col gap-4 max-w-full">
+    @foreach (var toast in Toasts)
+    {
+        <ToastItem @key="toast.Id" Message="toast" OnRemove="HandleRemove" />
+    }
+</div>
+
+@code {
+    private List<ToastMessage> Toasts => ToastService.Toasts;
+
+    protected override void OnInitialized()
+    {
+        ToastService.OnChanged += StateHasChanged;
+    }
+
+    private void HandleRemove(Guid id)
+    {
+        ToastService.RemoveToast(id);
+    }
+
+    public void Dispose()
+    {
+        ToastService.OnChanged -= StateHasChanged;
+    }
+}

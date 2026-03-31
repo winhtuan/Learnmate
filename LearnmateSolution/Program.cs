@@ -119,6 +119,7 @@ public class Program
 
         // ── Auth session (per Blazor circuit) ────────────────────────────────
         builder.Services.AddScoped<UserSessionService>();
+        builder.Services.AddScoped<ToastService>();
 
         // ── Blazor Server ─────────────────────────────────────────────────────
         builder.Services.AddRazorComponents()

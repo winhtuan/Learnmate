@@ -1,0 +1,38 @@
+@using LearnmateSolution.AppState
+
+<div class="toast-item flex items-center gap-3 p-4 rounded-xl border border-white/20 shadow-lg backdrop-blur-md transition-all duration-300 animate-in slide-in-from-right-16 fade-in @(Message.IsFadingOut ? "animate-out slide-out-to-right-16 fade-out" : "") @(GetBgClass()) text-white min-w-[300px] max-w-md">
+    <div class="size-10 flex items-center justify-center rounded-lg bg-white/20 shrink-0">
+        <span class="material-symbols-outlined text-xl">@(GetIcon())</span>
+    </div>
+    <div class="flex-1">
+        <p class="text-sm font-semibold leading-tight">@Message.Message</p>
+    </div>
+    <button @onclick="Remove" class="text-white/50 hover:text-white transition-colors p-0.5 bg-transparent border-0">
+        <span class="material-symbols-outlined text-lg">close</span>
+    </button>
+</div>
+
+@code {
+    [Parameter] public ToastMessage Message { get; set; } = null!;
+    [Parameter] public EventCallback<Guid> OnRemove { get; set; }
+
+    private async Task Remove() => await OnRemove.InvokeAsync(Message.Id);
+
+    private string GetBgClass() => Message.Type switch
+    {
+        ToastType.Success => "bg-green-600/90",
+        ToastType.Error   => "bg-red-600/90",
+        ToastType.Warning => "bg-amber-600/90",
+        ToastType.Info    => "bg-[#137fec]/90",
+        _                 => "bg-slate-800/90"
+    };
+
+    private string GetIcon() => Message.Type switch
+    {
+        ToastType.Success => "check_circle",
+        ToastType.Error   => "error",
+        ToastType.Warning => "warning",
+        ToastType.Info    => "info",
+        _                 => "notifications"
+    };
+}
