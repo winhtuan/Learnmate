@@ -3,6 +3,7 @@ using System;
 using DataAccessLayer.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace DataAccessLayer.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260330080155_AddMoreSeedUsers")]
+    partial class AddMoreSeedUsers
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1511,10 +1514,10 @@ namespace DataAccessLayer.Migrations
                             Bio = "Giáo viên Toán với 5 năm kinh nghiệm.",
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             FullName = "Nguyen Van A",
-                            HourlyRate = 35m,
-                            RatingAvg = 3.8m,
+                            HourlyRate = 200000m,
+                            RatingAvg = 0m,
                             Subjects = "Toán, Vật Lý",
-                            TotalRatingCount = 5,
+                            TotalRatingCount = 0,
                             UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             UserId = 2L
                         },

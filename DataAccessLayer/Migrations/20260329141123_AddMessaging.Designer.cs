@@ -3,6 +3,7 @@ using System;
 using DataAccessLayer.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace DataAccessLayer.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260329141123_AddMessaging")]
+    partial class AddMessaging
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1193,26 +1196,6 @@ namespace DataAccessLayer.Migrations
                             StudyStreakDays = 8,
                             UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             UserId = 3L
-                        },
-                        new
-                        {
-                            Id = 2L,
-                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            FullName = "Le Thi Hoa",
-                            GradeLevel = "11",
-                            StudyStreakDays = 3,
-                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            UserId = 14L
-                        },
-                        new
-                        {
-                            Id = 3L,
-                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            FullName = "Pham Van Kien",
-                            GradeLevel = "10",
-                            StudyStreakDays = 1,
-                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            UserId = 15L
                         });
                 });
 
@@ -1511,142 +1494,12 @@ namespace DataAccessLayer.Migrations
                             Bio = "Giáo viên Toán với 5 năm kinh nghiệm.",
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             FullName = "Nguyen Van A",
-                            HourlyRate = 35m,
-                            RatingAvg = 3.8m,
+                            HourlyRate = 200000m,
+                            RatingAvg = 0m,
                             Subjects = "Toán, Vật Lý",
-                            TotalRatingCount = 5,
+                            TotalRatingCount = 0,
                             UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             UserId = 2L
-                        },
-                        new
-                        {
-                            Id = 2L,
-                            Bio = "Giáo viên Toán & Vật Lý với 7 năm kinh nghiệm luyện thi đại học. Hơn 200 học sinh đã đỗ các trường top.",
-                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            FullName = "Tran Thi Mai",
-                            HourlyRate = 28m,
-                            RatingAvg = 4.5m,
-                            Subjects = "Mathematics,Science",
-                            TotalRatingCount = 42,
-                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            UserId = 4L
-                        },
-                        new
-                        {
-                            Id = 3L,
-                            Bio = "Thạc sĩ Hóa học, chuyên ôn luyện Hóa & Sinh cho học sinh THPT. Phương pháp dạy trực quan, dễ hiểu.",
-                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            FullName = "Le Van Duc",
-                            HourlyRate = 35m,
-                            RatingAvg = 4.2m,
-                            Subjects = "Science",
-                            TotalRatingCount = 28,
-                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            UserId = 5L
-                        },
-                        new
-                        {
-                            Id = 4L,
-                            Bio = "IELTS 8.0, 10 năm dạy Tiếng Anh giao tiếp và luyện thi IELTS/TOEIC. Cam kết đầu ra rõ ràng.",
-                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            FullName = "Pham Thi Huong",
-                            HourlyRate = 45m,
-                            RatingAvg = 4.8m,
-                            Subjects = "English",
-                            TotalRatingCount = 105,
-                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            UserId = 6L
-                        },
-                        new
-                        {
-                            Id = 5L,
-                            Bio = "Kỹ sư phần mềm tại FPT Software, 5 năm dạy lập trình Python, C#, và Web Development cho mọi trình độ.",
-                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            FullName = "Nguyen Quoc Bao",
-                            HourlyRate = 55m,
-                            RatingAvg = 4.6m,
-                            Subjects = "Coding",
-                            TotalRatingCount = 67,
-                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            UserId = 7L
-                        },
-                        new
-                        {
-                            Id = 6L,
-                            Bio = "Giáo viên Ngữ Văn & Lịch Sử THPT Quốc Gia. Chuyên luyện đề thi và viết văn nghị luận xã hội.",
-                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            FullName = "Hoang Thi Lan",
-                            HourlyRate = 22m,
-                            RatingAvg = 4.0m,
-                            Subjects = "English",
-                            TotalRatingCount = 19,
-                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            UserId = 8L
-                        },
-                        new
-                        {
-                            Id = 7L,
-                            Bio = "Tiến sĩ Toán ứng dụng, cựu giảng viên ĐH Bách Khoa. Dạy Toán cao cấp, Thống kê và Tin học.",
-                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            FullName = "Vu Minh Khoa",
-                            HourlyRate = 40m,
-                            RatingAvg = 4.7m,
-                            Subjects = "Mathematics,Coding",
-                            TotalRatingCount = 83,
-                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            UserId = 9L
-                        },
-                        new
-                        {
-                            Id = 8L,
-                            Bio = "Tốt nghiệp ĐH Ngoại Ngữ, dạy Tiếng Anh và Tiếng Pháp. 8 năm kinh nghiệm, lớp học tương tác cao.",
-                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            FullName = "Do Thi Thu",
-                            HourlyRate = 38m,
-                            RatingAvg = 4.3m,
-                            Subjects = "English,Languages",
-                            TotalRatingCount = 51,
-                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            UserId = 10L
-                        },
-                        new
-                        {
-                            Id = 9L,
-                            Bio = "Cựu học sinh Chuyên Lý ĐH Khoa Học Tự Nhiên. Dạy Vật Lý và Hóa học theo hướng tư duy phân tích.",
-                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            FullName = "Bui Van Long",
-                            HourlyRate = 30m,
-                            RatingAvg = 4.1m,
-                            Subjects = "Science,Mathematics",
-                            TotalRatingCount = 33,
-                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            UserId = 11L
-                        },
-                        new
-                        {
-                            Id = 10L,
-                            Bio = "Giáo viên Toán chuyên, huy chương Bạc Olympic Toán quốc gia. Đam mê giúp học sinh yêu thích Toán học.",
-                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            FullName = "Nguyen Thi Bich",
-                            HourlyRate = 25m,
-                            RatingAvg = 4.9m,
-                            Subjects = "Mathematics",
-                            TotalRatingCount = 134,
-                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            UserId = 12L
-                        },
-                        new
-                        {
-                            Id = 11L,
-                            Bio = "Senior Developer 8 năm kinh nghiệm, chuyên dạy Lập trình và Toán rời rạc cho sinh viên CNTT.",
-                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            FullName = "Trinh Van Nam",
-                            HourlyRate = 65m,
-                            RatingAvg = 4.4m,
-                            Subjects = "Coding,Mathematics",
-                            TotalRatingCount = 58,
-                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            UserId = 13L
                         });
                 });
 
@@ -1862,138 +1715,6 @@ namespace DataAccessLayer.Migrations
                             AvatarUrl = "https://placehold.co/400?text=Student",
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Email = "student@learnmate.vn",
-                            IsActive = true,
-                            PasswordHash = "$2a$12$BgRmemonnrWXu0O0hABfSuRgIBIjUevBcIGTk53b.y0oPqW45tCka",
-                            Role = "STUDENT",
-                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
-                        },
-                        new
-                        {
-                            Id = 4L,
-                            AvatarUrl = "https://placehold.co/400/fce7f3/be185d?text=TM",
-                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Email = "tran.thi.mai@learnmate.vn",
-                            IsActive = true,
-                            PasswordHash = "$2a$12$BgRmemonnrWXu0O0hABfSuRgIBIjUevBcIGTk53b.y0oPqW45tCka",
-                            Role = "TEACHER",
-                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
-                        },
-                        new
-                        {
-                            Id = 5L,
-                            AvatarUrl = "https://placehold.co/400/dcfce7/16a34a?text=LD",
-                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Email = "le.van.duc@learnmate.vn",
-                            IsActive = true,
-                            PasswordHash = "$2a$12$BgRmemonnrWXu0O0hABfSuRgIBIjUevBcIGTk53b.y0oPqW45tCka",
-                            Role = "TEACHER",
-                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
-                        },
-                        new
-                        {
-                            Id = 6L,
-                            AvatarUrl = "https://placehold.co/400/fef9c3/ca8a04?text=PH",
-                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Email = "pham.thi.huong@learnmate.vn",
-                            IsActive = true,
-                            PasswordHash = "$2a$12$BgRmemonnrWXu0O0hABfSuRgIBIjUevBcIGTk53b.y0oPqW45tCka",
-                            Role = "TEACHER",
-                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
-                        },
-                        new
-                        {
-                            Id = 7L,
-                            AvatarUrl = "https://placehold.co/400/ede9fe/7c3aed?text=NB",
-                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Email = "nguyen.quoc.bao@learnmate.vn",
-                            IsActive = true,
-                            PasswordHash = "$2a$12$BgRmemonnrWXu0O0hABfSuRgIBIjUevBcIGTk53b.y0oPqW45tCka",
-                            Role = "TEACHER",
-                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
-                        },
-                        new
-                        {
-                            Id = 8L,
-                            AvatarUrl = "https://placehold.co/400/ffedd5/ea580c?text=HL",
-                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Email = "hoang.thi.lan@learnmate.vn",
-                            IsActive = true,
-                            PasswordHash = "$2a$12$BgRmemonnrWXu0O0hABfSuRgIBIjUevBcIGTk53b.y0oPqW45tCka",
-                            Role = "TEACHER",
-                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
-                        },
-                        new
-                        {
-                            Id = 9L,
-                            AvatarUrl = "https://placehold.co/400/cffafe/0891b2?text=VK",
-                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Email = "vu.minh.khoa@learnmate.vn",
-                            IsActive = true,
-                            PasswordHash = "$2a$12$BgRmemonnrWXu0O0hABfSuRgIBIjUevBcIGTk53b.y0oPqW45tCka",
-                            Role = "TEACHER",
-                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
-                        },
-                        new
-                        {
-                            Id = 10L,
-                            AvatarUrl = "https://placehold.co/400/fce7f3/db2777?text=DT",
-                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Email = "do.thi.thu@learnmate.vn",
-                            IsActive = true,
-                            PasswordHash = "$2a$12$BgRmemonnrWXu0O0hABfSuRgIBIjUevBcIGTk53b.y0oPqW45tCka",
-                            Role = "TEACHER",
-                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
-                        },
-                        new
-                        {
-                            Id = 11L,
-                            AvatarUrl = "https://placehold.co/400/e0f2fe/0284c7?text=BL",
-                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Email = "bui.van.long@learnmate.vn",
-                            IsActive = true,
-                            PasswordHash = "$2a$12$BgRmemonnrWXu0O0hABfSuRgIBIjUevBcIGTk53b.y0oPqW45tCka",
-                            Role = "TEACHER",
-                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
-                        },
-                        new
-                        {
-                            Id = 12L,
-                            AvatarUrl = "https://placehold.co/400/f1f5f9/475569?text=NB",
-                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Email = "nguyen.thi.bich@learnmate.vn",
-                            IsActive = true,
-                            PasswordHash = "$2a$12$BgRmemonnrWXu0O0hABfSuRgIBIjUevBcIGTk53b.y0oPqW45tCka",
-                            Role = "TEACHER",
-                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
-                        },
-                        new
-                        {
-                            Id = 13L,
-                            AvatarUrl = "https://placehold.co/400/fef2f2/dc2626?text=TN",
-                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Email = "trinh.van.nam@learnmate.vn",
-                            IsActive = true,
-                            PasswordHash = "$2a$12$BgRmemonnrWXu0O0hABfSuRgIBIjUevBcIGTk53b.y0oPqW45tCka",
-                            Role = "TEACHER",
-                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
-                        },
-                        new
-                        {
-                            Id = 14L,
-                            AvatarUrl = "https://placehold.co/400/e0e7ff/4f46e5?text=S2",
-                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Email = "student2@learnmate.vn",
-                            IsActive = true,
-                            PasswordHash = "$2a$12$BgRmemonnrWXu0O0hABfSuRgIBIjUevBcIGTk53b.y0oPqW45tCka",
-                            Role = "STUDENT",
-                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
-                        },
-                        new
-                        {
-                            Id = 15L,
-                            AvatarUrl = "https://placehold.co/400/ecfdf5/059669?text=S3",
-                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Email = "student3@learnmate.vn",
                             IsActive = true,
                             PasswordHash = "$2a$12$BgRmemonnrWXu0O0hABfSuRgIBIjUevBcIGTk53b.y0oPqW45tCka",
                             Role = "STUDENT",

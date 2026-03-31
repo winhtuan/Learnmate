@@ -69,6 +69,15 @@
         };
     </script>
     <script>
+        window.scrollToBottom = function (el) {
+            if (el) el.scrollTop = el.scrollHeight;
+        };
+        window.getScrollHeight = function (el) {
+            return el ? el.scrollHeight : 0;
+        };
+        window.adjustScrollAfterPrepend = function (el, prevScrollHeight) {
+            if (el) el.scrollTop += (el.scrollHeight - prevScrollHeight);
+        };
         window.downloadFile = function (filename, content, mimeType) {
             const blob = new Blob([content], { type: mimeType });
             const url = URL.createObjectURL(blob);

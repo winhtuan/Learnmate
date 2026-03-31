@@ -30,7 +30,9 @@ public record AssignmentDetail(
     long Id, long ClassId, string Title, string Type, string DueDate, string Points,
     string SubmissionStatus,
     AssignmentInstructions Instructions, List<AssignmentResource> Resources,
-    string UploadText, string UploadSubtext);
+    string UploadText, string UploadSubtext,
+    string? FeedbackComment = null,
+    string? FeedbackScoreDisplay = null);
 
 public record InstructorInfo(string Name, string Department, string Avatar);
 

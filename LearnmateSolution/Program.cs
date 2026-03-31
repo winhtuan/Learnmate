@@ -36,16 +36,12 @@ public class Program
         if (Environment.GetEnvironmentVariable("EMAIL_PASSWORD") is { } emailPassword)
             builder.Configuration["EmailSettings:Password"] = emailPassword;
 
-        if (Environment.GetEnvironmentVariable("MINIO_ENDPOINT") is { } minioEndpoint)
-            builder.Configuration["MinIO:Endpoint"] = minioEndpoint;
-        if (Environment.GetEnvironmentVariable("MINIO_ACCESS_KEY") is { } minioAccessKey)
-            builder.Configuration["MinIO:AccessKey"] = minioAccessKey;
-        if (Environment.GetEnvironmentVariable("MINIO_SECRET_KEY") is { } minioSecretKey)
-            builder.Configuration["MinIO:SecretKey"] = minioSecretKey;
-        if (Environment.GetEnvironmentVariable("MINIO_BUCKET_NAME") is { } minioBucket)
-            builder.Configuration["MinIO:BucketName"] = minioBucket;
-        if (Environment.GetEnvironmentVariable("MINIO_USE_SSL") is { } minioSsl)
-            builder.Configuration["MinIO:UseSSL"] = minioSsl;
+        if (Environment.GetEnvironmentVariable("CLOUDINARY_CLOUD_NAME") is { } cloudName)
+            builder.Configuration["Cloudinary:CloudName"] = cloudName;
+        if (Environment.GetEnvironmentVariable("CLOUDINARY_API_KEY") is { } cloudApiKey)
+            builder.Configuration["Cloudinary:ApiKey"] = cloudApiKey;
+        if (Environment.GetEnvironmentVariable("CLOUDINARY_API_SECRET") is { } cloudApiSecret)
+            builder.Configuration["Cloudinary:ApiSecret"] = cloudApiSecret;
 
         // ── Database ──────────────────────────────────────────────────────────
         builder.Services.AddDataAccessLayer(builder.Configuration);
@@ -78,6 +74,19 @@ public class Program
                     IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret)),
                     ClockSkew = TimeSpan.Zero
                 };
+
+                // Allow SignalR to pass JWT via query string (?access_token=...)
+                options.Events = new Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerEvents
+                {
+                    OnMessageReceived = context =>
+                    {
+                        var token = context.Request.Query["access_token"];
+                        var path  = context.HttpContext.Request.Path;
+                        if (!string.IsNullOrEmpty(token) && path.StartsWithSegments("/hubs"))
+                            context.Token = token;
+                        return Task.CompletedTask;
+                    }
+                };
             });
 
         builder.Services.AddAuthorization();
@@ -85,25 +94,31 @@ public class Program
         // ── Web API controllers ───────────────────────────────────────────────
         builder.Services.AddControllers();
 
+        // ── SignalR ───────────────────────────────────────────────────────────
+        builder.Services.AddSignalR();
+
         // ── HttpClient (for Blazor components calling own API) ────────────────
         builder.Services.AddHttpClient("learnmate", client =>
         {
             client.Timeout = TimeSpan.FromSeconds(30);
         });
 
-        // ── MinIO file storage ────────────────────────────────────────────────
-        builder.Services.AddOptions<MinioSettings>()
-            .BindConfiguration("MinIO")
+        // ── Cloudinary file storage ───────────────────────────────────────────
+        builder.Services.AddOptions<CloudinarySettings>()
+            .BindConfiguration("Cloudinary")
             .ValidateDataAnnotations()
             .ValidateOnStart();
-        builder.Services.AddSingleton<IFileStorageService, MinioFileStorageService>();
+        builder.Services.AddSingleton<IFileStorageService, CloudinaryFileStorageService>();
 
         // ── Auth session (per Blazor circuit) ────────────────────────────────
         builder.Services.AddScoped<UserSessionService>();
 
         // ── Blazor Server ─────────────────────────────────────────────────────
         builder.Services.AddRazorComponents()
-            .AddInteractiveServerComponents();
+            .AddInteractiveServerComponents(options =>
+            {
+                options.DetailedErrors = builder.Environment.IsDevelopment();
+            });
 
         var app = builder.Build();
 
@@ -124,6 +139,9 @@ public class Program
 
         // API routes
         app.MapControllers();
+
+        // SignalR hubs
+        app.MapHub<LearnmateSolution.Hubs.ChatHub>("/hubs/chat");
 
         // Blazor routes
         app.MapRazorComponents<App>()

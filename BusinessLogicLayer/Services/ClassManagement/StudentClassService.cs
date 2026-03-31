@@ -283,7 +283,9 @@ public class StudentClassService(
             SubmissionStatus: status,
             Score: sub?.Score,
             TotalQuestions: a.Questions.Count > 0 ? a.Questions.Count : null,
-            TotalPoints: totalPoints
+            TotalPoints: totalPoints,
+            FeedbackComment: sub?.Feedback?.Comment,
+            FeedbackScore: sub?.Feedback?.Score
         );
     }
 

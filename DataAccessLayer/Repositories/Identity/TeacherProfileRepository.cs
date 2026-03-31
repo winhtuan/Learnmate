@@ -17,4 +17,26 @@ public class TeacherProfileRepository(AppDbContext db) : ITeacherProfileReposito
         db.TeacherProfiles.Update(profile);
         await db.SaveChangesAsync();
     }
+
+    public async Task<IReadOnlyList<TeacherProfile>> GetAllTeachersAsync(
+        string? subjectFilter = null,
+        decimal? maxRate = null,
+        CancellationToken ct = default)
+    {
+        var query = db.TeacherProfiles
+            .AsNoTracking()
+            .Include(p => p.User)
+            .Where(p => p.User.IsActive && p.User.DeletedAt == null);
+
+        if (!string.IsNullOrWhiteSpace(subjectFilter))
+            query = query.Where(p => EF.Functions.ILike(p.Subjects, $"%{subjectFilter}%"));
+
+        if (maxRate.HasValue)
+            query = query.Where(p => p.HourlyRate <= maxRate.Value);
+
+        return await query
+            .OrderByDescending(p => p.RatingAvg)
+            .ThenByDescending(p => p.TotalRatingCount)
+            .ToListAsync(ct);
+    }
 }
