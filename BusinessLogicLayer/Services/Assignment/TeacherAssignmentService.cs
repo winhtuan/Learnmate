@@ -7,7 +7,9 @@ using DataAccessLayer.Repositories.Interfaces;
 
 namespace BusinessLogicLayer.Services;
 
-public class TeacherAssignmentService(ITeacherAssignmentRepository assignmentRepo)
+public class TeacherAssignmentService(
+    ITeacherAssignmentRepository assignmentRepo,
+    IFileStorageService fileStorage)
     : ITeacherAssignmentService
 {
     public async Task<ApiResponse<object>> CreateAssignmentAsync(
@@ -22,6 +24,7 @@ public class TeacherAssignmentService(ITeacherAssignmentRepository assignmentRep
             Title = dto.Title,
             Description = dto.Description,
             DueDate = dto.DueDate,
+            FileUrl = dto.FileUrl,
             Status = AssignmentStatus.DRAFT,
             CreatedAt = DateTime.UtcNow,
             Questions = dto
@@ -90,6 +93,7 @@ public class TeacherAssignmentService(ITeacherAssignmentRepository assignmentRep
             DueDate = a.DueDate,
             ClassName = a.Class?.Name ?? "N/A",
             CreatedAt = a.CreatedAt,
+            FileUrl = a.FileUrl,
             Questions = a
                 .Questions.Select(q => new AssignmentQuestionDetailDto
                 {
@@ -126,6 +130,7 @@ public class TeacherAssignmentService(ITeacherAssignmentRepository assignmentRep
         assignment.DueDate = dto.DueDate;
         assignment.ClassId = dto.ClassId;
         assignment.Status = dto.Status;
+        assignment.FileUrl = dto.FileUrl;
 
         assignment.Questions.Clear();
         assignment.Questions = dto
@@ -156,5 +161,15 @@ public class TeacherAssignmentService(ITeacherAssignmentRepository assignmentRep
         await assignmentRepo.UpdateAsync(assignment);
 
         return ApiResponse<object>.Ok(null, "Assignment updated successfully");
+    }
+
+    public async Task<string> UploadAssignmentFileAsync(
+        Stream fileStream, string fileName, string contentType, CancellationToken ct = default)
+    {
+        var ext = Path.GetExtension(fileName).ToLower();
+        var objectPath = $"assignments/{Guid.NewGuid():N}{ext}";
+        await fileStorage.UploadAsync(objectPath, fileStream, contentType, ct);
+        // Return the absolute Cloudinary URL
+        return await fileStorage.GetUrlAsync(objectPath, ct: ct);
     }
 }

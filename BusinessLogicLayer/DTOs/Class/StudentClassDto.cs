@@ -33,7 +33,8 @@ public record ClassAssignmentDto(
     string SubmissionStatus, // "not_started" | "in_progress" | "submitted" | "graded" | "missing"
     decimal? Score,
     int? TotalQuestions,
-    decimal? TotalPoints
+    decimal? TotalPoints,
+    string? FileUrl = null
 );
 
 public record ClassScheduleItemDto(

@@ -23,6 +23,9 @@ public class Assignment : SoftDeletableEntity
 
     public DateTime? DueDate { get; set; }
 
+    [MaxLength(1000)]
+    public string? FileUrl { get; set; }
+
     // Navigation properties
     [ForeignKey("ClassId")]
     public Class Class { get; set; } = null!;
