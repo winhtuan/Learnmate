@@ -4,6 +4,7 @@
 @rendermode InteractiveServer
 @inject NavigationManager Nav
 @inject UserSessionService Session
+@inject ToastService ToastService
 @inject IJSRuntime JS
 @using BusinessLogicLayer.Services.Interfaces
 @using BusinessObject.Models.System
@@ -221,20 +222,7 @@
             </div>
         </div>
 
-        @if (showSuccessAlert)
-        {
-            <div class="alert alert-success d-flex align-items-center mb-4" role="alert">
-                <div class="alert-icon me-3">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-success"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
-                </div>
-                <div class="alert-content flex-grow-1">
-                    <strong>Export Generated Successfully</strong>
-                    <p class="mb-0">Your "User Activity" report for Oct 1 - Oct 31 is ready.</p>
-                    <a href="#" class="alert-link text-decoration-underline">Download User_Activity_Oct2023.csv</a>
-                </div>
-                <button type="button" class="btn-close" @onclick="() => showSuccessAlert = false" aria-label="Close"></button>
-            </div>
-        }
+        /* Removed Bootstrap Alert */
 
         <div class="card reports-config-card mb-5 shadow-sm">
             <div class="card-header bg-white py-3">
@@ -326,7 +314,6 @@
     }
 
     private bool isExportView = false;
-    private bool showSuccessAlert = false;
     private string selectedFormat = "CSV";
     
     // Filters
@@ -355,7 +342,7 @@
         var format = selectedFormat == "CSV" ? ReportFormat.CSV : ReportFormat.PDF;
         
         await ReportService.GenerateReportAsync(name, newReportCategory, format);
-        showSuccessAlert = true;
+        ToastService.ShowSuccess($"Export '{name}' generated successfully.");
         isExportView = false;
         await LoadReports();
     }
