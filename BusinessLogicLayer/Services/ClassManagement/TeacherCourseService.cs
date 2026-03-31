@@ -43,7 +43,7 @@ public class TeacherCourseService(
         var cls = await classRepo.GetTeacherClassDetailAsync(classId, teacherId, ct);
         if (cls is null) return null;
         int studentCount = cls.ClassMembers.Count;
-        return new TeacherClassDetailDto
+        var dto = new TeacherClassDetailDto
         {
             Id              = cls.Id,
             Name            = cls.Name,
@@ -95,20 +95,25 @@ public class TeacherCourseService(
                     IsTrial   = s.IsTrial
                 })
                 .ToList(),
-            Materials = cls.Materials
-                .Select(m => new TeacherMaterialItemDto
-                {
-                    Id          = m.Id,
-                    Title       = m.Title,
-                    Description = m.Description,
-                    FileUrl     = m.FileUrl,
-                    FileType    = m.FileType,
-                    FileSizeBytes = m.FileSizeBytes,
-                    Status      = m.Status.ToString(),
-                    UploadedAt  = m.CreatedAt.ToLocalTime()
-                })
-                .ToList()
+            Materials = []
         };
+
+        foreach(var m in cls.Materials)
+        {
+            dto.Materials.Add(new TeacherMaterialItemDto
+            {
+                Id          = m.Id,
+                Title       = m.Title,
+                Description = m.Description,
+                FileUrl     = await fileStorage.GetUrlAsync(m.FileUrl, ct: ct),
+                FileType    = m.FileType,
+                FileSizeBytes = m.FileSizeBytes,
+                Status      = m.Status.ToString(),
+                UploadedAt  = m.CreatedAt.ToLocalTime()
+            });
+        }
+
+        return dto;
     }
 
     public async Task<List<TeacherClassListItemDto>> GetTeacherClassesAsync(long teacherId, CancellationToken ct = default)
@@ -181,7 +186,7 @@ public class TeacherCourseService(
             Id            = saved.Id,
             Title         = saved.Title,
             Description   = saved.Description,
-            FileUrl       = objectPath,
+            FileUrl       = await fileStorage.GetUrlAsync(objectPath, ct: ct),
             FileType      = saved.FileType,
             FileSizeBytes = saved.FileSizeBytes,
             Status        = saved.Status.ToString(),
@@ -207,5 +212,66 @@ public class TeacherCourseService(
 
         // Soft-delete in database
         await classRepo.DeleteMaterialAsync(materialId, classId, ct);
+    }
+
+    // ── Assignments & Grading ────────────────────────────────────────────────
+    public async Task<TeacherAssignmentFullDetailDto?> GetAssignmentDetailAsync(long assignmentId, long classId, long teacherId, CancellationToken ct = default)
+    {
+        var a = await classRepo.GetAssignmentDetailAsync(assignmentId, classId, teacherId, ct);
+        if (a is null) return null;
+
+        var dto = new TeacherAssignmentFullDetailDto
+        {
+            Id = a.Id,
+            Title = a.Title,
+            Description = a.Description,
+            Status = a.Status.ToString(),
+            DueDate = a.DueDate,
+            TotalStudents = a.Class.MaxStudents, // Note: ideally we count active students in class here.
+        };
+
+        foreach (var s in a.Submissions)
+        {
+            var fileName = s.FileUrl;
+            var completeFileUrl = s.FileUrl;
+            if (!string.IsNullOrEmpty(fileName))
+            {
+                try {
+                    var uri = new Uri(fileName);
+                    fileName = Path.GetFileName(uri.LocalPath);
+                } catch { /* ignored */ }
+                
+                try {
+                    // Always try to fetch absolute URL from storage interface.
+                    completeFileUrl = await fileStorage.GetUrlAsync(s.FileUrl, ct: ct);
+                } catch { /* ignored */ }
+            }
+            
+            dto.Submissions.Add(new TeacherSubmissionItemDto
+            {
+                Id = s.Id,
+                StudentId = s.StudentId,
+                StudentName = s.Student?.StudentProfile?.FullName ?? s.Student?.Email ?? "Unknown",
+                StudentAvatarUrl = s.Student?.AvatarUrl,
+                Status = s.Status.ToString(),
+                SubmittedAt = s.SubmittedAt,
+                FileUrl = completeFileUrl,
+                FileName = fileName,
+                Score = s.Score,
+                FeedbackComment = s.Feedback?.Comment
+            });
+        }
+
+        dto.SubmittedCount = a.Submissions.Count(s => s.Status == SubmissionStatus.SUBMITTED || s.Status == SubmissionStatus.GRADED);
+        dto.GradedCount = a.Submissions.Count(s => s.Status == SubmissionStatus.GRADED);
+
+        return dto;
+    }
+
+    public async Task GradeSubmissionAsync(long submissionId, long teacherId, decimal score, string? feedback, CancellationToken ct = default)
+    {
+        var s = await classRepo.GradeSubmissionAsync(submissionId, teacherId, score, feedback, ct);
+        if (s is null)
+            throw new InvalidOperationException("Không tìm thấy bài tập hoặc bạn không có quyền chấm bài này.");
     }
 }
