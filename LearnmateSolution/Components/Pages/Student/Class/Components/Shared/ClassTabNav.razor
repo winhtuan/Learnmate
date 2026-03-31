@@ -1,25 +1,38 @@
+@using LearnmateSolution.Components.Shared
 @inject NavigationManager Nav
 
-<div class="flex items-center gap-1 mb-8 overflow-x-auto pb-2 scrollbar-hide border-b border-slate-200">
-    @foreach (var tab in Tabs)
-    {
-        var isActive = ActiveTab == tab.Key;
-        <a href="@tab.Path"
-           class="px-5 py-3 text-sm whitespace-nowrap transition-colors @(isActive ? "text-primary border-b-2 border-primary font-bold" : "text-slate-500 hover:text-slate-900 font-medium")">
-            @tab.Label
-            @if (tab.Badge is not null)
-            {
-                <span class="ml-1.5 px-2 py-0.5 rounded-full bg-slate-100 text-xs font-bold text-slate-600">
-                    @tab.Badge
-                </span>
-            }
-        </a>
-    }
+<div class="flex items-center justify-between gap-4 mb-4">
+    <div class="flex items-center gap-1 overflow-x-auto pb-2 scrollbar-hide border-b border-slate-200 flex-1">
+        @foreach (var tab in Tabs)
+        {
+            var isActive = ActiveTab == tab.Key;
+            <a href="@tab.Path"
+               class="px-5 py-3 text-sm whitespace-nowrap transition-colors @(isActive ? "text-primary border-b-2 border-primary font-bold" : "text-slate-500 hover:text-slate-900 font-medium")">
+                @tab.Label
+                @if (tab.Badge is not null)
+                {
+                    <span class="ml-1.5 px-2 py-0.5 rounded-full bg-slate-100 text-xs font-bold text-slate-600">
+                        @tab.Badge
+                    </span>
+                }
+            </a>
+        }
+    </div>
+    
+    <button @onclick="() => IsChatOpen = true" 
+            class="flex items-center gap-2 px-4 py-2 bg-amber-50 text-amber-700 hover:bg-amber-100 rounded-lg text-sm font-bold border border-amber-200 transition-colors shadow-sm whitespace-nowrap shrink-0">
+        <span class="material-symbols-outlined text-[18px]">forum</span>
+        Thảo luận lớp
+    </button>
 </div>
+
+<ClassChatDrawer @bind-IsOpen="IsChatOpen" ClassId="ClassId" />
 
 @code {
     [Parameter] public long ClassId { get; set; }
     [Parameter] public string ActiveTab { get; set; } = "overview";
+
+    private bool IsChatOpen = false;
 
     private record TabEntry(string Key, string Label, string Path, string? Badge = null);
 

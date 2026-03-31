@@ -50,6 +50,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     // ── Messaging ────────────────────────────────────────────────────────────
     public DbSet<Conversation> Conversations => Set<Conversation>();
     public DbSet<Message> Messages => Set<Message>();
+    public DbSet<ClassMessage> ClassMessages => Set<ClassMessage>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
