@@ -1,5 +1,5 @@
 @page "/student/bookings"
-@layout LearnmateSolution.Components.Layout.ClassLayout
+@layout LearnmateSolution.Components.Layout.DashboardLayout
 @rendermode InteractiveServer
 @using BusinessLogicLayer.DTOs
 @using BusinessLogicLayer.DTOs.Payment
@@ -35,7 +35,7 @@
             <span class="material-symbols-outlined text-5xl mb-3 text-slate-300">event_available</span>
             <p class="text-base font-semibold">Chưa có lịch đặt học nào</p>
             <p class="text-sm mt-1">Tìm giáo viên và đặt lịch học ngay hôm nay!</p>
-            <a href="/find-tutor" class="mt-5 px-5 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-blue-600 transition-colors shadow-sm shadow-primary/20">
+            <a href="/student/find-tutor" class="mt-5 px-5 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-blue-600 transition-colors shadow-sm shadow-primary/20">
                 Tìm giáo viên
             </a>
         </div>
