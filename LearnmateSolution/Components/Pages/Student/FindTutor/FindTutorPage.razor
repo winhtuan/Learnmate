@@ -24,10 +24,10 @@
 
             <!-- Title row -->
             <div class="flex items-center justify-between">
-                <h1 class="text-2xl font-bold text-slate-900">Find your perfect tutor</h1>
+                <h1 class="text-2xl font-bold text-slate-900">Find a class</h1>
                 @if (!_loading)
                 {
-                    <span class="text-sm text-slate-400 font-medium bg-indigo-50 px-3 py-1 rounded-full">@_filtered.Count available</span>
+                    <span class="text-sm text-slate-400 font-medium bg-indigo-50 px-3 py-1 rounded-full">@_filtered.Count classes</span>
                 }
             </div>
 
@@ -35,7 +35,7 @@
             <div class="flex w-full items-center rounded-xl h-11 bg-white border border-slate-200 focus-within:border-indigo-400 focus-within:shadow-sm focus-within:shadow-indigo-100 transition-all">
                 <span class="material-symbols-outlined text-slate-400 text-[18px] pl-4 shrink-0">search</span>
                 <input class="flex-1 bg-transparent text-slate-800 focus:outline-none border-none text-sm px-3 placeholder:text-slate-400"
-                       placeholder="Search by tutor name..."
+                       placeholder="Search by class name or tutor..."
                        @bind="_searchQuery" @bind:event="oninput" @bind:after="ApplyFilter" />
                 @if (!string.IsNullOrEmpty(_searchQuery))
                 {
@@ -113,30 +113,38 @@
                 </div>
             }
 
-            <!-- Tutor Cards -->
+            <!-- Class Cards -->
             <div class="flex flex-col gap-4">
                 @if (_loading)
                 {
                     @for (int i = 0; i < 3; i++)
                     {
-                        <div class="animate-pulse flex gap-5 bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
-                            <div class="flex flex-col items-center gap-2 shrink-0 w-16">
-                                <div class="size-16 rounded-full bg-slate-200"></div>
-                                <div class="h-3 w-10 bg-slate-200 rounded"></div>
-                            </div>
-                            <div class="flex flex-col flex-1 gap-3">
-                                <div class="h-4 w-36 bg-slate-200 rounded"></div>
-                                <div class="flex gap-2">
+                        <div class="animate-pulse flex flex-col gap-4 bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+                            <div class="flex items-start justify-between">
+                                <div class="flex flex-col gap-2 flex-1">
                                     <div class="h-5 w-16 bg-slate-200 rounded-md"></div>
-                                    <div class="h-5 w-16 bg-slate-200 rounded-md"></div>
+                                    <div class="h-5 w-52 bg-slate-200 rounded"></div>
                                 </div>
-                                <div class="h-3 w-full bg-slate-200 rounded"></div>
-                                <div class="h-3 w-3/4 bg-slate-200 rounded"></div>
+                                <div class="flex flex-col items-end gap-2">
+                                    <div class="h-6 w-16 bg-slate-200 rounded"></div>
+                                    <div class="h-5 w-20 bg-slate-200 rounded-md"></div>
+                                </div>
                             </div>
-                            <div class="flex flex-col items-end gap-3 shrink-0 w-24">
-                                <div class="h-6 w-16 bg-slate-200 rounded"></div>
-                                <div class="h-8 w-full bg-slate-200 rounded-lg"></div>
-                                <div class="h-8 w-full bg-slate-200 rounded-lg"></div>
+                            <div class="h-3 w-full bg-slate-200 rounded"></div>
+                            <div class="h-3 w-3/4 bg-slate-200 rounded"></div>
+                            <div class="border-t border-slate-100"></div>
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-2">
+                                    <div class="size-9 rounded-full bg-slate-200"></div>
+                                    <div class="flex flex-col gap-1">
+                                        <div class="h-3 w-24 bg-slate-200 rounded"></div>
+                                        <div class="h-3 w-16 bg-slate-200 rounded"></div>
+                                    </div>
+                                </div>
+                                <div class="flex gap-2">
+                                    <div class="h-8 w-16 bg-slate-200 rounded-xl"></div>
+                                    <div class="h-8 w-16 bg-slate-200 rounded-xl"></div>
+                                </div>
                             </div>
                         </div>
                     }
@@ -145,17 +153,17 @@
                 {
                     <div class="flex flex-col items-center justify-center py-20 text-slate-400">
                         <span class="material-symbols-outlined text-5xl mb-3 text-indigo-200">search_off</span>
-                        <p class="text-base font-medium text-slate-500">No tutors match your filters</p>
+                        <p class="text-base font-medium text-slate-500">No classes match your filters</p>
                         <button class="mt-3 text-sm text-indigo-500 hover:text-indigo-700 underline underline-offset-2 transition-colors" @onclick="ResetAll">Clear all</button>
                     </div>
                 }
                 else
                 {
-                    @foreach (var tutor in _filtered)
+                    @foreach (var cls in _filtered)
                     {
-                        <TutorListCard Tutor="tutor"
-                                       IsSelected="@(_selected?.Id == tutor.Id)"
-                                       OnSelected="SelectTutor" />
+                        <ClassListCard Class="cls"
+                                       IsSelected="@(_selected?.ClassId == cls.ClassId)"
+                                       OnSelected="SelectClass" />
                     }
                 }
             </div>
@@ -164,17 +172,17 @@
         <!-- Right Column: Quick View -->
         <div class="hidden lg:block lg:col-span-4">
             <div class="sticky top-8 flex flex-col gap-6 rounded-xl bg-white border border-[#E9E9E7] p-6 max-h-[calc(100vh-6rem)] overflow-y-auto">
-                <TutorQuickView Tutor="_selected" OnBookClicked="OpenBookingModal" />
+                <TutorQuickView Tutor="_selectedTutor" OnBookClicked="OpenBookingModal" />
             </div>
         </div>
 
     </div>
 </div>
 
-@if (_showBookingModal && _selected is not null)
+@if (_showBookingModal && _selectedTutor is not null)
 {
-    <BookingModal TeacherId="_selected.Id"
-                  TeacherName="_selected.Name"
+    <BookingModal TeacherId="_selectedTutor.Id"
+                  TeacherName="_selectedTutor.Name"
                   OnClose="CloseBookingModal"
                   OnBooked="HandleBooked" />
 }
@@ -197,21 +205,22 @@
     private string _priceFilter   = "Any Price";
     private bool   _verifiedOnly;
     private bool   _showFilters;
-    private string _searchQuery  = "";
-    private bool   _loading      = true;
-    private string _errorMessage = "";
+    private string _searchQuery   = "";
+    private bool   _loading       = true;
+    private string _errorMessage  = "";
     private string _successMessage = "";
 
     private bool _showBookingModal;
 
-    private TutorListItem? _selected;
+    private ClassListItem?  _selected;
+    private TutorListItem?  _selectedTutor;
 
     private int ActiveFilterCount =>
         (_priceFilter != "Any Price" ? 1 : 0) +
         (_verifiedOnly               ? 1 : 0);
 
-    private List<TutorListItem> _tutors   = [];
-    private List<TutorListItem> _filtered = [];
+    private List<ClassListItem> _classes  = [];
+    private List<ClassListItem> _filtered = [];
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -224,7 +233,7 @@
         }
         await FetchTutorsAsync();
         ApplyFilter();
-        _selected = _filtered.FirstOrDefault();
+        SelectClass(_filtered.FirstOrDefault());
         _loading = false;
         StateHasChanged();
     }
@@ -256,9 +265,9 @@
             var subject  = _activeSubject == "All Subjects" ? null : _activeSubject;
             decimal? max = _priceFilter switch
             {
-                "Under $30"  => 29.99m,
-                "$30 – $50"  => 50m,
-                _            => null
+                "Under $30" => 29.99m,
+                "$30 – $50" => 50m,
+                _           => null
             };
 
             var url = "api/tutors";
@@ -268,42 +277,63 @@
             if (query.Count > 0) url += "?" + string.Join("&", query);
 
             var resp = await client.GetFromJsonAsync<ApiResponse<IReadOnlyList<TutorSummaryDto>>>(url);
-            _tutors = resp?.Data?.Select(MapToListItem).ToList() ?? [];
+            _classes = resp?.Data?.Select(MapToClassItem).ToList() ?? [];
         }
         catch
         {
-            _errorMessage = "Failed to load tutors. Please try again.";
-            _tutors = [];
+            _errorMessage = "Failed to load classes. Please try again.";
+            _classes = [];
         }
     }
 
-    private static TutorListItem MapToListItem(TutorSummaryDto dto)
+    private static ClassListItem MapToClassItem(TutorSummaryDto dto)
     {
         var initials = dto.FullName.Length >= 2
             ? dto.FullName[..2].ToUpper()
             : dto.FullName.ToUpper();
 
-        return new TutorListItem(
-            Id:               dto.TeacherUserId,
-            Name:             dto.FullName,
-            AvatarUrl:        dto.AvatarUrl ?? $"https://placehold.co/200/e0e7ff/4f46e5?text={Uri.EscapeDataString(initials)}",
-            IsVerified:       false,
-            IsSuperTutor:     false,
+        var subjects = dto.Subjects.Split(',').Select(s => s.Trim()).Where(s => s.Length > 0).ToArray();
+        var primarySubject = subjects.FirstOrDefault() ?? "General";
+
+        return new ClassListItem(
+            ClassId:          dto.TeacherUserId,   // tạm dùng TeacherUserId, sẽ thay bằng ClassId thật sau
+            ClassName:        $"{primarySubject} — {dto.FullName}",
+            Description:      dto.Bio,
+            Subject:          primarySubject,
+            ScheduleSummary:  "",                  // sẽ có khi API trả về class thật
+            EnrolledCount:    0,
+            MaxStudents:      30,
+            TeacherId:        dto.TeacherUserId,
+            TeacherName:      dto.FullName,
+            TeacherAvatarUrl: dto.AvatarUrl ?? $"https://placehold.co/200/e0e7ff/4f46e5?text={Uri.EscapeDataString(initials)}",
             Rating:           dto.RatingAvg,
             ReviewCount:      dto.TotalRatingCount,
-            StudentCount:     0,
-            Bio:              dto.Bio ?? "",
-            Subjects:         dto.Subjects.Split(',').Select(s => s.Trim()).Where(s => s.Length > 0).ToArray(),
+            Subjects:         subjects,
             HourlyRate:       dto.HourlyRate,
-            Availability:     AvailabilityStatus.NextSlot,
-            AvailabilityLabel: null,
-            Location:         "Online",
-            ResponseTime:     "",
-            TotalLessons:     0,
-            FullBio:          dto.Bio ?? "",
-            AvailableSlots:   []
+            Bio:              dto.Bio ?? ""
         );
     }
+
+    private static TutorListItem ToTutorListItem(ClassListItem cls) => new(
+        Id:               cls.TeacherId,
+        Name:             cls.TeacherName,
+        AvatarUrl:        cls.TeacherAvatarUrl,
+        IsVerified:       false,
+        IsSuperTutor:     false,
+        Rating:           cls.Rating,
+        ReviewCount:      cls.ReviewCount,
+        StudentCount:     0,
+        Bio:              cls.Bio,
+        Subjects:         cls.Subjects,
+        HourlyRate:       cls.HourlyRate,
+        Availability:     AvailabilityStatus.NextSlot,
+        AvailabilityLabel: null,
+        Location:         "Online",
+        ResponseTime:     "",
+        TotalLessons:     0,
+        FullBio:          cls.Bio,
+        AvailableSlots:   []
+    );
 
     private void SetSubject(string chip) { _activeSubject = chip; ApplyFilter(); }
     private void ClearSearch() { _searchQuery = ""; ApplyFilter(); }
@@ -325,24 +355,24 @@
     private void ApplyFilter()
     {
         var q = _searchQuery.Trim().ToLowerInvariant();
-        _filtered = _tutors
-            .Where(t =>
+        _filtered = _classes
+            .Where(c =>
             {
                 if (!string.IsNullOrEmpty(q) &&
-                    !t.Name.Contains(q, StringComparison.OrdinalIgnoreCase))
+                    !c.ClassName.Contains(q, StringComparison.OrdinalIgnoreCase) &&
+                    !c.TeacherName.Contains(q, StringComparison.OrdinalIgnoreCase))
                     return false;
 
                 if (_activeSubject != "All Subjects" &&
-                    !t.Subjects.Any(s => s.Contains(_activeSubject, StringComparison.OrdinalIgnoreCase)))
+                    !c.Subjects.Any(s => s.Contains(_activeSubject, StringComparison.OrdinalIgnoreCase)))
                     return false;
 
-                // Price filter (applied via API, but also filter client-side for "Over $50")
                 var pass = _priceFilter switch
                 {
-                    "Under $30"  => t.HourlyRate < 30,
-                    "$30 – $50"  => t.HourlyRate is >= 30 and <= 50,
-                    "Over $50"   => t.HourlyRate > 50,
-                    _            => true
+                    "Under $30" => c.HourlyRate < 30,
+                    "$30 – $50" => c.HourlyRate is >= 30 and <= 50,
+                    "Over $50"  => c.HourlyRate > 50,
+                    _           => true
                 };
                 if (!pass) return false;
 
@@ -351,7 +381,11 @@
             .ToList();
     }
 
-    private void SelectTutor(TutorListItem tutor) => _selected = tutor;
+    private void SelectClass(ClassListItem? cls)
+    {
+        _selected      = cls;
+        _selectedTutor = cls is null ? null : ToTutorListItem(cls);
+    }
 
     private void OpenBookingModal(long teacherId) => _showBookingModal = true;
     private void CloseBookingModal() => _showBookingModal = false;
