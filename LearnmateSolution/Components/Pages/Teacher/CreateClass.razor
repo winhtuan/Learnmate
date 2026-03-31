@@ -1,0 +1,302 @@
+@page "/teacher/classes/create"
+@rendermode InteractiveServer
+@layout Layout.TeacherLayout
+
+@using BusinessLogicLayer.DTOs.Teacher.Classes
+@using BusinessLogicLayer.Services.Interfaces
+@using LearnmateSolution.AppState
+@inject ITeacherCourseService ClassService
+@inject UserSessionService Session
+@inject NavigationManager NavigationManager
+
+<PageTitle>Tạo lớp học mới | LearnMate</PageTitle>
+
+<!-- Breadcrumb -->
+<nav class="flex items-center gap-2 text-sm text-slate-400 mb-6">
+    <a href="/teacher/classes" class="hover:text-primary transition-colors">Lớp học</a>
+    <span class="material-symbols-outlined text-[16px]">chevron_right</span>
+    <span class="text-slate-700 font-medium">Tạo lớp mới</span>
+</nav>
+
+<!-- Page header -->
+<div class="mb-8">
+    <h1 class="text-3xl font-bold tracking-tight text-slate-900 mb-1">Tạo lớp học mới</h1>
+    <p class="text-slate-500">Điền thông tin bên dưới để tạo lớp học mới của bạn.</p>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+
+    <!-- ─── Left: Form ──────────────────────────────────────────────────────── -->
+    <div class="lg:col-span-8">
+        <EditForm Model="Form" OnValidSubmit="HandleSubmit">
+            <DataAnnotationsValidator />
+
+            <!-- Card 1: Thông tin cơ bản -->
+            <div class="bg-white border border-slate-200 rounded-xl shadow-sm p-6 mb-5">
+                <h3 class="text-base font-bold text-slate-900 mb-5 pb-3 border-b border-slate-100 flex items-center gap-2">
+                    <span class="material-symbols-outlined text-primary text-[22px]">info</span>
+                    Thông tin cơ bản
+                </h3>
+
+                @if (!string.IsNullOrEmpty(ErrorMessage))
+                {
+                    <div class="mb-4 p-3.5 rounded-lg flex items-center gap-2 text-sm bg-red-50 text-red-600 border border-red-200">
+                        <span class="material-symbols-outlined text-[18px]">error</span>
+                        @ErrorMessage
+                    </div>
+                }
+
+                <div class="flex flex-col gap-5">
+                    <!-- Class Name -->
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1.5">
+                            Tên lớp học <span class="text-red-500">*</span>
+                        </label>
+                        <InputText @bind-Value="Form.Name"
+                                   class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all"
+                                   placeholder="VD: Toán 12 — Luyện thi THPT Quốc Gia" />
+                        <ValidationMessage For="@(() => Form.Name)" class="text-red-500 text-xs mt-1.5 flex items-center gap-1" />
+                    </div>
+
+                    <!-- Subject -->
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1.5">
+                            Môn học <span class="text-red-500">*</span>
+                        </label>
+                        <div class="flex gap-2 flex-wrap mb-2">
+                            @foreach (var preset in SubjectPresets)
+                            {
+                                <button type="button" @onclick="() => Form.Subject = preset"
+                                        class="px-3 py-1.5 rounded-lg text-xs font-medium border transition-all
+                                               @(Form.Subject == preset ? "bg-primary text-white border-primary" : "border-slate-200 text-slate-600 hover:border-primary hover:text-primary")">
+                                    @preset
+                                </button>
+                            }
+                        </div>
+                        <InputText @bind-Value="Form.Subject"
+                                   class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all"
+                                   placeholder="VD: Toán, Vật Lý, Hóa Học..." />
+                        <ValidationMessage For="@(() => Form.Subject)" class="text-red-500 text-xs mt-1.5" />
+                    </div>
+
+                    <!-- Description -->
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1.5">Mô tả lớp học</label>
+                        <InputTextArea @bind-Value="Form.Description"
+                                       rows="4"
+                                       class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all resize-y"
+                                       placeholder="Mô tả nội dung, mục tiêu, đối tượng học sinh của lớp..." />
+                        <p class="text-xs text-slate-400 mt-1">Học sinh sẽ thấy mô tả này khi xem thông tin lớp.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 2: Cài đặt -->
+            <div class="bg-white border border-slate-200 rounded-xl shadow-sm p-6 mb-5">
+                <h3 class="text-base font-bold text-slate-900 mb-5 pb-3 border-b border-slate-100 flex items-center gap-2">
+                    <span class="material-symbols-outlined text-primary text-[22px]">settings</span>
+                    Cài đặt lớp học
+                </h3>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <!-- Max Students -->
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1.5">
+                            Số học sinh tối đa <span class="text-red-500">*</span>
+                        </label>
+                        <div class="flex items-center gap-2">
+                            <button type="button" @onclick="DecrementStudents"
+                                    class="size-10 flex items-center justify-center bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors text-slate-600 font-bold shrink-0">
+                                <span class="material-symbols-outlined text-[20px]">remove</span>
+                            </button>
+                            <InputNumber @bind-Value="Form.MaxStudents"
+                                         class="flex-1 text-center px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all font-semibold" />
+                            <button type="button" @onclick="IncrementStudents"
+                                    class="size-10 flex items-center justify-center bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors text-slate-600 font-bold shrink-0">
+                                <span class="material-symbols-outlined text-[20px]">add</span>
+                            </button>
+                        </div>
+                        <ValidationMessage For="@(() => Form.MaxStudents)" class="text-red-500 text-xs mt-1.5" />
+                        <p class="text-xs text-slate-400 mt-1">Khuyến nghị: 15–30 học sinh/lớp.</p>
+                    </div>
+
+                    <!-- Thumbnail URL -->
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1.5">URL thumbnail (tùy chọn)</label>
+                        <div class="relative">
+                            <span class="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-400 text-[20px]">image</span>
+                            <InputText @bind-Value="Form.ThumbnailUrl"
+                                       class="w-full pl-10 pr-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all"
+                                       placeholder="https://example.com/image.jpg" />
+                        </div>
+                        <p class="text-xs text-slate-400 mt-1">Để trống sẽ tự tạo ảnh theo môn học.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="flex items-center justify-end gap-3">
+                <a href="/teacher/classes"
+                   class="px-5 py-2.5 rounded-lg border border-slate-200 text-slate-600 text-sm font-medium hover:bg-slate-50 transition-colors">
+                    Hủy
+                </a>
+                <button type="submit" disabled="@IsSubmitting"
+                        class="flex items-center gap-2 px-6 py-2.5 rounded-lg bg-primary hover:bg-blue-600 text-white text-sm font-medium transition-all shadow-sm disabled:opacity-60 disabled:cursor-not-allowed">
+                    @if (IsSubmitting)
+                    {
+                        <span class="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>
+                        <span>Đang tạo...</span>
+                    }
+                    else
+                    {
+                        <span class="material-symbols-outlined text-[18px]">add_circle</span>
+                        <span>Tạo lớp học</span>
+                    }
+                </button>
+            </div>
+        </EditForm>
+    </div>
+
+    <!-- ─── Right: Preview card ─────────────────────────────────────────────── -->
+    <div class="lg:col-span-4">
+        <div class="sticky top-6">
+            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Xem trước</p>
+
+            <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                <div class="h-1.5 @GetSubjectColor(Form.Subject)"></div>
+
+                <!-- Thumbnail -->
+                @if (!string.IsNullOrWhiteSpace(Form.ThumbnailUrl))
+                {
+                    <img src="@Form.ThumbnailUrl" alt="Thumbnail"
+                         class="w-full h-36 object-cover"
+                         onerror="this.style.display='none'" />
+                }
+                else
+                {
+                    <div class="w-full h-36 @GetSubjectBg(Form.Subject) flex items-center justify-center">
+                        <span class="material-symbols-outlined text-5xl @GetSubjectText(Form.Subject)">@GetSubjectIcon(Form.Subject)</span>
+                    </div>
+                }
+
+                <div class="p-4">
+                    <div class="size-10 rounded-lg @GetSubjectBg(Form.Subject) flex items-center justify-center mb-3">
+                        <span class="material-symbols-outlined text-[22px] @GetSubjectText(Form.Subject)">@GetSubjectIcon(Form.Subject)</span>
+                    </div>
+
+                    <h4 class="font-bold text-slate-900 text-base leading-snug mb-1">
+                        @(string.IsNullOrWhiteSpace(Form.Name) ? "Tên lớp học..." : Form.Name)
+                    </h4>
+                    <p class="text-xs text-slate-500 mb-3 line-clamp-2">
+                        @(string.IsNullOrWhiteSpace(Form.Description) ? "Mô tả lớp học sẽ hiện ở đây..." : Form.Description)
+                    </p>
+
+                    <div class="flex items-center justify-between pt-3 border-t border-slate-100">
+                        <span class="flex items-center gap-1.5 text-xs text-slate-500">
+                            <span class="material-symbols-outlined text-[16px]">group</span>
+                            <span class="font-medium text-slate-700">0</span> / @Form.MaxStudents học sinh
+                        </span>
+                        <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-green-50 text-green-700">
+                            <span class="size-1.5 rounded-full bg-green-500"></span>
+                            Active
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tips -->
+            <div class="mt-4 p-4 rounded-xl bg-blue-50 border border-blue-100">
+                <p class="text-xs font-semibold text-blue-700 mb-2 flex items-center gap-1.5">
+                    <span class="material-symbols-outlined text-[16px]">lightbulb</span>
+                    Gợi ý
+                </p>
+                <ul class="space-y-1.5 text-xs text-blue-600">
+                    <li>• Đặt tên lớp rõ ràng, gồm môn học và cấp độ</li>
+                    <li>• Mô tả chi tiết giúp học sinh hiểu nội dung lớp</li>
+                    <li>• Giới hạn 15–25 học sinh để dễ quản lý</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private CreateClassDto Form      = new();
+    private bool           IsSubmitting = false;
+    private string?        ErrorMessage;
+
+    private static readonly string[] SubjectPresets =
+        ["Toán", "Vật Lý", "Hóa Học", "Sinh Học", "Ngữ Văn", "Tiếng Anh", "Tin Học", "Lịch Sử"];
+
+    private void IncrementStudents() { if (Form.MaxStudents < 200) Form.MaxStudents++; }
+    private void DecrementStudents() { if (Form.MaxStudents > 1)   Form.MaxStudents--; }
+
+    private async Task HandleSubmit()
+    {
+        ErrorMessage = null;
+        IsSubmitting = true;
+
+        try
+        {
+            long teacherId = Session.UserId > 0 ? Session.UserId : 2;
+            var newClassId = await ClassService.CreateClassAsync(teacherId, Form);
+            // Redirect to the new class detail page (or back to list)
+            NavigationManager.NavigateTo($"/teacher/classes");
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = "Lỗi hệ thống: " + ex.Message;
+        }
+        finally
+        {
+            IsSubmitting = false;
+        }
+    }
+
+    // ── Subject theming (shared with MyClasses.razor) ─────────────────────────
+    private static string GetSubjectColor(string s) => s.ToLower() switch
+    {
+        var x when x.Contains("toán") || x.Contains("math")    => "bg-blue-500",
+        var x when x.Contains("lý")   || x.Contains("physics") => "bg-purple-500",
+        var x when x.Contains("hóa")  || x.Contains("chem")    => "bg-orange-500",
+        var x when x.Contains("sinh") || x.Contains("bio")     => "bg-green-500",
+        var x when x.Contains("văn")  || x.Contains("liter")   => "bg-pink-500",
+        var x when x.Contains("sử")   || x.Contains("hist")    => "bg-yellow-500",
+        var x when x.Contains("tin")  || x.Contains("comp")    => "bg-cyan-500",
+        _                                                        => "bg-indigo-500"
+    };
+
+    private static string GetSubjectBg(string s)   => s.ToLower() switch
+    {
+        var x when x.Contains("toán") || x.Contains("math")    => "bg-blue-50",
+        var x when x.Contains("lý")   || x.Contains("physics") => "bg-purple-50",
+        var x when x.Contains("hóa")  || x.Contains("chem")    => "bg-orange-50",
+        var x when x.Contains("sinh") || x.Contains("bio")     => "bg-green-50",
+        var x when x.Contains("văn")  || x.Contains("liter")   => "bg-pink-50",
+        var x when x.Contains("tin")  || x.Contains("comp")    => "bg-cyan-50",
+        _                                                        => "bg-indigo-50"
+    };
+
+    private static string GetSubjectText(string s) => s.ToLower() switch
+    {
+        var x when x.Contains("toán") || x.Contains("math")    => "text-blue-600",
+        var x when x.Contains("lý")   || x.Contains("physics") => "text-purple-600",
+        var x when x.Contains("hóa")  || x.Contains("chem")    => "text-orange-600",
+        var x when x.Contains("sinh") || x.Contains("bio")     => "text-green-600",
+        var x when x.Contains("văn")  || x.Contains("liter")   => "text-pink-600",
+        var x when x.Contains("tin")  || x.Contains("comp")    => "text-cyan-600",
+        _                                                        => "text-indigo-600"
+    };
+
+    private static string GetSubjectIcon(string s) => s.ToLower() switch
+    {
+        var x when x.Contains("toán") || x.Contains("math")    => "calculate",
+        var x when x.Contains("lý")   || x.Contains("physics") => "science",
+        var x when x.Contains("hóa")  || x.Contains("chem")    => "biotech",
+        var x when x.Contains("sinh") || x.Contains("bio")     => "eco",
+        var x when x.Contains("văn")  || x.Contains("liter")   => "menu_book",
+        var x when x.Contains("sử")   || x.Contains("hist")    => "history_edu",
+        var x when x.Contains("tin")  || x.Contains("comp")    => "terminal",
+        _                                                        => "class"
+    };
+}

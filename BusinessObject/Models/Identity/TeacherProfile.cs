@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using BusinessObject.Enum;
 using BusinessObject.Models.Base;
 
 namespace BusinessObject.Models;
@@ -25,6 +26,13 @@ public class TeacherProfile : AuditableEntity
     [Required]
     public decimal HourlyRate { get; set; }
 
+    [MaxLength(500)]
+    public string? LanguagesSpoken { get; set; }
+
+    public int? YearsOfExperience { get; set; }
+
+    public string? TeachingPhilosophy { get; set; }
+
     public decimal RatingAvg { get; set; } = 0;
 
     public int TotalRatingCount { get; set; } = 0;
@@ -32,7 +40,15 @@ public class TeacherProfile : AuditableEntity
     [MaxLength(100)]
     public string? BankAccount { get; set; }
 
+    public ComplianceStatus Status { get; set; } = ComplianceStatus.PENDING;
+
+    public string? AdminNotes { get; set; }
+
+    public DateTime? VerifiedAt { get; set; }
+
     // Navigation properties
+    public ICollection<TeacherDocument> Documents { get; set; } = [];
+
     [ForeignKey("UserId")]
     public User User { get; set; } = null!;
 }

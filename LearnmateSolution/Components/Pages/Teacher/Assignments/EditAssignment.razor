@@ -3,9 +3,13 @@
 @layout Layout.TeacherLayout
 
 @using BusinessLogicLayer.DTOs.Teacher.Assignments
-@using BusinessLogicLayer.Services.Interfaces.Teacher.Assignments
+@using BusinessLogicLayer.DTOs.Teacher.Classes
+@using BusinessLogicLayer.Services.Interfaces
 @using BusinessObject.Enum
+@using LearnmateSolution.AppState
 @inject ITeacherAssignmentService AssignmentService
+@inject ITeacherCourseService ClassService
+@inject UserSessionService Session
 @inject NavigationManager NavigationManager
 
 <PageTitle>Edit Assignment | LearnMate</PageTitle>
@@ -35,9 +39,9 @@ else
             <h1 class="text-3xl font-bold tracking-tight text-slate-900 mb-1">Edit Assignment</h1>
             <p class="text-slate-500 font-normal">Update your assignment details, questions, and settings.</p>
         </div>
-        <button type="button" @onclick='() => NavigationManager.NavigateTo("/teacher/assignments/create")' class="flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-slate-800 transition-colors">
+        <button type="button" @onclick='() => NavigationManager.NavigateTo("/teacher/classes")' class="flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-slate-800 transition-colors">
             <span class="material-symbols-outlined text-[20px]">arrow_back</span>
-            Back to Assignments
+            Back to Classes
         </button>
     </div>
 
@@ -78,74 +82,45 @@ else
                 </div>
             </div>
 
-            <!-- Questions Section -->
+            <!-- File Upload Section (replaces Questions) -->
             <div class="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden p-6">
-                <div class="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
-                    <h3 class="text-lg font-bold text-slate-900">Questions (@Model.Questions.Count)</h3>
-                    <button type="button" @onclick="AddQuestion" class="flex items-center gap-1 text-sm font-medium text-primary hover:text-blue-600 transition-colors">
-                        <span class="material-symbols-outlined text-[18px]">add</span> Add Question
-                    </button>
-                </div>
+                <h3 class="text-lg font-bold text-slate-900 mb-4 border-b border-slate-100 pb-3">Assignment File</h3>
+                <p class="text-sm text-slate-500 mb-4">Upload a new assignment document (PDF, DOCX, PPT, ZIP, images, etc.). Max 50 MB.</p>
+                
+                <label class="border-2 border-dashed rounded-lg p-8 flex flex-col items-center text-center cursor-pointer transition-all
+                    @(UploadedFile != null ? "border-primary/50 bg-primary/5" : "border-slate-300 hover:border-primary hover:bg-slate-50")">
+                    @if (IsUploading)
+                    {
+                        <span class="material-symbols-outlined animate-spin text-primary text-4xl mb-2">progress_activity</span>
+                        <p class="text-sm font-medium text-primary">Uploading...</p>
+                    }
+                    else if (UploadedFile != null)
+                    {
+                        <span class="material-symbols-outlined text-primary text-4xl mb-2">task</span>
+                        <p class="text-sm font-bold text-primary">@UploadedFile.Name</p>
+                        <p class="text-xs text-slate-400 mt-1">@FormatFileSize(UploadedFile.Size) — Click to change</p>
+                    }
+                    else
+                    {
+                        <span class="material-symbols-outlined text-slate-400 text-4xl mb-2">cloud_upload</span>
+                        <p class="text-sm font-medium text-slate-700">Click to select a file</p>
+                        <p class="text-xs text-slate-400 mt-1">Leave empty to keep current file</p>
+                    }
+                    <InputFile OnChange="OnFileSelected" class="hidden" />
+                </label>
 
-                @if (Model.Questions.Count == 0)
+                @if (!string.IsNullOrEmpty(FileUploadError))
                 {
-                    <div class="py-8 text-center bg-slate-50 border border-dashed border-slate-200 rounded-lg">
-                        <span class="material-symbols-outlined text-slate-400 text-4xl mb-2">quiz</span>
-                        <p class="text-slate-500 text-sm">No questions yet. Click "Add Question" to get started.</p>
-                    </div>
+                    <p class="text-xs text-red-500 mt-2">@FileUploadError</p>
                 }
-                else
+                @if (!string.IsNullOrEmpty(Model.FileUrl))
                 {
-                    <div class="flex flex-col gap-6">
-                        @for (int i = 0; i < Model.Questions.Count; i++)
-                        {
-                            var idx = i;
-                            <div class="p-5 border border-slate-200 rounded-lg bg-slate-50 relative group">
-                                <button type="button" @onclick="() => RemoveQuestion(idx)" class="absolute top-4 right-4 text-slate-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <span class="material-symbols-outlined text-[20px]">delete</span>
-                                </button>
-
-                                <div class="flex gap-4 mb-4">
-                                    <div class="flex-1">
-                                        <label class="block text-xs font-medium text-slate-500 mb-1">Question @(idx + 1)</label>
-                                        <InputTextArea @bind-Value="Model.Questions[idx].Content" rows="2" class="w-full px-3 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary outline-none" placeholder="Enter question..." />
-                                    </div>
-                                    <div class="w-48">
-                                        <label class="block text-xs font-medium text-slate-500 mb-1">Type</label>
-                                        <InputSelect @bind-Value="Model.Questions[idx].Type" class="w-full px-3 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary outline-none text-sm">
-                                            <option value="@QuestionType.MULTIPLE_CHOICE">Multiple Choice</option>
-                                            <option value="@QuestionType.ESSAY">Essay</option>
-                                        </InputSelect>
-                                    </div>
-                                    <div class="w-24">
-                                        <label class="block text-xs font-medium text-slate-500 mb-1">Points</label>
-                                        <InputNumber @bind-Value="Model.Questions[idx].Points" class="w-full px-3 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary outline-none text-sm" />
-                                    </div>
-                                </div>
-
-                                @if (Model.Questions[idx].Type == QuestionType.MULTIPLE_CHOICE)
-                                {
-                                    <div class="pl-4 border-l-2 border-slate-200 ml-2 space-y-3">
-                                        <label class="block text-xs font-medium text-slate-500">Options <span class="text-slate-400">(check = correct answer)</span></label>
-                                        @for (int j = 0; j < Model.Questions[idx].Options.Count; j++)
-                                        {
-                                            var oi = j;
-                                            var qi = idx;
-                                            <div class="flex items-center gap-3">
-                                                <InputCheckbox @bind-Value="Model.Questions[qi].Options[oi].IsCorrect" class="size-4 text-primary rounded border-slate-300" />
-                                                <InputText @bind-Value="Model.Questions[qi].Options[oi].Content" class="flex-1 px-3 py-1.5 text-sm rounded-md border border-slate-300 focus:ring-2 focus:ring-primary outline-none" placeholder="Option text..." />
-                                                <button type="button" @onclick="() => RemoveOption(qi, oi)" class="text-slate-400 hover:text-red-500">
-                                                    <span class="material-symbols-outlined text-[18px]">close</span>
-                                                </button>
-                                            </div>
-                                        }
-                                        <button type="button" @onclick="() => AddOption(idx)" class="text-xs font-medium text-primary hover:text-blue-600 flex items-center gap-1 mt-2">
-                                            <span class="material-symbols-outlined text-[16px]">add</span> Add Option
-                                        </button>
-                                    </div>
-                                }
-                            </div>
-                        }
+                    <div class="mt-3 flex items-center justify-between text-sm p-3 rounded-lg bg-slate-50 border border-slate-200">
+                        <div class="flex items-center gap-2 text-primary">
+                            <span class="material-symbols-outlined text-[18px]">attachment</span>
+                            <span class="font-medium truncate max-w-[200px]" title="@Model.FileUrl">Current File</span>
+                        </div>
+                        <a href="@Model.FileUrl" target="_blank" class="text-primary hover:underline" @onclick:stopPropagation>View Document &rarr;</a>
                     </div>
                 }
             </div>
@@ -160,9 +135,10 @@ else
                     <label class="block text-sm font-medium text-slate-700 mb-1">Target Class <span class="text-red-500">*</span></label>
                     <InputSelect @bind-Value="Model.ClassId" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary outline-none transition-all appearance-none bg-white">
                         <option value="0" disabled>Select a class...</option>
-                        <option value="1">Advanced Mathematics (10A)</option>
-                        <option value="2">Physics 101: Mechanics (10B)</option>
-                        <option value="3">Literature &amp; Arts (11A)</option>
+                        @foreach (var cls in TeacherClasses)
+                        {
+                            <option value="@cls.Id">@cls.Name (@cls.Subject)</option>
+                        }
                     </InputSelect>
                 </div>
 
@@ -187,7 +163,7 @@ else
                 <div class="space-y-2 text-xs text-slate-500">
                     <div class="flex justify-between"><span>ID</span><span class="font-mono text-slate-700">#@AssignmentId</span></div>
                     <div class="flex justify-between"><span>Created</span><span class="text-slate-700">@OriginalCreatedAt.ToString("MMM dd, yyyy HH:mm")</span></div>
-                    <div class="flex justify-between"><span>Questions</span><span class="text-slate-700">@Model.Questions.Count</span></div>
+                    <div class="flex justify-between"><span>File Attached</span><span class="text-slate-700">@(string.IsNullOrEmpty(Model.FileUrl) ? "No" : "Yes")</span></div>
                 </div>
             </div>
 
@@ -220,13 +196,29 @@ else
     private UpdateAssignmentDto? Model;
     private bool IsLoading = true;
     private bool IsSubmitting;
+    private bool IsUploading;
     private string? ErrorMessage;
     private string? SuccessMessage;
+    private string? FileUploadError;
+    private IBrowserFile? UploadedFile;
     private DateTime OriginalCreatedAt;
+
+    private List<TeacherClassListItemDto> TeacherClasses = new();
 
     protected override async Task OnInitializedAsync()
     {
+        await LoadTeacherClasses();
         await LoadAssignment();
+    }
+
+    private async Task LoadTeacherClasses()
+    {
+        try
+        {
+            long teacherId = Session.UserId > 0 ? Session.UserId : 1;
+            TeacherClasses = await ClassService.GetTeacherClassesAsync(teacherId);
+        }
+        catch { }
     }
 
     private async Task LoadAssignment()
@@ -245,19 +237,7 @@ else
                     Description = detail.Description,
                     DueDate = detail.DueDate,
                     Status = detail.Status,
-                    Questions = detail.Questions.Select(q => new UpdateAssignmentQuestionDto
-                    {
-                        Id = q.Id,
-                        Content = q.Content,
-                        Type = q.Type,
-                        Points = q.Points,
-                        Options = q.Options.Select(o => new UpdateAssignmentOptionDto
-                        {
-                            Id = o.Id,
-                            Content = o.Content,
-                            IsCorrect = o.IsCorrect
-                        }).ToList()
-                    }).ToList()
+                    FileUrl = detail.FileUrl
                 };
             }
         }
@@ -285,7 +265,6 @@ else
         }
 
         IsSubmitting = true;
-        StateHasChanged();
 
         try
         {
@@ -310,36 +289,47 @@ else
         }
     }
 
-    private void AddQuestion()
+    private async Task OnFileSelected(InputFileChangeEventArgs e)
     {
-        Model?.Questions.Add(new UpdateAssignmentQuestionDto
+        FileUploadError = null;
+        UploadedFile = e.File;
+
+        if (UploadedFile.Size > 50 * 1024 * 1024)
         {
-            Type = QuestionType.MULTIPLE_CHOICE,
-            Points = 1,
-            Options = new List<UpdateAssignmentOptionDto>
+            FileUploadError = "File too large. Maximum 50 MB.";
+            UploadedFile = null;
+            return;
+        }
+
+        IsUploading = true;
+        StateHasChanged();
+
+        try
+        {
+            using var stream = UploadedFile.OpenReadStream(maxAllowedSize: 50 * 1024 * 1024);
+            var url = await AssignmentService.UploadAssignmentFileAsync(
+                stream, UploadedFile.Name, UploadedFile.ContentType);
+            if (Model != null)
             {
-                new() { Content = "" },
-                new() { Content = "" }
+                Model.FileUrl = url;
             }
-        });
+        }
+        catch (Exception ex)
+        {
+            FileUploadError = "Upload failed: " + ex.Message;
+            UploadedFile = null;
+        }
+        finally
+        {
+            IsUploading = false;
+            StateHasChanged();
+        }
     }
 
-    private void RemoveQuestion(int index)
+    private static string FormatFileSize(long bytes)
     {
-        if (Model != null && index >= 0 && index < Model.Questions.Count)
-            Model.Questions.RemoveAt(index);
-    }
-
-    private void AddOption(int questionIndex)
-    {
-        if (Model != null && questionIndex >= 0 && questionIndex < Model.Questions.Count)
-            Model.Questions[questionIndex].Options.Add(new UpdateAssignmentOptionDto { Content = "" });
-    }
-
-    private void RemoveOption(int questionIndex, int optionIndex)
-    {
-        if (Model != null && questionIndex >= 0 && questionIndex < Model.Questions.Count &&
-            optionIndex >= 0 && optionIndex < Model.Questions[questionIndex].Options.Count)
-            Model.Questions[questionIndex].Options.RemoveAt(optionIndex);
+        if (bytes < 1024) return $"{bytes} B";
+        if (bytes < 1024 * 1024) return $"{bytes / 1024.0:F1} KB";
+        return $"{bytes / 1024.0 / 1024.0:F1} MB";
     }
 }

@@ -1,0 +1,414 @@
+@using BusinessLogicLayer.DTOs.Messaging
+@using LearnmateSolution.Components.Pages.Student.FindTutor.Models
+@using Microsoft.AspNetCore.SignalR.Client
+@inject IJSRuntime JS
+@inject NavigationManager Nav
+@inject UserSessionService Session
+@inject IHttpClientFactory HttpClientFactory
+@implements IAsyncDisposable
+
+@if (_visible)
+{
+    <!-- Overlay -->
+    <div class="fixed inset-0 z-40 bg-black/40 transition-opacity duration-300 @(_open ? "opacity-100" : "opacity-0")"
+         @onclick="Close">
+    </div>
+
+    <!-- Drawer -->
+    <div class="fixed top-0 right-0 z-50 h-full w-full sm:w-1/3 min-w-[320px] bg-white shadow-2xl flex flex-col
+                transition-transform duration-300 ease-out @(_open ? "translate-x-0" : "translate-x-full")">
+
+        <!-- Header -->
+        <div class="flex items-center justify-between px-5 py-4 border-b border-[#E9E9E7]">
+            <div class="flex items-center gap-3">
+                <div class="size-9 rounded-full bg-[#F1F1EF] bg-cover bg-center shrink-0"
+                     style="background-image: url('@Tutor?.AvatarUrl')">
+                </div>
+                <div>
+                    <p class="text-sm font-semibold text-[#37352F] leading-snug">@Tutor?.Name</p>
+                    <p class="text-xs text-[#787774]">@(Tutor?.IsSuperTutor == true ? "Super Tutor" : "Tutor")</p>
+                </div>
+            </div>
+            <button class="p-1.5 rounded-md hover:bg-[#F1F1EF] transition-colors" @onclick="Close">
+                <span class="material-symbols-outlined text-[#787774] text-[20px]">close</span>
+            </button>
+        </div>
+
+        <!-- Messages -->
+        <div @ref="_messagesContainer" class="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-3">
+
+            @if (_loading)
+            {
+                <div class="flex items-center justify-center h-16 text-[#787774]">
+                    <span class="text-sm">Loading...</span>
+                </div>
+            }
+            else if (!string.IsNullOrEmpty(_loadError))
+            {
+                <div class="text-sm text-rose-600 text-center py-4">@_loadError</div>
+            }
+            else
+            {
+                <!-- Load more button -->
+                @if (_hasMore)
+                {
+                    <div class="flex justify-center">
+                        <button class="text-xs text-[#787774] hover:text-[#37352F] py-1.5 px-3 rounded-full hover:bg-[#F1F1EF] transition-colors disabled:opacity-40"
+                                disabled="@_loadingMore"
+                                @onclick="LoadMoreAsync">
+                            @(_loadingMore ? "Loading…" : "Load older messages")
+                        </button>
+                    </div>
+                }
+
+                @foreach (var msg in _messages)
+                {
+                    if (msg.IsMine)
+                    {
+                        <div class="flex justify-end">
+                            <div class="bg-[#37352F] rounded-xl rounded-tr-sm px-3.5 py-2.5 max-w-[80%]">
+                                <p class="text-sm text-white whitespace-pre-wrap">@msg.Content</p>
+                                <p class="text-[11px] text-white/60 mt-1 text-right">@msg.SentAtLocal.ToString("h:mm tt")</p>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="flex gap-2.5">
+                            <div class="size-7 rounded-full bg-[#F1F1EF] bg-cover bg-center shrink-0 mt-0.5"
+                                 style="background-image: url('@Tutor?.AvatarUrl')">
+                            </div>
+                            <div class="bg-[#F7F7F5] rounded-xl rounded-tl-sm px-3.5 py-2.5 max-w-[80%]">
+                                <p class="text-sm text-[#37352F] whitespace-pre-wrap">@msg.Content</p>
+                                <p class="text-[11px] text-[#787774] mt-1">@msg.SentAtLocal.ToString("h:mm tt")</p>
+                            </div>
+                        </div>
+                    }
+                }
+
+                <!-- Typing indicator -->
+                @if (_otherUserTyping)
+                {
+                    <div class="flex gap-2.5">
+                        <div class="size-7 rounded-full bg-[#F1F1EF] bg-cover bg-center shrink-0 mt-0.5"
+                             style="background-image: url('@Tutor?.AvatarUrl')">
+                        </div>
+                        <div class="bg-[#F7F7F5] rounded-xl rounded-tl-sm px-3.5 py-3 flex items-center gap-1">
+                            <span class="size-1.5 rounded-full bg-[#B0AEAC] animate-bounce" style="animation-delay:0ms"></span>
+                            <span class="size-1.5 rounded-full bg-[#B0AEAC] animate-bounce" style="animation-delay:150ms"></span>
+                            <span class="size-1.5 rounded-full bg-[#B0AEAC] animate-bounce" style="animation-delay:300ms"></span>
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+
+        <!-- Input -->
+        <div class="px-4 py-3 border-t border-[#E9E9E7] flex items-end gap-2">
+            <textarea @ref="_textareaRef"
+                      class="flex-1 resize-none overflow-y-auto rounded-xl border border-[#E9E9E7] bg-[#F7F7F5]
+                             px-3.5 py-2.5 text-sm text-[#37352F] placeholder:text-[#B0AEAC]
+                             focus:outline-none focus:ring-0 focus:border-[#37352F] transition-colors
+                             min-h-[42px] max-h-32 leading-relaxed"
+                      placeholder="Type a message…"
+                      rows="1"
+                      value="@_draft"
+                      @oninput="OnInput">
+            </textarea>
+            <button class="shrink-0 size-[42px] rounded-xl bg-[#37352F] hover:bg-[#2F2E2B] transition-colors
+                           flex items-center justify-center disabled:opacity-40"
+                    disabled="@(string.IsNullOrWhiteSpace(_draft) || _sending)"
+                    @onclick="SendMessage">
+                <span class="material-symbols-outlined text-white text-[18px]">send</span>
+            </button>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public TutorListItem? Tutor { get; set; }
+
+    private bool _visible;
+    private bool _open;
+    private bool _loading;
+    private bool _sending;
+    private bool _loadingMore;
+    private bool _hasMore;
+    private bool _otherUserTyping;
+    private bool _isTypingNotified;
+    private bool _needsScrollAdjust;
+    private double _prevScrollHeight;
+    private int _skip;
+    private const int Take = 50;
+    private string _draft = "";
+    private string _loadError = "";
+    private long _conversationId;
+    private List<MessageDto> _messages = [];
+    private ElementReference _textareaRef;
+    private ElementReference _messagesContainer;
+    private DotNetObjectReference<ChatDrawer>? _dotnetRef;
+    private HubConnection? _hub;
+    private CancellationTokenSource? _typingCts;
+
+    public async Task OpenAsync()
+    {
+        _messages.Clear();
+        _draft = "";
+        _loadError = "";
+        _loading = true;
+        _hasMore = false;
+        _skip = 0;
+        _otherUserTyping = false;
+        _visible = true;
+        StateHasChanged();
+
+        await Task.Delay(20);
+        _open = true;
+        StateHasChanged();
+
+        await Task.Delay(20);
+        _dotnetRef = DotNetObjectReference.Create(this);
+        await JS.InvokeVoidAsync("initChatInput", _textareaRef, _dotnetRef);
+
+        await InitConversationAsync();
+    }
+
+    private async Task InitConversationAsync()
+    {
+        if (Tutor is null) { _loading = false; return; }
+
+        try
+        {
+            var client = CreateClient();
+            var convResp = await client.PostAsJsonAsync<object>(
+                $"api/conversations/{Tutor.Id}", new { });
+
+            if (!convResp.IsSuccessStatusCode)
+            {
+                _loadError = "Could not open conversation.";
+                _loading = false;
+                StateHasChanged();
+                return;
+            }
+
+            var convResult = await convResp.Content
+                .ReadFromJsonAsync<BusinessLogicLayer.DTOs.ApiResponse<ConversationSummaryDto>>();
+
+            _conversationId = convResult?.Data?.Id ?? 0;
+
+            if (_conversationId == 0)
+            {
+                _loadError = "Could not open conversation.";
+                _loading = false;
+                StateHasChanged();
+                return;
+            }
+
+            // Load first page
+            var msgResp = await client.GetFromJsonAsync<BusinessLogicLayer.DTOs.ApiResponse<IReadOnlyList<MessageDto>>>(
+                $"api/conversations/{_conversationId}/messages?skip=0&take={Take}");
+            var loaded = msgResp?.Data?.ToList() ?? [];
+            _messages = loaded;
+            _skip = loaded.Count;
+            _hasMore = loaded.Count == Take;
+
+            await ConnectHubAsync();
+
+            _loading = false;
+            StateHasChanged();
+            await ScrollToBottomAsync();
+
+            _ = client.PostAsync($"api/conversations/{_conversationId}/read", null);
+        }
+        catch
+        {
+            _loadError = "Failed to load messages.";
+            _loading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadMoreAsync()
+    {
+        if (_loadingMore || !_hasMore || _conversationId == 0) return;
+
+        _loadingMore = true;
+        StateHasChanged();
+
+        try
+        {
+            var msgResp = await CreateClient()
+                .GetFromJsonAsync<BusinessLogicLayer.DTOs.ApiResponse<IReadOnlyList<MessageDto>>>(
+                    $"api/conversations/{_conversationId}/messages?skip={_skip}&take={Take}");
+            var loaded = msgResp?.Data?.ToList() ?? [];
+
+            if (loaded.Count > 0)
+            {
+                _prevScrollHeight = await JS.InvokeAsync<double>("getScrollHeight", _messagesContainer);
+                _messages.InsertRange(0, loaded);
+                _skip += loaded.Count;
+                _hasMore = loaded.Count == Take;
+                _needsScrollAdjust = true;
+            }
+            else
+            {
+                _hasMore = false;
+            }
+        }
+        catch { }
+
+        _loadingMore = false;
+        StateHasChanged();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_needsScrollAdjust)
+        {
+            _needsScrollAdjust = false;
+            try { await JS.InvokeVoidAsync("adjustScrollAfterPrepend", _messagesContainer, _prevScrollHeight); }
+            catch { }
+        }
+    }
+
+    private async Task ConnectHubAsync()
+    {
+        if (_hub is not null)
+        {
+            try { await _hub.StopAsync(); } catch { }
+            await _hub.DisposeAsync();
+        }
+
+        _hub = new HubConnectionBuilder()
+            .WithUrl(Nav.ToAbsoluteUri("/hubs/chat"), opts =>
+            {
+                opts.AccessTokenProvider = () => Task.FromResult<string?>(Session.AccessToken);
+            })
+            .WithAutomaticReconnect()
+            .Build();
+
+        _hub.On<MessageDto>("ReceiveMessage", async msg =>
+        {
+            var corrected = msg with { IsMine = msg.SenderId == Session.UserId };
+            if (_messages.All(m => m.Id != msg.Id))
+                _messages.Add(corrected);
+            await InvokeAsync(StateHasChanged);
+            await ScrollToBottomAsync();
+        });
+
+        _hub.On<bool>("UserTyping", async isTyping =>
+        {
+            _otherUserTyping = isTyping;
+            await InvokeAsync(StateHasChanged);
+            if (isTyping) await ScrollToBottomAsync();
+        });
+
+        await _hub.StartAsync();
+        await _hub.InvokeAsync("JoinConversation", _conversationId);
+    }
+
+    private async Task Close()
+    {
+        _open = false;
+        StateHasChanged();
+        await Task.Delay(300);
+        _visible = false;
+        if (_hub is not null)
+        {
+            try { await _hub.InvokeAsync("LeaveConversation", _conversationId); } catch { }
+        }
+        StateHasChanged();
+    }
+
+    private void OnInput(ChangeEventArgs e)
+    {
+        _draft = e.Value?.ToString() ?? "";
+        _ = NotifyTypingAsync();
+    }
+
+    private async Task NotifyTypingAsync()
+    {
+        if (_hub?.State != HubConnectionState.Connected || _conversationId == 0) return;
+
+        _typingCts?.Cancel();
+        _typingCts = new CancellationTokenSource();
+
+        if (!_isTypingNotified)
+        {
+            _isTypingNotified = true;
+            try { await _hub.InvokeAsync("StartTyping", _conversationId); } catch { }
+        }
+
+        var cts = _typingCts;
+        try
+        {
+            await Task.Delay(2000, cts.Token);
+            _isTypingNotified = false;
+            try { await _hub.InvokeAsync("StopTyping", _conversationId); } catch { }
+        }
+        catch (OperationCanceledException) { }
+    }
+
+    [JSInvokable]
+    public async Task SendFromJs()
+    {
+        await SendMessage();
+    }
+
+    private async Task SendMessage()
+    {
+        var text = _draft.Trim();
+        if (string.IsNullOrEmpty(text) || _sending || _conversationId == 0) return;
+
+        _sending = true;
+        _draft = "";
+        StateHasChanged();
+        await JS.InvokeVoidAsync("resetTextareaHeight", _textareaRef);
+
+        // Stop typing indicator
+        _typingCts?.Cancel();
+        _isTypingNotified = false;
+        try { await _hub!.InvokeAsync("StopTyping", _conversationId); } catch { }
+
+        try
+        {
+            var client = CreateClient();
+            await client.PostAsJsonAsync(
+                $"api/conversations/{_conversationId}/messages",
+                new SendMessageDto { Content = text });
+        }
+        catch { }
+        finally
+        {
+            _sending = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task ScrollToBottomAsync()
+    {
+        try { await JS.InvokeVoidAsync("scrollToBottom", _messagesContainer); }
+        catch { }
+    }
+
+    private HttpClient CreateClient()
+    {
+        var client = HttpClientFactory.CreateClient("learnmate");
+        client.BaseAddress = new Uri(Nav.BaseUri);
+        client.DefaultRequestHeaders.Authorization =
+            new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", Session.AccessToken);
+        return client;
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        _typingCts?.Cancel();
+        _typingCts?.Dispose();
+        _dotnetRef?.Dispose();
+        if (_hub is not null)
+        {
+            try { await _hub.StopAsync(); } catch { }
+            await _hub.DisposeAsync();
+        }
+    }
+}

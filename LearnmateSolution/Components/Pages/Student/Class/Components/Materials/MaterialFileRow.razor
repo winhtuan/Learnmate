@@ -1,0 +1,53 @@
+@using LearnmateSolution.Components.Pages.Student.Class.Models
+@inject IJSRuntime JS
+
+<tr class="group hover:bg-slate-50 transition-colors border-b border-slate-100 last:border-0">
+    <td class="py-4 pl-6">
+        <div class="flex items-center gap-4">
+            <div class="size-10 rounded-lg @File.IconBg @File.IconColor flex items-center justify-center shrink-0">
+                <span class="material-symbols-outlined text-[20px]">@File.Icon</span>
+            </div>
+            <span class="font-medium text-slate-900 group-hover:text-primary transition-colors cursor-pointer">@File.Name</span>
+        </div>
+    </td>
+    <td class="py-4 text-slate-500 hidden md:table-cell">@File.Type</td>
+    <td class="py-4 text-slate-500 hidden lg:table-cell">@File.Size</td>
+    <td class="py-4 text-slate-500 hidden lg:table-cell">@File.Date</td>
+    <td class="py-4 pr-6 text-right">
+        <div class="relative inline-block">
+            <button @onclick="ToggleMenu" @onclick:stopPropagation="true"
+                    class="p-2 text-slate-400 hover:text-slate-900 transition-colors rounded-full hover:bg-slate-200">
+                <span class="material-symbols-outlined text-[20px]">more_horiz</span>
+            </button>
+            @if (_menuOpen)
+            {
+                <div class="fixed inset-0 z-10" @onclick="CloseMenu"></div>
+                <div class="absolute right-0 top-8 z-20 py-1 min-w-[160px]"
+                     style="background:#f8fafc; border:2px solid #e2e8f0; border-radius:8px; box-shadow:0 1px 4px rgba(0,0,0,.08);"
+                     @onclick:stopPropagation="true">
+                    <button @onclick="DownloadAsync"
+                            class="w-full px-4 py-2.5 text-left text-sm text-slate-700 hover:bg-slate-100 flex items-center gap-3 transition-colors">
+                        <span class="material-symbols-outlined text-[20px]">download</span>
+                        Download
+                    </button>
+                </div>
+            }
+        </div>
+    </td>
+</tr>
+
+@code {
+    [Parameter] public MaterialFile File { get; set; } = null!;
+
+    private bool _menuOpen;
+
+    private void ToggleMenu() => _menuOpen = !_menuOpen;
+    private void CloseMenu() => _menuOpen = false;
+
+    private async Task DownloadAsync()
+    {
+        _menuOpen = false;
+        if (!string.IsNullOrEmpty(File.FileUrl))
+            await JS.InvokeVoidAsync("open", File.FileUrl, "_blank");
+    }
+}

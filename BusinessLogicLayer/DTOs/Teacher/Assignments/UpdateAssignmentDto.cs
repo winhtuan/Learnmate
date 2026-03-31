@@ -18,6 +18,8 @@ public class UpdateAssignmentDto
 
     public AssignmentStatus Status { get; set; }
 
+    public string? FileUrl { get; set; }
+
     public List<UpdateAssignmentQuestionDto> Questions { get; set; } = new();
 }
 

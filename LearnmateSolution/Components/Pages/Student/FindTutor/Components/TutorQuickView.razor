@@ -1,0 +1,207 @@
+@using LearnmateSolution.Components.Pages.Student.FindTutor.Models
+
+@if (Tutor is null)
+{
+    <div class="flex flex-col items-center justify-center h-64 gap-3">
+        <span class="material-symbols-outlined text-5xl text-indigo-200">person_search</span>
+        <p class="text-sm font-medium text-slate-400">Select a tutor to see details</p>
+    </div>
+}
+else
+{
+    <!-- Header -->
+    <div class="flex flex-col items-center text-center gap-2">
+        <div class="relative">
+            <div class="size-24 rounded-full bg-indigo-100 bg-cover bg-center ring-4 ring-indigo-100"
+                 style="background-image: url('@Tutor.AvatarUrl')">
+            </div>
+            @if (Tutor.IsVerified)
+            {
+                <div class="absolute bottom-1 right-1 bg-white rounded-full p-0.5 shadow" title="Verified Tutor">
+                    <span class="material-symbols-outlined text-indigo-500 text-[16px]" style="font-variation-settings:'FILL' 1">verified</span>
+                </div>
+            }
+        </div>
+        <div>
+            <h2 class="text-lg font-bold text-slate-900">@Tutor.Name</h2>
+            <p class="text-xs text-slate-400 mt-0.5">
+                @(Tutor.IsSuperTutor ? "Super Tutor" : "Tutor")
+                <span class="mx-1">·</span>
+                @Tutor.Location
+            </p>
+        </div>
+        <!-- Rating row -->
+        <div class="flex items-center gap-1 text-sm">
+            <span class="material-symbols-outlined text-amber-400 text-[15px]" style="font-variation-settings:'FILL' 1">star</span>
+            <span class="font-semibold text-slate-800">@Tutor.Rating.ToString("0.0")</span>
+            <span class="text-slate-400">(@Tutor.ReviewCount reviews)</span>
+        </div>
+        <!-- Subjects -->
+        <div class="flex flex-wrap justify-center gap-1.5 mt-0.5">
+            @foreach (var subject in Tutor.Subjects)
+            {
+                <span class="px-2.5 py-0.5 text-xs bg-indigo-50 text-indigo-700 rounded-md font-medium border border-indigo-100">@subject</span>
+            }
+        </div>
+    </div>
+
+    <!-- Price + Availability -->
+    <div class="flex items-center justify-between bg-gradient-to-r from-indigo-50 to-violet-50 rounded-2xl px-4 py-3.5 border border-indigo-100">
+        <div>
+            <p class="text-xs text-indigo-400 font-semibold uppercase tracking-wide">Hourly Rate</p>
+            <p class="text-2xl font-bold text-indigo-600 leading-none mt-0.5">
+                $@Tutor.HourlyRate.ToString("0")<span class="text-sm font-normal text-slate-400">/hr</span>
+            </p>
+        </div>
+        @{ var (badgeText, badgeCss) = AvailBadge(Tutor.Availability); }
+        <span class="text-xs px-3 py-1.5 rounded-xl font-semibold @badgeCss">@badgeText</span>
+    </div>
+
+    <!-- Stats -->
+    <div class="grid grid-cols-2 gap-3">
+        <div class="flex flex-col items-center justify-center p-3 rounded-xl bg-slate-50 border border-slate-100">
+            <span class="text-xs text-slate-400 uppercase font-semibold tracking-wider">Response</span>
+            <span class="font-bold text-slate-700 mt-1">@Tutor.ResponseTime</span>
+        </div>
+        <div class="flex flex-col items-center justify-center p-3 rounded-xl bg-slate-50 border border-slate-100">
+            <span class="text-xs text-slate-400 uppercase font-semibold tracking-wider">Lessons</span>
+            <span class="font-bold text-slate-700 mt-1">@Tutor.TotalLessons.ToString("N0")</span>
+        </div>
+    </div>
+
+    <!-- Bio -->
+    <div class="space-y-1.5">
+        <h4 class="text-xs font-semibold uppercase tracking-wide text-slate-400">About</h4>
+        <p class="text-sm text-slate-700 leading-relaxed">@Tutor.FullBio</p>
+    </div>
+
+    <!-- Mini Calendar -->
+    <div class="space-y-3">
+        <div class="flex items-center justify-between">
+            <h4 class="text-sm font-semibold text-slate-800">@_monthLabel</h4>
+            <div class="flex gap-1">
+                <button class="p-1 rounded-lg hover:bg-indigo-50 transition-colors" @onclick="PrevMonth">
+                    <span class="material-symbols-outlined text-slate-400 text-[18px]">chevron_left</span>
+                </button>
+                <button class="p-1 rounded-lg hover:bg-indigo-50 transition-colors" @onclick="NextMonth">
+                    <span class="material-symbols-outlined text-slate-400 text-[18px]">chevron_right</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-7 gap-1 text-center text-xs">
+            @foreach (var day in new[] { "Mo", "Tu", "We", "Th", "Fr", "Sa", "Su" })
+            {
+                <div class="text-slate-400 py-1 font-semibold">@day</div>
+            }
+            @foreach (var cell in _calendarCells)
+            {
+                @if (cell == 0)
+                {
+                    <div class="py-2"></div>
+                }
+                else if (cell == _today.Day && _viewYear == _today.Year && _viewMonth == _today.Month)
+                {
+                    <div class="bg-indigo-600 text-white font-bold py-2 rounded-lg cursor-pointer shadow-sm shadow-indigo-300">@cell</div>
+                }
+                else if (_availableDays.Contains(cell))
+                {
+                    <div class="bg-indigo-100 text-indigo-700 font-semibold py-2 rounded-lg cursor-pointer hover:bg-indigo-200 transition-colors">@cell</div>
+                }
+                else
+                {
+                    <div class="text-slate-600 py-2 hover:bg-slate-100 rounded-lg cursor-pointer transition-colors">@cell</div>
+                }
+            }
+        </div>
+
+        @if (Tutor.AvailableSlots.Length > 0)
+        {
+            <div class="flex flex-wrap gap-2 mt-1">
+                @foreach (var slot in Tutor.AvailableSlots)
+                {
+                    <span class="text-xs px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 font-medium border border-emerald-200 hover:bg-emerald-100 transition-colors cursor-pointer">@slot</span>
+                }
+            </div>
+        }
+    </div>
+
+    <!-- Actions -->
+    <div class="mt-2 flex flex-col gap-2.5">
+        <button class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 rounded-xl transition-colors flex items-center justify-center gap-2 shadow-sm shadow-indigo-200"
+                @onclick="() => OnBookClicked.InvokeAsync(Tutor!.Id)">
+            <span class="material-symbols-outlined text-[18px]">event</span>
+            Book a Session
+        </button>
+        <button class="w-full bg-white border border-slate-200 hover:bg-indigo-50 hover:border-indigo-200 hover:text-indigo-700 text-slate-700 font-medium py-2.5 rounded-xl transition-colors flex items-center justify-center gap-2"
+                @onclick="() => _chatDrawer.OpenAsync()">
+            <span class="material-symbols-outlined text-[18px]">chat_bubble</span>
+            Message @Tutor!.Name.Split(' ')[0]
+        </button>
+    </div>
+
+    <ChatDrawer @ref="_chatDrawer" Tutor="Tutor" />
+}
+
+@code {
+    [Parameter] public TutorListItem? Tutor { get; set; }
+    [Parameter] public EventCallback<long> OnBookClicked { get; set; }
+
+    private ChatDrawer _chatDrawer = null!;
+    private DateTime _today = DateTime.Today;
+    private int _viewYear;
+    private int _viewMonth;
+    private string _monthLabel = "";
+    private List<int> _calendarCells = [];
+    private HashSet<int> _availableDays = [];
+
+    protected override void OnInitialized()
+    {
+        _viewYear = _today.Year;
+        _viewMonth = _today.Month;
+        RebuildCalendar();
+    }
+
+    protected override void OnParametersSet() => RebuildCalendar();
+
+    private void PrevMonth()
+    {
+        var d = new DateTime(_viewYear, _viewMonth, 1).AddMonths(-1);
+        _viewYear = d.Year; _viewMonth = d.Month;
+        RebuildCalendar();
+    }
+
+    private void NextMonth()
+    {
+        var d = new DateTime(_viewYear, _viewMonth, 1).AddMonths(1);
+        _viewYear = d.Year; _viewMonth = d.Month;
+        RebuildCalendar();
+    }
+
+    private void RebuildCalendar()
+    {
+        _monthLabel = new DateTime(_viewYear, _viewMonth, 1).ToString("MMMM yyyy");
+        var firstDay = new DateTime(_viewYear, _viewMonth, 1);
+        var startOffset = ((int)firstDay.DayOfWeek + 6) % 7;
+        var daysInMonth = DateTime.DaysInMonth(_viewYear, _viewMonth);
+
+        _calendarCells = [.. Enumerable.Repeat(0, startOffset),
+                          .. Enumerable.Range(1, daysInMonth)];
+
+        while (_calendarCells.Count % 7 != 0) _calendarCells.Add(0);
+
+        _availableDays = [.. Enumerable.Range(1, daysInMonth)
+            .Where(d =>
+            {
+                var dow = new DateTime(_viewYear, _viewMonth, d).DayOfWeek;
+                return dow is DayOfWeek.Monday or DayOfWeek.Wednesday or DayOfWeek.Friday;
+            })];
+    }
+
+    private static (string text, string css) AvailBadge(AvailabilityStatus status) => status switch
+    {
+        AvailabilityStatus.AvailableToday => ("Available Today", "bg-emerald-50 text-emerald-700 border border-emerald-200"),
+        AvailabilityStatus.FullyBooked    => ("Fully Booked",    "bg-slate-100 text-slate-500"),
+        _                                 => ("Has Slots",        "bg-violet-50 text-violet-700 border border-violet-200"),
+    };
+}

@@ -1,6 +1,7 @@
 using System.Reflection;
 using BusinessObject.Models;
 using BusinessObject.Models.Base;
+using BusinessObject.Models.System;
 using DataAccessLayer.Data.Seeding;
 using Microsoft.EntityFrameworkCore;
 
@@ -11,6 +12,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     // ── Identity ─────────────────────────────────────────────────────────────
     public DbSet<User> Users => Set<User>();
     public DbSet<TeacherProfile> TeacherProfiles => Set<TeacherProfile>();
+    public DbSet<TeacherDocument> TeacherDocuments => Set<TeacherDocument>();
     public DbSet<StudentProfile> StudentProfiles => Set<StudentProfile>();
     public DbSet<OtpVerification> OtpVerifications => Set<OtpVerification>();
 
@@ -20,6 +22,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<Schedule> Schedules => Set<Schedule>();
     public DbSet<VideoSession> VideoSessions => Set<VideoSession>();
     public DbSet<Material> Materials => Set<Material>();
+    public DbSet<Attendance> Attendances => Set<Attendance>();
 
     // ── Assignment System ────────────────────────────────────────────────────
     public DbSet<Assignment> Assignments => Set<Assignment>();
@@ -39,6 +42,14 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
     // ── System ───────────────────────────────────────────────────────────────
     public DbSet<Notification> Notifications => Set<Notification>();
+    public DbSet<Report> Reports => Set<Report>();
+
+    // ── Tutor Booking ────────────────────────────────────────────────────────
+    public DbSet<TutorBookingRequest> TutorBookingRequests => Set<TutorBookingRequest>();
+
+    // ── Messaging ────────────────────────────────────────────────────────────
+    public DbSet<Conversation> Conversations => Set<Conversation>();
+    public DbSet<Message> Messages => Set<Message>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

@@ -12,19 +12,22 @@ internal sealed class AssignmentConfiguration : IEntityTypeConfiguration<Assignm
     {
         builder.HasIndex(a => a.ClassId);
 
-        builder.Property(a => a.Status)
-               .HasConversion<string>()
-               .HasDefaultValue(AssignmentStatus.DRAFT);
+        builder
+            .Property(a => a.Status)
+            .HasConversion<string>()
+            .HasDefaultValue(AssignmentStatus.DRAFT);
 
-        builder.HasOne(a => a.Class)
-               .WithMany(c => c.Assignments)
-               .HasForeignKey(a => a.ClassId)
-               .OnDelete(DeleteBehavior.Cascade);
+        builder
+            .HasOne(a => a.Class)
+            .WithMany(c => c.Assignments)
+            .HasForeignKey(a => a.ClassId)
+            .OnDelete(DeleteBehavior.Cascade);
 
-        builder.HasOne(a => a.Teacher)
-               .WithMany(u => u.Assignments)
-               .HasForeignKey(a => a.TeacherId)
-               .OnDelete(DeleteBehavior.Restrict);
+        builder
+            .HasOne(a => a.Teacher)
+            .WithMany(u => u.Assignments)
+            .HasForeignKey(a => a.TeacherId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }
 
@@ -42,10 +45,11 @@ internal sealed class AssignmentQuestionConfiguration : IEntityTypeConfiguration
             t.HasCheckConstraint("ck_assignment_questions_order", "\"order\" > 0");
         });
 
-        builder.HasOne(q => q.Assignment)
-               .WithMany(a => a.Questions)
-               .HasForeignKey(q => q.AssignmentId)
-               .OnDelete(DeleteBehavior.Cascade);
+        builder
+            .HasOne(q => q.Assignment)
+            .WithMany(a => a.Questions)
+            .HasForeignKey(q => q.AssignmentId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }
 
@@ -56,12 +60,12 @@ internal sealed class AssignmentOptionConfiguration : IEntityTypeConfiguration<A
     {
         builder.Property(o => o.IsCorrect).HasDefaultValue(false);
 
-        builder.ToTable(t =>
-            t.HasCheckConstraint("ck_assignment_options_order", "\"order\" > 0"));
+        builder.ToTable(t => t.HasCheckConstraint("ck_assignment_options_order", "\"order\" > 0"));
 
-        builder.HasOne(o => o.Question)
-               .WithMany(q => q.Options)
-               .HasForeignKey(o => o.QuestionId)
-               .OnDelete(DeleteBehavior.Cascade);
+        builder
+            .HasOne(o => o.Question)
+            .WithMany(q => q.Options)
+            .HasForeignKey(o => o.QuestionId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

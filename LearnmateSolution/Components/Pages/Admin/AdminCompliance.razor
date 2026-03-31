@@ -1,9 +1,13 @@
 @page "/admin/compliance"
 @using LearnmateSolution.Components.Layout.Admin
+@using BusinessLogicLayer.Services.Interfaces
+@using BusinessLogicLayer.DTOs
+@using BusinessObject.Enum
 @layout AdminLayout
 @rendermode InteractiveServer
 @inject NavigationManager Nav
 @inject UserSessionService Session
+@inject ITeacherComplianceService ComplianceService
 @inject IJSRuntime JS
 
 <HeadContent>
@@ -51,26 +55,19 @@
                 <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
                     <p class="text-sm font-medium text-slate-500 uppercase tracking-wider">Pending Review</p>
                     <div class="mt-2 flex items-baseline gap-2">
-                        <span class="text-3xl font-bold">24</span>
-                        <span class="text-xs font-semibold text-red-500 flex items-center">
-                            <span class="material-symbols-outlined text-xs">arrow_upward</span> 12%
-                        </span>
+                        <span class="text-3xl font-bold">@applications.Count(a => a.Status == ComplianceStatus.PENDING)</span>
                     </div>
                 </div>
                 <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-                    <p class="text-sm font-medium text-slate-500 uppercase tracking-wider">In Progress</p>
+                    <p class="text-sm font-medium text-slate-500 uppercase tracking-wider">Approved</p>
                     <div class="mt-2 flex items-baseline gap-2">
-                        <span class="text-3xl font-bold">12</span>
-                        <span class="text-xs font-semibold text-slate-400">Stable</span>
+                        <span class="text-3xl font-bold">@applications.Count(a => a.Status == ComplianceStatus.APPROVED)</span>
                     </div>
                 </div>
                 <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-                    <p class="text-sm font-medium text-slate-500 uppercase tracking-wider">Average TAT</p>
+                    <p class="text-sm font-medium text-slate-500 uppercase tracking-wider">Rejected</p>
                     <div class="mt-2 flex items-baseline gap-2">
-                        <span class="text-3xl font-bold">1.2d</span>
-                        <span class="text-xs font-semibold text-green-500 flex items-center">
-                            <span class="material-symbols-outlined text-xs">arrow_downward</span> 4%
-                        </span>
+                        <span class="text-3xl font-bold">@applications.Count(a => a.Status == ComplianceStatus.REJECTED)</span>
                     </div>
                 </div>
             </div>
@@ -88,43 +85,47 @@
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100 bg-white">
-                        @foreach (var teacher in teachers)
+                        @foreach (var app in applications)
                         {
-                            <tr class="group hover:bg-slate-50 transition-colors @(selectedTeacher?.Id == teacher.Id ? "bg-blue-50/50 ring-1 ring-inset ring-primary/10" : "")">
+                            <tr class="group hover:bg-slate-50 transition-colors @(selectedApp?.UserId == app.UserId ? "bg-blue-50/50 ring-1 ring-inset ring-primary/10" : "")">
                                 <td class="px-6 py-4">
                                     <div class="flex items-center gap-3">
                                         <div class="h-10 w-10 overflow-hidden rounded-full border border-slate-200 bg-slate-100">
-                                            <img alt="@teacher.Name" src="@teacher.Avatar" class="h-full w-full object-cover" />
+                                            <img alt="@app.FullName" src="@(string.IsNullOrEmpty(app.AvatarUrl) ? "/images/default-avatar.png" : app.AvatarUrl)" class="h-full w-full object-cover" />
                                         </div>
                                         <div>
-                                            <div class="text-sm font-semibold text-slate-900">@teacher.Name</div>
-                                            <div class="text-xs text-slate-500">@teacher.Email</div>
+                                            <div class="text-sm font-semibold text-slate-900">@app.FullName</div>
+                                            <div class="text-xs text-slate-500">@app.Email</div>
                                         </div>
                                     </div>
                                 </td>
                                 <td class="px-6 py-4">
-                                    <span class="inline-flex rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-700">@teacher.Expertise</span>
+                                    <span class="inline-flex rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-700">@app.Subjects</span>
                                 </td>
-                                <td class="px-6 py-4 text-sm text-slate-600">@teacher.SubmittedAt.ToString("MMM dd, yyyy")</td>
+                                <td class="px-6 py-4 text-sm text-slate-600">@app.SubmittedAt.ToString("MMM dd, yyyy")</td>
                                 <td class="px-6 py-4">
                                     @{
-                                        var statusClass = teacher.Status switch {
-                                            "Pending Review" => "bg-amber-50 text-amber-700 border-amber-100",
-                                            "In Progress" => "bg-blue-50 text-blue-700 border-blue-100",
+                                        var statusClass = app.Status switch {
+                                            ComplianceStatus.PENDING => "bg-amber-50 text-amber-700 border-amber-100",
+                                            ComplianceStatus.APPROVED => "bg-green-50 text-green-700 border-green-100",
+                                            ComplianceStatus.REJECTED => "bg-red-50 text-red-700 border-red-100",
+                                            ComplianceStatus.INFO_REQUESTED => "bg-blue-50 text-blue-700 border-blue-100",
                                             _ => "bg-slate-50 text-slate-700 border-slate-100"
                                         };
-                                        var dotClass = teacher.Status switch {
-                                            "Pending Review" => "bg-amber-500",
-                                            "In Progress" => "bg-blue-500",
+                                        var dotClass = app.Status switch {
+                                            ComplianceStatus.PENDING => "bg-amber-500",
+                                            ComplianceStatus.APPROVED => "bg-green-500",
+                                            ComplianceStatus.REJECTED => "bg-red-500",
+                                            ComplianceStatus.INFO_REQUESTED => "bg-blue-500",
                                             _ => "bg-slate-500"
                                         };
                                     }
                                     <span class="inline-flex items-center gap-1.5 rounded-md @statusClass px-2 py-1 text-xs font-medium border">
-                                        <span class="h-1.5 w-1.5 rounded-full @dotClass"></span> @teacher.Status
+                                        <span class="h-1.5 w-1.5 rounded-full @dotClass"></span> @app.Status
                                     </span>
                                 </td>
                                 <td class="px-6 py-4">
-                                    <button class="text-sm font-semibold text-primary hover:underline hover:text-primary/70 bg-transparent border-0 p-0" @onclick="() => SelectTeacher(teacher)">Review Details</button>
+                                    <button class="text-sm font-semibold text-primary hover:underline hover:text-primary/70 bg-transparent border-0 p-0" @onclick="() => SelectApplication(app)">Review Details</button>
                                 </td>
                             </tr>
                         }
@@ -136,73 +137,104 @@
         <!-- Review Panel (Side Panel Layout) -->
         <div class="w-full xl:w-[420px]">
             <aside class="rounded-xl border border-slate-200 bg-white flex flex-col overflow-hidden shadow-lg xl:sticky xl:top-8 min-h-[600px]">
-                @if (selectedTeacher != null)
+                @if (selectedApp != null)
                 {
                     <div class="border-b border-slate-100 p-6 bg-white">
                         <div class="flex items-center justify-between mb-6">
                             <h3 class="text-lg font-bold text-slate-900">Review Application</h3>
-                            <button class="text-slate-400 hover:text-slate-600 bg-transparent border-0 p-0" @onclick="() => selectedTeacher = null">
+                            <button class="text-slate-400 hover:text-slate-600 bg-transparent border-0 p-0" @onclick="() => selectedApp = null">
                                 <span class="material-symbols-outlined">close</span>
                             </button>
                         </div>
                         <div class="flex flex-col items-center text-center">
                             <div class="relative mb-3">
                                 <div class="h-24 w-24 overflow-hidden rounded-xl border-4 border-slate-50 shadow-sm bg-slate-100">
-                                    <img alt="@selectedTeacher.Name" src="@selectedTeacher.Avatar" class="h-full w-full object-cover" />
+                                    <img alt="@selectedApp.FullName" src="@(string.IsNullOrEmpty(selectedApp.AvatarUrl) ? "/images/default-avatar.png" : selectedApp.AvatarUrl)" class="h-full w-full object-cover" />
                                 </div>
                                 <span class="absolute bottom-0 right-0 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-white text-[10px] ring-2 ring-white">
                                     <span class="material-symbols-outlined text-xs">verified_user</span>
                                 </span>
                             </div>
-                            <h4 class="text-lg font-bold text-slate-900">@selectedTeacher.Name</h4>
-                            <p class="text-sm text-slate-500 mb-2">@selectedTeacher.Description</p>
-                            <div class="flex gap-2">
-                                <span class="text-xs font-semibold px-2 py-1 bg-slate-100 rounded-lg text-slate-700">@selectedTeacher.Degree</span>
+                            <h4 class="text-lg font-bold text-slate-900">@selectedApp.FullName</h4>
+                            <div class="flex flex-wrap justify-center gap-2 my-3">
+                                <span class="text-xs font-semibold px-2 py-1 bg-slate-100 rounded-lg text-slate-700">@selectedApp.HourlyRate $/hr</span>
+                                <span class="text-xs font-semibold px-2 py-1 bg-blue-50 rounded-lg text-primary">@selectedApp.YearsOfExperience Years Exp</span>
                                 <span class="text-xs font-semibold px-2 py-1 bg-slate-100 rounded-lg text-slate-700">Verified ID</span>
                             </div>
+                            <p class="text-sm text-slate-500 mb-2 px-4 italic line-clamp-2">"@selectedApp.Bio"</p>
                         </div>
                     </div>
-                    <div class="p-6 space-y-6 bg-white flex-1">
+                    <div class="p-6 space-y-6 bg-white flex-1 overflow-y-auto">
+                        <!-- Expertise Details -->
+                        <section class="grid grid-cols-2 gap-4 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                            <div>
+                                <h5 class="text-[10px] font-bold uppercase text-slate-400 mb-1">Languages</h5>
+                                <p class="text-xs font-bold text-slate-700">@selectedApp.LanguagesSpoken</p>
+                            </div>
+                            <div>
+                                <h5 class="text-[10px] font-bold uppercase text-slate-400 mb-1">Subjects</h5>
+                                <p class="text-xs font-bold text-slate-700">@selectedApp.Subjects</p>
+                            </div>
+                            <div class="col-span-2 pt-2 border-t border-slate-200">
+                                <h5 class="text-[10px] font-bold uppercase text-slate-400 mb-1">Teaching Philosophy</h5>
+                                <p class="text-xs text-slate-600 leading-relaxed">@selectedApp.TeachingPhilosophy</p>
+                            </div>
+                        </section>
                         <!-- Documents Section -->
                         <section>
                             <h5 class="text-xs font-bold uppercase text-slate-400 tracking-wider mb-3">Verification Documents</h5>
                             <div class="space-y-2">
-                                @foreach (var doc in selectedTeacher.Documents)
+                                @foreach (var doc in selectedApp.Documents)
                                 {
-                                    <button class="flex w-full items-center justify-between rounded-lg border border-slate-200 p-3 bg-white hover:bg-slate-50 transition-colors text-left group">
+                                    <a href="@doc.FileUrl" target="_blank" class="flex w-full items-center justify-between rounded-lg border border-slate-200 p-3 bg-white hover:bg-slate-50 transition-colors text-left group no-underline">
                                         <div class="flex items-center gap-3">
-                                            <span class="material-symbols-outlined text-primary">@doc.Icon</span>
+                                            <div class="size-8 bg-primary/10 text-primary rounded-lg flex items-center justify-center shrink-0">
+                                                <span class="material-symbols-outlined text-sm">@(doc.Category == "CV" ? "school" : doc.Category == "Certificate" ? "verified" : "badge")</span>
+                                            </div>
                                             <div>
-                                                <div class="text-sm font-semibold text-slate-700">@doc.Name</div>
-                                                <div class="text-[10px] text-slate-400 uppercase">@doc.Type • @doc.Size</div>
+                                                <div class="text-xs font-bold text-slate-800">@doc.Category: @doc.Name</div>
+                                                <div class="text-[9px] text-slate-400 uppercase">@doc.FileType • @(doc.FileSize / 1024) KB</div>
                                             </div>
                                         </div>
-                                        <span class="material-symbols-outlined text-slate-300 group-hover:text-primary transition-colors">visibility</span>
-                                    </button>
+                                        <span class="material-symbols-outlined text-slate-300 group-hover:text-primary transition-colors text-sm">visibility</span>
+                                    </a>
                                 }
                             </div>
                         </section>
                         <!-- Notes Section -->
                         <section>
                             <h5 class="text-xs font-bold uppercase text-slate-400 tracking-wider mb-3">Internal Admin Notes</h5>
-                            <textarea class="w-full rounded-lg border-slate-200 bg-slate-50 p-3 text-sm focus:border-primary focus:ring-primary placeholder:italic text-slate-700 h-24" placeholder="Add a private note for other admins..."></textarea>
+                            <textarea @bind="adminNotes" class="w-full rounded-lg border-slate-200 bg-slate-50 p-3 text-sm focus:border-primary focus:ring-primary placeholder:italic text-slate-700 h-24" placeholder="Add a private note for other admins..."></textarea>
                         </section>
                     </div>
                     <!-- Footer Actions -->
                     <div class="p-6 border-t border-slate-100 bg-slate-50/50">
-                        <div class="flex flex-col gap-2">
-                            <button class="w-full flex items-center justify-center gap-2 rounded-lg bg-primary py-2.5 text-sm font-bold text-white shadow-md border-0 hover:bg-primary/90 transition-all">
-                                <span class="material-symbols-outlined text-lg">check_circle</span> Approve Application
-                            </button>
-                            <div class="grid grid-cols-2 gap-2">
-                                <button class="flex items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">
-                                    <span class="material-symbols-outlined text-sm">info</span> Info Request
-                                </button>
-                                <button class="flex items-center justify-center gap-2 rounded-lg border border-red-200 bg-red-50 py-2 text-xs font-semibold text-red-600 hover:bg-red-100">
-                                    <span class="material-symbols-outlined text-sm">cancel</span> Reject
-                                </button>
+                        @if (selectedApp.Status == ComplianceStatus.APPROVED || selectedApp.Status == ComplianceStatus.REJECTED)
+                        {
+                            <div class="p-4 rounded-xl @(selectedApp.Status == ComplianceStatus.APPROVED ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800") text-center">
+                                <p class="text-sm font-bold flex items-center justify-center gap-2">
+                                    <span class="material-symbols-outlined">@(selectedApp.Status == ComplianceStatus.APPROVED ? "verified" : "block")</span>
+                                    Decision Finalized: @selectedApp.Status
+                                </p>
+                                <p class="text-[10px] mt-1 opacity-70">No further changes can be made to this application.</p>
                             </div>
-                        </div>
+                        }
+                        else
+                        {
+                            <div class="flex flex-col gap-2">
+                                <button @onclick="() => UpdateStatus(ComplianceStatus.APPROVED)" class="w-full flex items-center justify-center gap-2 rounded-lg bg-primary py-2.5 text-sm font-bold text-white shadow-md border-0 hover:bg-primary/90 transition-all">
+                                    <span class="material-symbols-outlined text-lg">check_circle</span> Approve Application
+                                </button>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <button @onclick="() => UpdateStatus(ComplianceStatus.INFO_REQUESTED)" class="flex items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">
+                                        <span class="material-symbols-outlined text-sm">info</span> Info Request
+                                    </button>
+                                    <button @onclick="() => UpdateStatus(ComplianceStatus.REJECTED)" class="flex items-center justify-center gap-2 rounded-lg border border-red-200 bg-red-50 py-2 text-xs font-semibold text-red-600 hover:bg-red-100">
+                                        <span class="material-symbols-outlined text-sm">cancel</span> Reject
+                                    </button>
+                                </div>
+                            </div>
+                        }
                     </div>
                 }
                 else
@@ -255,6 +287,10 @@
 </style>
 
 @code {
+    private List<TeacherApplicationDto> applications = new();
+    private TeacherApplicationDto? selectedApp;
+    private string adminNotes = "";
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (!firstRender) return;
@@ -267,84 +303,38 @@
                 Session.SetSession(email, role, token);
         }
         if (!Session.IsAuthenticated) { Nav.NavigateTo("/login", replace: true); return; }
-        if (Session.Role != "ADMIN") { Nav.NavigateTo(Session.Role == "STUDENT" ? "/student-dashboard" : "/", replace: true); }
+        if (Session.Role != "ADMIN") { Nav.NavigateTo(Session.Role == "STUDENT" ? "/student-dashboard" : "/", replace: true); return; }
+        
+        await LoadApplications();
     }
 
-    private class TeacherApplication
+    private async Task LoadApplications()
     {
-        public int Id { get; set; }
-        public string Name { get; set; } = "";
-        public string Email { get; set; } = "";
-        public string Avatar { get; set; } = "";
-        public string Expertise { get; set; } = "";
-        public DateTime SubmittedAt { get; set; }
-        public string Status { get; set; } = "";
-        public string Description { get; set; } = "";
-        public string Degree { get; set; } = "";
-        public List<Document> Documents { get; set; } = new();
+        applications = (await ComplianceService.GetAllApplicationsAsync()).ToList();
+        selectedApp = applications.FirstOrDefault();
+        adminNotes = selectedApp?.AdminNotes ?? "";
+        StateHasChanged();
     }
 
-    private class Document
+    private void SelectApplication(TeacherApplicationDto app)
     {
-        public string Name { get; set; } = "";
-        public string Type { get; set; } = "";
-        public string Size { get; set; } = "";
-        public string Icon { get; set; } = "";
+        selectedApp = app;
+        adminNotes = app.AdminNotes ?? "";
     }
 
-    private List<TeacherApplication> teachers = new()
+    private async Task UpdateStatus(ComplianceStatus status)
     {
-        new TeacherApplication { 
-            Id = 1, Name = "Dr. Sarah Jenkins", Email = "sarah.j@edu.com", Expertise = "Mathematics", 
-            SubmittedAt = new DateTime(2023, 10, 12), Status = "Pending Review",
-            Avatar = "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=150&h=150",
-            Description = "Mathematics Specialist • 8+ Years Experience", Degree = "PhD, Stanford",
-            Documents = new() {
-                new Document { Name = "Curriculum Vitae", Type = "PDF", Size = "2.4 MB", Icon = "description" },
-                new Document { Name = "University Diploma", Type = "JPG", Size = "4.1 MB", Icon = "school" },
-                new Document { Name = "Teaching Certificate", Type = "PDF", Size = "1.1 MB", Icon = "badge" }
-            }
-        },
-        new TeacherApplication { 
-            Id = 2, Name = "Marcus Thorne", Email = "m.thorne@phys.org", Expertise = "Physics", 
-            SubmittedAt = new DateTime(2023, 10, 14), Status = "In Progress",
-            Avatar = "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=150&h=150",
-            Description = "Theoretical Physics Professor • 12+ Years Experience", Degree = "MSc, MIT",
-            Documents = new() {
-                new Document { Name = "Curriculum Vitae", Type = "PDF", Size = "3.2 MB", Icon = "description" },
-                new Document { Name = "Teaching License", Type = "PDF", Size = "1.5 MB", Icon = "badge" }
-            }
-        },
-        new TeacherApplication { 
-            Id = 3, Name = "Elena Rodriguez", Email = "erodriguez@lang.es", Expertise = "Spanish", 
-            SubmittedAt = new DateTime(2023, 10, 15), Status = "Pending Review",
-            Avatar = "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&q=80&w=150&h=150",
-            Description = "Language Arts Educator • 5+ Years Experience", Degree = "BA, Madrid",
-            Documents = new() {
-                new Document { Name = "Portfolio", Type = "PDF", Size = "5.4 MB", Icon = "description" }
-            }
-        },
-        new TeacherApplication { 
-            Id = 4, Name = "James Wilson", Email = "jwilson@coding.io", Expertise = "CS", 
-            SubmittedAt = new DateTime(2023, 10, 15), Status = "Pending Review",
-            Avatar = "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=150&h=150",
-            Description = "Full Stack Developer • Industry Expert", Degree = "BSc, Oxford",
-            Documents = new() {
-                new Document { Name = "Work Experience", Type = "DOCX", Size = "0.8 MB", Icon = "description" }
-            }
+        if (selectedApp == null) return;
+        
+        var result = await ComplianceService.ReviewApplicationAsync(selectedApp.UserId, status, adminNotes);
+        if (result.Success)
+        {
+            await LoadApplications();
+            await JS.InvokeVoidAsync("alert", $"Successfully updated to {status}");
         }
-    };
-
-    private TeacherApplication? selectedTeacher;
-
-    protected override void OnInitialized()
-    {
-        // Select first teacher by default as in the image
-        selectedTeacher = teachers.FirstOrDefault();
-    }
-
-    private void SelectTeacher(TeacherApplication teacher)
-    {
-        selectedTeacher = teacher;
+        else
+        {
+            await JS.InvokeVoidAsync("alert", result.Message);
+        }
     }
 }

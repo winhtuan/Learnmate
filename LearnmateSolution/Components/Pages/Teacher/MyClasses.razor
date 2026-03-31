@@ -1,0 +1,257 @@
+@page "/teacher/classes"
+@rendermode InteractiveServer
+@layout Layout.TeacherLayout
+
+@using BusinessLogicLayer.DTOs.Teacher.Classes
+@using BusinessLogicLayer.Services.Interfaces
+@using BusinessObject.Enum
+@using LearnmateSolution.AppState
+@inject ITeacherCourseService ClassService
+@inject UserSessionService Session
+@inject NavigationManager NavigationManager
+
+<PageTitle>Lớp học của tôi | LearnMate</PageTitle>
+
+<!-- Page Header -->
+<div class="mb-8 flex items-start justify-between gap-4">
+    <div>
+        <h1 class="text-3xl font-bold tracking-tight text-slate-900 mb-1">Lớp học của tôi</h1>
+        <p class="text-slate-500">
+            @if (!IsLoading)
+            {
+                <span>Quản lý @FilteredClasses.Count lớp @FilterLabel.</span>
+            }
+        </p>
+    </div>
+    <button @onclick="OpenCreateModal"
+            class="flex items-center gap-2 bg-primary hover:bg-blue-600 text-white font-medium px-5 py-2.5 rounded-lg transition-all shadow-sm shrink-0">
+        <span class="material-symbols-outlined text-[20px]">add</span>
+        Tạo lớp mới
+    </button>
+</div>
+
+<!-- Toolbar: Search + Filter tabs -->
+<div class="flex items-center justify-between gap-4 mb-6 flex-wrap">
+    <!-- Search -->
+    <div class="flex items-center w-full sm:w-72 h-10 bg-white border border-slate-200 rounded-lg px-3 gap-2 focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary transition-all shadow-sm">
+        <span class="material-symbols-outlined text-slate-400 text-[20px]">search</span>
+        <input @bind="SearchText" @bind:event="oninput"
+               placeholder="Tìm kiếm lớp học..."
+               class="bg-transparent border-none outline-none w-full text-sm text-slate-700 placeholder:text-slate-400" />
+    </div>
+
+    <!-- Filter pills -->
+    <div class="flex items-center gap-1 bg-slate-100 p-1 rounded-lg">
+        @foreach (var tab in Tabs)
+        {
+            <button @onclick="() => ActiveTab = tab"
+                    class="px-4 py-1.5 rounded-md text-sm font-medium transition-all
+                           @(ActiveTab == tab ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700")">
+                @tab
+            </button>
+        }
+    </div>
+</div>
+
+<!-- Content -->
+@if (IsLoading)
+{
+    <div class="flex items-center justify-center py-24">
+        <span class="material-symbols-outlined animate-spin text-primary text-4xl">progress_activity</span>
+    </div>
+}
+else if (AllClasses.Count == 0)
+{
+    <!-- Empty state: no classes at all -->
+    <div class="flex flex-col items-center justify-center py-24 text-center">
+        <div class="size-20 rounded-full bg-blue-50 flex items-center justify-center mb-4">
+            <span class="material-symbols-outlined text-primary text-4xl">class</span>
+        </div>
+        <h3 class="text-xl font-bold text-slate-900 mb-2">Chưa có lớp học nào</h3>
+        <p class="text-slate-500 max-w-sm mb-6">Tạo lớp học đầu tiên của bạn để bắt đầu quản lý học sinh và bài tập.</p>
+        <button @onclick="OpenCreateModal"
+                class="flex items-center gap-2 bg-primary hover:bg-blue-600 text-white font-medium px-5 py-2.5 rounded-lg transition-all shadow-sm">
+            <span class="material-symbols-outlined">add</span>
+            Tạo lớp đầu tiên
+        </button>
+    </div>
+}
+else
+{
+    <!-- Class Grid -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-5">
+        @foreach (var cls in FilteredClasses)
+        {
+            <div @onclick="() => NavigateToClass(cls.Id)"
+                 class="group bg-white border border-slate-200 rounded-xl shadow-sm hover:shadow-md hover:border-primary/40 transition-all cursor-pointer overflow-hidden flex flex-col">
+
+                <!-- Color accent bar -->
+                <div class="h-1.5 @GetSubjectColor(cls.Subject)"></div>
+
+                <div class="p-5 flex flex-col flex-1">
+                    <!-- Icon + menu -->
+                    <div class="flex items-start justify-between mb-4">
+                        <div class="size-10 rounded-lg @GetSubjectBg(cls.Subject) flex items-center justify-center shrink-0">
+                            <span class="material-symbols-outlined text-[22px] @GetSubjectText(cls.Subject)">@GetSubjectIcon(cls.Subject)</span>
+                        </div>
+                        <button @onclick:stopPropagation="true"
+                                class="size-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors opacity-0 group-hover:opacity-100">
+                            <span class="material-symbols-outlined text-[20px]">more_horiz</span>
+                        </button>
+                    </div>
+
+                    <!-- Name & schedule -->
+                    <h4 class="font-bold text-slate-900 text-base leading-snug mb-1 line-clamp-2 group-hover:text-primary transition-colors">
+                        @cls.Name
+                    </h4>
+                    @if (!string.IsNullOrWhiteSpace(cls.ScheduleLabel))
+                    {
+                        <p class="text-xs text-slate-500 mb-3 flex items-center gap-1">
+                            <span class="material-symbols-outlined text-[14px]">schedule</span>
+                            @cls.ScheduleLabel
+                        </p>
+                    }
+                    else if (!string.IsNullOrWhiteSpace(cls.Description))
+                    {
+                        <p class="text-xs text-slate-500 mb-3 line-clamp-2">@cls.Description</p>
+                    }
+                    else
+                    {
+                        <p class="text-xs text-slate-400 mb-3 italic">Chưa có lịch học</p>
+                    }
+
+                    <!-- Footer -->
+                    <div class="flex items-center justify-between mt-auto pt-3 border-t border-slate-100">
+                        <span class="flex items-center gap-1.5 text-xs text-slate-500">
+                            <span class="material-symbols-outlined text-[16px]">group</span>
+                            <span class="font-medium text-slate-700">@cls.StudentCount</span> / @cls.MaxStudents học sinh
+                        </span>
+                        @{
+                            var (dot, label, badge) = cls.Status switch
+                            {
+                                ClassStatus.ACTIVE    => ("bg-green-500", "Active",    "bg-green-50 text-green-700"),
+                                ClassStatus.INACTIVE  => ("bg-slate-400",  "Archived", "bg-slate-100 text-slate-500"),
+                                ClassStatus.COMPLETED => ("bg-blue-400",   "Completed","bg-blue-50 text-blue-700"),
+                                _                     => ("bg-slate-300",  cls.Status.ToString(), "bg-slate-100 text-slate-500")
+                            };
+                        }
+                        <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-semibold @badge">
+                            <span class="size-1.5 rounded-full @dot"></span>
+                            @label
+                        </span>
+                    </div>
+                </div>
+            </div>
+        }
+
+        <!-- Create new class card -->
+        <button @onclick="OpenCreateModal"
+                class="flex flex-col items-center justify-center gap-3 min-h-[180px] border-2 border-dashed border-slate-200 rounded-xl text-slate-400 hover:border-primary/50 hover:text-primary hover:bg-blue-50/30 transition-all group">
+            <div class="size-12 rounded-full border-2 border-dashed border-current flex items-center justify-center group-hover:scale-110 transition-transform">
+                <span class="material-symbols-outlined text-[24px]">add</span>
+            </div>
+            <span class="text-sm font-medium">Tạo lớp mới</span>
+        </button>
+    </div>
+
+    <!-- Empty filter result -->
+    @if (FilteredClasses.Count == 0 && AllClasses.Count > 0)
+    {
+        <div class="text-center py-16">
+            <span class="material-symbols-outlined text-slate-300 text-5xl mb-3">search_off</span>
+            <p class="text-slate-500">Không tìm thấy lớp nào phù hợp.</p>
+            <button @onclick='() => { SearchText = ""; ActiveTab = "Tất cả"; }'
+                    class="mt-3 text-sm font-medium text-primary hover:underline">Xóa bộ lọc</button>
+        </div>
+    }
+}
+
+@code {
+    private List<TeacherClassListItemDto> AllClasses = new();
+    private bool   IsLoading  = true;
+    private string SearchText = string.Empty;
+    private string ActiveTab  = "Tất cả";
+
+    private static readonly string[] Tabs = ["Tất cả", "Active", "Archived"];
+
+    private List<TeacherClassListItemDto> FilteredClasses =>
+        AllClasses.Where(c =>
+        {
+            bool tabMatch = ActiveTab switch
+            {
+                "Active"   => c.Status == ClassStatus.ACTIVE,
+                "Archived" => c.Status != ClassStatus.ACTIVE,
+                _          => true
+            };
+            bool searchMatch = string.IsNullOrWhiteSpace(SearchText)
+                || c.Name.Contains(SearchText, StringComparison.OrdinalIgnoreCase)
+                || c.Subject.Contains(SearchText, StringComparison.OrdinalIgnoreCase);
+            return tabMatch && searchMatch;
+        }).ToList();
+
+    private string FilterLabel => ActiveTab switch
+    {
+        "Active"   => "đang hoạt động",
+        "Archived" => "đã lưu trữ",
+        _          => "tất cả"
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        long teacherId = Session.UserId > 0 ? Session.UserId : 1; 
+        try { AllClasses = await ClassService.GetTeacherClassesAsync(teacherId); }
+        catch { }
+        finally { IsLoading = false; }
+    }
+
+    private void NavigateToClass(long id) => NavigationManager.NavigateTo($"/teacher/classes/{id}");
+    private void OpenCreateModal()        => NavigationManager.NavigateTo("/teacher/classes/create");
+
+    private static string GetSubjectColor(string s) => s.ToLower() switch
+    {
+        var x when x.Contains("toán") || x.Contains("math")    => "bg-blue-500",
+        var x when x.Contains("lý")   || x.Contains("physics") => "bg-purple-500",
+        var x when x.Contains("hóa")  || x.Contains("chem")    => "bg-orange-500",
+        var x when x.Contains("sinh") || x.Contains("bio")     => "bg-green-500",
+        var x when x.Contains("văn")  || x.Contains("liter")   => "bg-pink-500",
+        var x when x.Contains("sử")   || x.Contains("hist")    => "bg-yellow-500",
+        var x when x.Contains("tin")  || x.Contains("comp")    => "bg-cyan-500",
+        var x when x.Contains("nghệ") || x.Contains("art")     => "bg-red-500",
+        _                                                        => "bg-indigo-500"
+    };
+
+    private static string GetSubjectBg(string s)   => s.ToLower() switch
+    {
+        var x when x.Contains("toán") || x.Contains("math")    => "bg-blue-50",
+        var x when x.Contains("lý")   || x.Contains("physics") => "bg-purple-50",
+        var x when x.Contains("hóa")  || x.Contains("chem")    => "bg-orange-50",
+        var x when x.Contains("sinh") || x.Contains("bio")     => "bg-green-50",
+        var x when x.Contains("văn")  || x.Contains("liter")   => "bg-pink-50",
+        var x when x.Contains("tin")  || x.Contains("comp")    => "bg-cyan-50",
+        _                                                        => "bg-indigo-50"
+    };
+
+    private static string GetSubjectText(string s) => s.ToLower() switch
+    {
+        var x when x.Contains("toán") || x.Contains("math")    => "text-blue-600",
+        var x when x.Contains("lý")   || x.Contains("physics") => "text-purple-600",
+        var x when x.Contains("hóa")  || x.Contains("chem")    => "text-orange-600",
+        var x when x.Contains("sinh") || x.Contains("bio")     => "text-green-600",
+        var x when x.Contains("văn")  || x.Contains("liter")   => "text-pink-600",
+        var x when x.Contains("tin")  || x.Contains("comp")    => "text-cyan-600",
+        _                                                        => "text-indigo-600"
+    };
+
+    private static string GetSubjectIcon(string s) => s.ToLower() switch
+    {
+        var x when x.Contains("toán") || x.Contains("math")    => "calculate",
+        var x when x.Contains("lý")   || x.Contains("physics") => "science",
+        var x when x.Contains("hóa")  || x.Contains("chem")    => "biotech",
+        var x when x.Contains("sinh") || x.Contains("bio")     => "eco",
+        var x when x.Contains("văn")  || x.Contains("liter")   => "menu_book",
+        var x when x.Contains("sử")   || x.Contains("hist")    => "history_edu",
+        var x when x.Contains("tin")  || x.Contains("comp")    => "terminal",
+        var x when x.Contains("nghệ") || x.Contains("art")     => "palette",
+        _                                                        => "class"
+    };
+}

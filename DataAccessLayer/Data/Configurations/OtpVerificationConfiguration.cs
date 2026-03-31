@@ -13,9 +13,10 @@ internal sealed class OtpVerificationConfiguration : IEntityTypeConfiguration<Ot
 
         builder.HasIndex(o => new { o.UserId, o.IsUsed });
 
-        builder.HasOne(o => o.User)
-               .WithMany()
-               .HasForeignKey(o => o.UserId)
-               .OnDelete(DeleteBehavior.Cascade);
+        builder
+            .HasOne(o => o.User)
+            .WithMany()
+            .HasForeignKey(o => o.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

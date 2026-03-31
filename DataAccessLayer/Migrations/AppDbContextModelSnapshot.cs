@@ -51,6 +51,11 @@ namespace DataAccessLayer.Migrations
                         .HasColumnType("timestamp without time zone")
                         .HasColumnName("due_date");
 
+                    b.Property<string>("FileUrl")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("file_url");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .ValueGeneratedOnAdd()
@@ -201,6 +206,86 @@ namespace DataAccessLayer.Migrations
 
                             t.HasCheckConstraint("ck_assignment_questions_points", "points > 0");
                         });
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1L,
+                            AssignmentId = 1L,
+                            Content = "Triển khai Shell Navigation giữa ít nhất 3 màn hình.",
+                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Order = 1,
+                            Points = 5m,
+                            Type = "ESSAY",
+                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 2L,
+                            AssignmentId = 1L,
+                            Content = "Truyền dữ liệu giữa các trang bằng QueryProperty hoặc constructor injection.",
+                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Order = 2,
+                            Points = 5m,
+                            Type = "ESSAY",
+                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 3L,
+                            AssignmentId = 2L,
+                            Content = "Tạo scene Unity với đầy đủ ánh sáng, Plane, Rigidbody và Collider.",
+                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Order = 1,
+                            Points = 10m,
+                            Type = "ESSAY",
+                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        });
+                });
+
+            modelBuilder.Entity("BusinessObject.Models.Attendance", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<bool>("IsPresent")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_present");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("text")
+                        .HasColumnName("notes");
+
+                    b.Property<long>("ScheduleId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("schedule_id");
+
+                    b.Property<long>("StudentId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("student_id");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_attendances");
+
+                    b.HasIndex("ScheduleId")
+                        .HasDatabaseName("ix_attendances_schedule_id");
+
+                    b.HasIndex("StudentId")
+                        .HasDatabaseName("ix_attendances_student_id");
+
+                    b.ToTable("attendances", (string)null);
                 });
 
             modelBuilder.Entity("BusinessObject.Models.Class", b =>
@@ -230,6 +315,11 @@ namespace DataAccessLayer.Migrations
                         .HasDefaultValue(30)
                         .HasColumnName("max_students");
 
+                    b.Property<string>("MeetingLink")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("meeting_link");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(200)
@@ -252,6 +342,11 @@ namespace DataAccessLayer.Migrations
                     b.Property<long>("TeacherId")
                         .HasColumnType("bigint")
                         .HasColumnName("teacher_id");
+
+                    b.Property<string>("ThumbnailUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("thumbnail_url");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp without time zone")
@@ -279,6 +374,7 @@ namespace DataAccessLayer.Migrations
                             Status = "ACTIVE",
                             Subject = "Toán",
                             TeacherId = 2L,
+                            ThumbnailUrl = "https://placehold.co/400?text=Course",
                             UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
@@ -291,6 +387,7 @@ namespace DataAccessLayer.Migrations
                             Status = "ACTIVE",
                             Subject = "PRN222",
                             TeacherId = 2L,
+                            ThumbnailUrl = "https://placehold.co/400?text=Course",
                             UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
@@ -303,6 +400,7 @@ namespace DataAccessLayer.Migrations
                             Status = "ACTIVE",
                             Subject = "PRU213",
                             TeacherId = 2L,
+                            ThumbnailUrl = "https://placehold.co/400?text=Course",
                             UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         });
                 });
@@ -376,6 +474,52 @@ namespace DataAccessLayer.Migrations
                         });
                 });
 
+            modelBuilder.Entity("BusinessObject.Models.Conversation", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("deleted_at");
+
+                    b.Property<DateTime?>("LastMessageAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("last_message_at");
+
+                    b.Property<long>("ParticipantAId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("participant_a_id");
+
+                    b.Property<long>("ParticipantBId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("participant_b_id");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_conversations");
+
+                    b.HasIndex("ParticipantBId")
+                        .HasDatabaseName("ix_conversations_participant_b_id");
+
+                    b.HasIndex("ParticipantAId", "ParticipantBId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_conversations_participant_a_id_participant_b_id");
+
+                    b.ToTable("conversations", (string)null);
+                });
+
             modelBuilder.Entity("BusinessObject.Models.Feedback", b =>
                 {
                     b.Property<long>("Id")
@@ -415,6 +559,17 @@ namespace DataAccessLayer.Migrations
                     b.ToTable("feedbacks", null, t =>
                         {
                             t.HasCheckConstraint("ck_feedbacks_score", "score >= 0");
+                        });
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1L,
+                            Comment = "Bài làm tốt! Navigation giữa các màn hình hoạt động đúng yêu cầu. Tuy nhiên, cần cải thiện phần truyền dữ liệu — nên dùng QueryProperty thay vì singleton. Tiếp tục cố gắng nhé!",
+                            CreatedAt = new DateTime(2026, 3, 15, 8, 0, 0, 0, DateTimeKind.Utc),
+                            Score = 8.5m,
+                            SubmissionId = 1L,
+                            UpdatedAt = new DateTime(2026, 3, 15, 8, 0, 0, 0, DateTimeKind.Utc)
                         });
                 });
 
@@ -512,6 +667,10 @@ namespace DataAccessLayer.Migrations
                         .HasColumnType("text")
                         .HasColumnName("description");
 
+                    b.Property<long?>("FileSizeBytes")
+                        .HasColumnType("bigint")
+                        .HasColumnName("file_size_bytes");
+
                     b.Property<string>("FileType")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -583,6 +742,57 @@ namespace DataAccessLayer.Migrations
                             UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             UploadedBy = 2L
                         });
+                });
+
+            modelBuilder.Entity("BusinessObject.Models.Message", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)")
+                        .HasColumnName("content");
+
+                    b.Property<long>("ConversationId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("conversation_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<bool>("IsRead")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_read");
+
+                    b.Property<DateTime?>("ReadAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("read_at");
+
+                    b.Property<long>("SenderId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("sender_id");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_messages");
+
+                    b.HasIndex("ConversationId")
+                        .HasDatabaseName("ix_messages_conversation_id");
+
+                    b.HasIndex("SenderId")
+                        .HasDatabaseName("ix_messages_sender_id");
+
+                    b.ToTable("messages", (string)null);
                 });
 
             modelBuilder.Entity("BusinessObject.Models.Notification", b =>
@@ -993,6 +1203,26 @@ namespace DataAccessLayer.Migrations
                             StudyStreakDays = 8,
                             UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             UserId = 3L
+                        },
+                        new
+                        {
+                            Id = 2L,
+                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            FullName = "Le Thi Hoa",
+                            GradeLevel = "11",
+                            StudyStreakDays = 3,
+                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            UserId = 14L
+                        },
+                        new
+                        {
+                            Id = 3L,
+                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            FullName = "Pham Van Kien",
+                            GradeLevel = "10",
+                            StudyStreakDays = 1,
+                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            UserId = 15L
                         });
                 });
 
@@ -1016,6 +1246,11 @@ namespace DataAccessLayer.Migrations
                     b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("timestamp without time zone")
                         .HasColumnName("deleted_at");
+
+                    b.Property<string>("FileUrl")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("file_url");
 
                     b.Property<decimal?>("Score")
                         .HasColumnType("numeric(5,2)")
@@ -1056,6 +1291,29 @@ namespace DataAccessLayer.Migrations
                     b.ToTable("submissions", null, t =>
                         {
                             t.HasCheckConstraint("ck_submissions_score", "score IS NULL OR score >= 0");
+                        });
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1L,
+                            AssignmentId = 1L,
+                            CreatedAt = new DateTime(2026, 3, 14, 10, 0, 0, 0, DateTimeKind.Utc),
+                            Score = 8.5m,
+                            Status = "GRADED",
+                            StudentId = 3L,
+                            SubmittedAt = new DateTime(2026, 3, 14, 10, 0, 0, 0, DateTimeKind.Utc),
+                            UpdatedAt = new DateTime(2026, 3, 15, 8, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 2L,
+                            AssignmentId = 2L,
+                            CreatedAt = new DateTime(2026, 3, 14, 15, 30, 0, 0, DateTimeKind.Utc),
+                            Status = "SUBMITTED",
+                            StudentId = 3L,
+                            SubmittedAt = new DateTime(2026, 3, 14, 15, 30, 0, 0, DateTimeKind.Utc),
+                            UpdatedAt = new DateTime(2026, 3, 14, 15, 30, 0, 0, DateTimeKind.Utc)
                         });
                 });
 
@@ -1130,6 +1388,113 @@ namespace DataAccessLayer.Migrations
                     b.ToTable("submission_answer_options", (string)null);
                 });
 
+            modelBuilder.Entity("BusinessObject.Models.System.Report", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("Category")
+                        .HasColumnType("integer")
+                        .HasColumnName("category");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("FileUrl")
+                        .HasColumnType("text")
+                        .HasColumnName("file_url");
+
+                    b.Property<int>("Format")
+                        .HasColumnType("integer")
+                        .HasColumnName("format");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("name");
+
+                    b.Property<DateTime>("RequestedOn")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("requested_on");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer")
+                        .HasColumnName("status");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_reports");
+
+                    b.ToTable("reports", (string)null);
+                });
+
+            modelBuilder.Entity("BusinessObject.Models.TeacherDocument", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("category");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("DocumentName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("document_name");
+
+                    b.Property<long>("FileSize")
+                        .HasColumnType("bigint")
+                        .HasColumnName("file_size");
+
+                    b.Property<string>("FileType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("file_type");
+
+                    b.Property<string>("FileUrl")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("file_url");
+
+                    b.Property<long>("TeacherProfileId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("teacher_profile_id");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_teacher_documents");
+
+                    b.HasIndex("TeacherProfileId")
+                        .HasDatabaseName("ix_teacher_documents_teacher_profile_id");
+
+                    b.ToTable("teacher_documents", (string)null);
+                });
+
             modelBuilder.Entity("BusinessObject.Models.TeacherProfile", b =>
                 {
                     b.Property<long>("Id")
@@ -1138,6 +1503,10 @@ namespace DataAccessLayer.Migrations
                         .HasColumnName("id");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("AdminNotes")
+                        .HasColumnType("text")
+                        .HasColumnName("admin_notes");
 
                     b.Property<string>("AvatarUrl")
                         .HasMaxLength(500)
@@ -1167,17 +1536,33 @@ namespace DataAccessLayer.Migrations
                         .HasColumnType("numeric(12,2)")
                         .HasColumnName("hourly_rate");
 
+                    b.Property<string>("LanguagesSpoken")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("languages_spoken");
+
                     b.Property<decimal>("RatingAvg")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("numeric(5,2)")
                         .HasDefaultValue(0m)
                         .HasColumnName("rating_avg");
 
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("PENDING")
+                        .HasColumnName("status");
+
                     b.Property<string>("Subjects")
                         .IsRequired()
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)")
                         .HasColumnName("subjects");
+
+                    b.Property<string>("TeachingPhilosophy")
+                        .HasColumnType("text")
+                        .HasColumnName("teaching_philosophy");
 
                     b.Property<int>("TotalRatingCount")
                         .ValueGeneratedOnAdd()
@@ -1192,6 +1577,14 @@ namespace DataAccessLayer.Migrations
                     b.Property<long>("UserId")
                         .HasColumnType("bigint")
                         .HasColumnName("user_id");
+
+                    b.Property<DateTime?>("VerifiedAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("verified_at");
+
+                    b.Property<int?>("YearsOfExperience")
+                        .HasColumnType("integer")
+                        .HasColumnName("years_of_experience");
 
                     b.HasKey("Id")
                         .HasName("pk_teacher_profiles");
@@ -1214,12 +1607,153 @@ namespace DataAccessLayer.Migrations
                             Bio = "Giáo viên Toán với 5 năm kinh nghiệm.",
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             FullName = "Nguyen Van A",
-                            HourlyRate = 200000m,
-                            RatingAvg = 0m,
+                            HourlyRate = 35m,
+                            RatingAvg = 3.8m,
+                            Status = "PENDING",
                             Subjects = "Toán, Vật Lý",
-                            TotalRatingCount = 0,
+                            TotalRatingCount = 5,
                             UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             UserId = 2L
+                        },
+                        new
+                        {
+                            Id = 2L,
+                            Bio = "Giáo viên Toán & Vật Lý với 7 năm kinh nghiệm luyện thi đại học. Hơn 200 học sinh đã đỗ các trường top.",
+                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            FullName = "Tran Thi Mai",
+                            HourlyRate = 28m,
+                            RatingAvg = 4.5m,
+                            Status = "PENDING",
+                            Subjects = "Mathematics,Science",
+                            TotalRatingCount = 42,
+                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            UserId = 4L
+                        },
+                        new
+                        {
+                            Id = 3L,
+                            Bio = "Thạc sĩ Hóa học, chuyên ôn luyện Hóa & Sinh cho học sinh THPT. Phương pháp dạy trực quan, dễ hiểu.",
+                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            FullName = "Le Van Duc",
+                            HourlyRate = 35m,
+                            RatingAvg = 4.2m,
+                            Status = "PENDING",
+                            Subjects = "Science",
+                            TotalRatingCount = 28,
+                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            UserId = 5L
+                        },
+                        new
+                        {
+                            Id = 4L,
+                            Bio = "IELTS 8.0, 10 năm dạy Tiếng Anh giao tiếp và luyện thi IELTS/TOEIC. Cam kết đầu ra rõ ràng.",
+                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            FullName = "Pham Thi Huong",
+                            HourlyRate = 45m,
+                            RatingAvg = 4.8m,
+                            Status = "PENDING",
+                            Subjects = "English",
+                            TotalRatingCount = 105,
+                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            UserId = 6L
+                        },
+                        new
+                        {
+                            Id = 5L,
+                            Bio = "Kỹ sư phần mềm tại FPT Software, 5 năm dạy lập trình Python, C#, và Web Development cho mọi trình độ.",
+                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            FullName = "Nguyen Quoc Bao",
+                            HourlyRate = 55m,
+                            RatingAvg = 4.6m,
+                            Status = "PENDING",
+                            Subjects = "Coding",
+                            TotalRatingCount = 67,
+                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            UserId = 7L
+                        },
+                        new
+                        {
+                            Id = 6L,
+                            Bio = "Giáo viên Ngữ Văn & Lịch Sử THPT Quốc Gia. Chuyên luyện đề thi và viết văn nghị luận xã hội.",
+                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            FullName = "Hoang Thi Lan",
+                            HourlyRate = 22m,
+                            RatingAvg = 4.0m,
+                            Status = "PENDING",
+                            Subjects = "English",
+                            TotalRatingCount = 19,
+                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            UserId = 8L
+                        },
+                        new
+                        {
+                            Id = 7L,
+                            Bio = "Tiến sĩ Toán ứng dụng, cựu giảng viên ĐH Bách Khoa. Dạy Toán cao cấp, Thống kê và Tin học.",
+                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            FullName = "Vu Minh Khoa",
+                            HourlyRate = 40m,
+                            RatingAvg = 4.7m,
+                            Status = "PENDING",
+                            Subjects = "Mathematics,Coding",
+                            TotalRatingCount = 83,
+                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            UserId = 9L
+                        },
+                        new
+                        {
+                            Id = 8L,
+                            Bio = "Tốt nghiệp ĐH Ngoại Ngữ, dạy Tiếng Anh và Tiếng Pháp. 8 năm kinh nghiệm, lớp học tương tác cao.",
+                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            FullName = "Do Thi Thu",
+                            HourlyRate = 38m,
+                            RatingAvg = 4.3m,
+                            Status = "PENDING",
+                            Subjects = "English,Languages",
+                            TotalRatingCount = 51,
+                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            UserId = 10L
+                        },
+                        new
+                        {
+                            Id = 9L,
+                            Bio = "Cựu học sinh Chuyên Lý ĐH Khoa Học Tự Nhiên. Dạy Vật Lý và Hóa học theo hướng tư duy phân tích.",
+                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            FullName = "Bui Van Long",
+                            HourlyRate = 30m,
+                            RatingAvg = 4.1m,
+                            Status = "PENDING",
+                            Subjects = "Science,Mathematics",
+                            TotalRatingCount = 33,
+                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            UserId = 11L
+                        },
+                        new
+                        {
+                            Id = 10L,
+                            Bio = "Giáo viên Toán chuyên, huy chương Bạc Olympic Toán quốc gia. Đam mê giúp học sinh yêu thích Toán học.",
+                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            FullName = "Nguyen Thi Bich",
+                            HourlyRate = 25m,
+                            RatingAvg = 4.9m,
+                            Status = "PENDING",
+                            Subjects = "Mathematics",
+                            TotalRatingCount = 134,
+                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            UserId = 12L
+                        },
+                        new
+                        {
+                            Id = 11L,
+                            Bio = "Senior Developer 8 năm kinh nghiệm, chuyên dạy Lập trình và Toán rời rạc cho sinh viên CNTT.",
+                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            FullName = "Trinh Van Nam",
+                            HourlyRate = 65m,
+                            RatingAvg = 4.4m,
+                            Status = "PENDING",
+                            Subjects = "Coding,Mathematics",
+                            TotalRatingCount = 58,
+                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            UserId = 13L
                         });
                 });
 
@@ -1277,6 +1811,75 @@ namespace DataAccessLayer.Migrations
                         {
                             t.HasCheckConstraint("ck_teacher_ratings_rating", "rating BETWEEN 1.0 AND 5.0");
                         });
+                });
+
+            modelBuilder.Entity("BusinessObject.Models.TutorBookingRequest", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("deleted_at");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("note");
+
+                    b.Property<DateTime>("RequestedEndTime")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("requested_end_time");
+
+                    b.Property<DateTime>("RequestedStartTime")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("requested_start_time");
+
+                    b.Property<long?>("ResultClassId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("result_class_id");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("status");
+
+                    b.Property<long>("StudentId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("student_id");
+
+                    b.Property<long>("TeacherId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("teacher_id");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_tutor_booking_requests");
+
+                    b.HasIndex("ResultClassId")
+                        .HasDatabaseName("ix_tutor_booking_requests_result_class_id");
+
+                    b.HasIndex("Status")
+                        .HasDatabaseName("ix_tutor_booking_requests_status");
+
+                    b.HasIndex("TeacherId")
+                        .HasDatabaseName("ix_tutor_booking_requests_teacher_id");
+
+                    b.HasIndex("StudentId", "TeacherId")
+                        .HasDatabaseName("ix_tutor_booking_requests_student_id_teacher_id");
+
+                    b.ToTable("tutor_booking_requests", (string)null);
                 });
 
             modelBuilder.Entity("BusinessObject.Models.User", b =>
@@ -1366,6 +1969,138 @@ namespace DataAccessLayer.Migrations
                             AvatarUrl = "https://placehold.co/400?text=Student",
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Email = "student@learnmate.vn",
+                            IsActive = true,
+                            PasswordHash = "$2a$12$BgRmemonnrWXu0O0hABfSuRgIBIjUevBcIGTk53b.y0oPqW45tCka",
+                            Role = "STUDENT",
+                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 4L,
+                            AvatarUrl = "https://placehold.co/400/fce7f3/be185d?text=TM",
+                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Email = "tran.thi.mai@learnmate.vn",
+                            IsActive = true,
+                            PasswordHash = "$2a$12$BgRmemonnrWXu0O0hABfSuRgIBIjUevBcIGTk53b.y0oPqW45tCka",
+                            Role = "TEACHER",
+                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 5L,
+                            AvatarUrl = "https://placehold.co/400/dcfce7/16a34a?text=LD",
+                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Email = "le.van.duc@learnmate.vn",
+                            IsActive = true,
+                            PasswordHash = "$2a$12$BgRmemonnrWXu0O0hABfSuRgIBIjUevBcIGTk53b.y0oPqW45tCka",
+                            Role = "TEACHER",
+                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 6L,
+                            AvatarUrl = "https://placehold.co/400/fef9c3/ca8a04?text=PH",
+                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Email = "pham.thi.huong@learnmate.vn",
+                            IsActive = true,
+                            PasswordHash = "$2a$12$BgRmemonnrWXu0O0hABfSuRgIBIjUevBcIGTk53b.y0oPqW45tCka",
+                            Role = "TEACHER",
+                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 7L,
+                            AvatarUrl = "https://placehold.co/400/ede9fe/7c3aed?text=NB",
+                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Email = "nguyen.quoc.bao@learnmate.vn",
+                            IsActive = true,
+                            PasswordHash = "$2a$12$BgRmemonnrWXu0O0hABfSuRgIBIjUevBcIGTk53b.y0oPqW45tCka",
+                            Role = "TEACHER",
+                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 8L,
+                            AvatarUrl = "https://placehold.co/400/ffedd5/ea580c?text=HL",
+                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Email = "hoang.thi.lan@learnmate.vn",
+                            IsActive = true,
+                            PasswordHash = "$2a$12$BgRmemonnrWXu0O0hABfSuRgIBIjUevBcIGTk53b.y0oPqW45tCka",
+                            Role = "TEACHER",
+                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 9L,
+                            AvatarUrl = "https://placehold.co/400/cffafe/0891b2?text=VK",
+                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Email = "vu.minh.khoa@learnmate.vn",
+                            IsActive = true,
+                            PasswordHash = "$2a$12$BgRmemonnrWXu0O0hABfSuRgIBIjUevBcIGTk53b.y0oPqW45tCka",
+                            Role = "TEACHER",
+                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 10L,
+                            AvatarUrl = "https://placehold.co/400/fce7f3/db2777?text=DT",
+                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Email = "do.thi.thu@learnmate.vn",
+                            IsActive = true,
+                            PasswordHash = "$2a$12$BgRmemonnrWXu0O0hABfSuRgIBIjUevBcIGTk53b.y0oPqW45tCka",
+                            Role = "TEACHER",
+                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 11L,
+                            AvatarUrl = "https://placehold.co/400/e0f2fe/0284c7?text=BL",
+                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Email = "bui.van.long@learnmate.vn",
+                            IsActive = true,
+                            PasswordHash = "$2a$12$BgRmemonnrWXu0O0hABfSuRgIBIjUevBcIGTk53b.y0oPqW45tCka",
+                            Role = "TEACHER",
+                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 12L,
+                            AvatarUrl = "https://placehold.co/400/f1f5f9/475569?text=NB",
+                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Email = "nguyen.thi.bich@learnmate.vn",
+                            IsActive = true,
+                            PasswordHash = "$2a$12$BgRmemonnrWXu0O0hABfSuRgIBIjUevBcIGTk53b.y0oPqW45tCka",
+                            Role = "TEACHER",
+                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 13L,
+                            AvatarUrl = "https://placehold.co/400/fef2f2/dc2626?text=TN",
+                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Email = "trinh.van.nam@learnmate.vn",
+                            IsActive = true,
+                            PasswordHash = "$2a$12$BgRmemonnrWXu0O0hABfSuRgIBIjUevBcIGTk53b.y0oPqW45tCka",
+                            Role = "TEACHER",
+                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 14L,
+                            AvatarUrl = "https://placehold.co/400/e0e7ff/4f46e5?text=S2",
+                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Email = "student2@learnmate.vn",
+                            IsActive = true,
+                            PasswordHash = "$2a$12$BgRmemonnrWXu0O0hABfSuRgIBIjUevBcIGTk53b.y0oPqW45tCka",
+                            Role = "STUDENT",
+                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 15L,
+                            AvatarUrl = "https://placehold.co/400/ecfdf5/059669?text=S3",
+                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Email = "student3@learnmate.vn",
                             IsActive = true,
                             PasswordHash = "$2a$12$BgRmemonnrWXu0O0hABfSuRgIBIjUevBcIGTk53b.y0oPqW45tCka",
                             Role = "STUDENT",
@@ -1480,6 +2215,27 @@ namespace DataAccessLayer.Migrations
                     b.Navigation("Assignment");
                 });
 
+            modelBuilder.Entity("BusinessObject.Models.Attendance", b =>
+                {
+                    b.HasOne("BusinessObject.Models.Schedule", "Schedule")
+                        .WithMany("Attendances")
+                        .HasForeignKey("ScheduleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_attendances_schedules_schedule_id");
+
+                    b.HasOne("BusinessObject.Models.User", "Student")
+                        .WithMany()
+                        .HasForeignKey("StudentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_attendances_users_student_id");
+
+                    b.Navigation("Schedule");
+
+                    b.Navigation("Student");
+                });
+
             modelBuilder.Entity("BusinessObject.Models.Class", b =>
                 {
                     b.HasOne("BusinessObject.Models.User", "Teacher")
@@ -1511,6 +2267,27 @@ namespace DataAccessLayer.Migrations
                     b.Navigation("Class");
 
                     b.Navigation("Student");
+                });
+
+            modelBuilder.Entity("BusinessObject.Models.Conversation", b =>
+                {
+                    b.HasOne("BusinessObject.Models.User", "ParticipantA")
+                        .WithMany()
+                        .HasForeignKey("ParticipantAId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_conversations_users_participant_a_id");
+
+                    b.HasOne("BusinessObject.Models.User", "ParticipantB")
+                        .WithMany()
+                        .HasForeignKey("ParticipantBId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_conversations_users_participant_b_id");
+
+                    b.Navigation("ParticipantA");
+
+                    b.Navigation("ParticipantB");
                 });
 
             modelBuilder.Entity("BusinessObject.Models.Feedback", b =>
@@ -1565,6 +2342,27 @@ namespace DataAccessLayer.Migrations
                     b.Navigation("Class");
 
                     b.Navigation("Uploader");
+                });
+
+            modelBuilder.Entity("BusinessObject.Models.Message", b =>
+                {
+                    b.HasOne("BusinessObject.Models.Conversation", "Conversation")
+                        .WithMany("Messages")
+                        .HasForeignKey("ConversationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_messages_conversations_conversation_id");
+
+                    b.HasOne("BusinessObject.Models.User", "Sender")
+                        .WithMany()
+                        .HasForeignKey("SenderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_messages_users_sender_id");
+
+                    b.Navigation("Conversation");
+
+                    b.Navigation("Sender");
                 });
 
             modelBuilder.Entity("BusinessObject.Models.Notification", b =>
@@ -1707,6 +2505,18 @@ namespace DataAccessLayer.Migrations
                     b.Navigation("SubmissionAnswer");
                 });
 
+            modelBuilder.Entity("BusinessObject.Models.TeacherDocument", b =>
+                {
+                    b.HasOne("BusinessObject.Models.TeacherProfile", "TeacherProfile")
+                        .WithMany("Documents")
+                        .HasForeignKey("TeacherProfileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_teacher_documents_teacher_profiles_teacher_profile_id");
+
+                    b.Navigation("TeacherProfile");
+                });
+
             modelBuilder.Entity("BusinessObject.Models.TeacherProfile", b =>
                 {
                     b.HasOne("BusinessObject.Models.User", "User")
@@ -1743,6 +2553,35 @@ namespace DataAccessLayer.Migrations
                         .HasConstraintName("fk_teacher_ratings_users_teacher_id");
 
                     b.Navigation("Class");
+
+                    b.Navigation("Student");
+
+                    b.Navigation("Teacher");
+                });
+
+            modelBuilder.Entity("BusinessObject.Models.TutorBookingRequest", b =>
+                {
+                    b.HasOne("BusinessObject.Models.Class", "ResultClass")
+                        .WithMany()
+                        .HasForeignKey("ResultClassId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_tutor_booking_requests_classes_result_class_id");
+
+                    b.HasOne("BusinessObject.Models.User", "Student")
+                        .WithMany()
+                        .HasForeignKey("StudentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_tutor_booking_requests_users_student_id");
+
+                    b.HasOne("BusinessObject.Models.User", "Teacher")
+                        .WithMany()
+                        .HasForeignKey("TeacherId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_tutor_booking_requests_users_teacher_id");
+
+                    b.Navigation("ResultClass");
 
                     b.Navigation("Student");
 
@@ -1797,6 +2636,11 @@ namespace DataAccessLayer.Migrations
                     b.Navigation("TeacherRatings");
                 });
 
+            modelBuilder.Entity("BusinessObject.Models.Conversation", b =>
+                {
+                    b.Navigation("Messages");
+                });
+
             modelBuilder.Entity("BusinessObject.Models.Invoice", b =>
                 {
                     b.Navigation("Payments");
@@ -1804,6 +2648,8 @@ namespace DataAccessLayer.Migrations
 
             modelBuilder.Entity("BusinessObject.Models.Schedule", b =>
                 {
+                    b.Navigation("Attendances");
+
                     b.Navigation("VideoSession");
                 });
 
@@ -1817,6 +2663,11 @@ namespace DataAccessLayer.Migrations
             modelBuilder.Entity("BusinessObject.Models.SubmissionAnswer", b =>
                 {
                     b.Navigation("SelectedOptions");
+                });
+
+            modelBuilder.Entity("BusinessObject.Models.TeacherProfile", b =>
+                {
+                    b.Navigation("Documents");
                 });
 
             modelBuilder.Entity("BusinessObject.Models.User", b =>

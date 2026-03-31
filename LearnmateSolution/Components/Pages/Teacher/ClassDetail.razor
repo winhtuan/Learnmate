@@ -1,0 +1,1165 @@
+@page "/teacher/classes/{ClassId:long}"
+@rendermode InteractiveServer
+@layout Layout.TeacherLayout
+
+@using BusinessLogicLayer.DTOs.Teacher.Classes
+@using BusinessLogicLayer.Services.Interfaces
+@using BusinessObject.Enum
+@using LearnmateSolution.AppState
+@using Microsoft.AspNetCore.Components.Forms
+@inject ITeacherCourseService ClassService
+@inject IFileStorageService FileStorage
+@inject UserSessionService Session
+@inject NavigationManager Nav
+
+<PageTitle>@(Detail?.Name ?? "Chi tiết lớp") | LearnMate</PageTitle>
+
+@if (IsLoading)
+{
+    <div class="flex items-center justify-center py-32">
+        <span class="material-symbols-outlined animate-spin text-primary text-5xl">progress_activity</span>
+    </div>
+}
+else if (Detail is null)
+{
+    <div class="flex flex-col items-center justify-center py-32 text-center">
+        <span class="material-symbols-outlined text-slate-300 text-6xl mb-4">search_off</span>
+        <h3 class="text-xl font-bold text-slate-900 mb-2">Không tìm thấy lớp học</h3>
+        <p class="text-slate-500 mb-5">Lớp học không tồn tại hoặc bạn không có quyền truy cập.</p>
+        <a href="/teacher/classes" class="text-primary font-medium hover:underline flex items-center gap-1">
+            <span class="material-symbols-outlined text-[18px]">arrow_back</span> Quay về danh sách lớp
+        </a>
+    </div>
+}
+else
+{
+    <!-- Breadcrumb -->
+    <nav class="flex items-center gap-1.5 text-sm text-slate-400 mb-5">
+        <a href="/teacher/dashboard" class="hover:text-primary transition-colors">Dashboard</a>
+        <span class="material-symbols-outlined text-[16px]">chevron_right</span>
+        <a href="/teacher/classes" class="hover:text-primary transition-colors">Lớp học</a>
+        <span class="material-symbols-outlined text-[16px]">chevron_right</span>
+        <span class="text-slate-700 font-medium truncate max-w-[200px]">@Detail.Name</span>
+    </nav>
+
+    <!-- ── Meeting Link Management ────────────────────────────────────────── -->
+    <div class="bg-white border @(string.IsNullOrEmpty(Detail.MeetingLink) ? "border-amber-200 bg-amber-50/20" : "border-slate-200") rounded-xl shadow-sm p-4 mb-6 transition-all">
+        <div class="flex items-center justify-between gap-4 flex-wrap">
+            <div class="flex items-center gap-3">
+                <div class="size-10 rounded-full @(string.IsNullOrEmpty(Detail.MeetingLink) ? "bg-amber-100 text-amber-600" : "bg-primary/10 text-primary") flex items-center justify-center shrink-0">
+                    <span class="material-symbols-outlined text-[24px]">videocam</span>
+                </div>
+                <div>
+                    <h3 class="text-sm font-bold text-slate-900">Google Meet Link</h3>
+                    @if (isEditingMeetLink)
+                    {
+                        <div class="mt-2 flex items-center gap-2 max-w-sm">
+                            <input @bind="tempMeetLink" 
+                                   placeholder="Dán link Meet vào đây..."
+                                   class="flex-1 px-3 py-1.5 border border-slate-300 rounded-lg text-sm outline-none transition-all" />
+                            <button @onclick="SaveMeetLink" disabled="@isSavingMeetLink"
+                                    class="px-4 py-1.5 bg-primary text-white text-sm font-bold rounded-lg hover:bg-blue-600 transition-all opacity-100">
+                                @(isSavingMeetLink ? "..." : "Lưu")
+                            </button>
+                        </div>
+                    }
+                    else
+                    {
+                        @if (string.IsNullOrEmpty(Detail.MeetingLink))
+                        {
+                            <p class="text-xs text-amber-600">Chưa cài đặt link dạy học.</p>
+                        }
+                        else
+                        {
+                            <a href="@Detail.MeetingLink" target="_blank" class="text-xs text-primary font-medium hover:underline">@Detail.MeetingLink</a>
+                        }
+                    }
+                </div>
+            </div>
+            
+            <button @onclick="() => isEditingMeetLink = !isEditingMeetLink" 
+                    class="px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-bold text-slate-700 hover:bg-white transition-all">
+                @(isEditingMeetLink ? "Hủy" : (string.IsNullOrEmpty(Detail.MeetingLink) ? "Cài đặt link" : "Sửa link"))
+            </button>
+        </div>
+    </div>
+
+    <!-- ── Header ─────────────────────────────────────────────────────────── -->
+    <div class="flex items-start justify-between gap-4 mb-6 flex-wrap">
+        <div class="flex items-center gap-4">
+            <button @onclick='() => Nav.NavigateTo("/teacher/classes")' 
+                    class="size-10 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center shrink-0 transition-colors shadow-sm">
+                <span class="material-symbols-outlined text-[20px]">arrow_back</span>
+            </button>
+            <!-- Subject Icon -->
+            <div class="size-14 rounded-xl @GetSubjectBg(Detail.Subject) flex items-center justify-center shrink-0 shadow-sm">
+                <span class="material-symbols-outlined text-3xl @GetSubjectText(Detail.Subject)">@GetSubjectIcon(Detail.Subject)</span>
+            </div>
+            <div>
+                <div class="flex items-center gap-2 flex-wrap">
+                    <h1 class="text-2xl font-bold text-slate-900">@Detail.Name</h1>
+                    @{
+                        var (dot, badge, color) = Detail.Status switch
+                        {
+                            ClassStatus.ACTIVE    => ("bg-green-500", "Active",    "bg-green-100 text-green-700"),
+                            ClassStatus.INACTIVE  => ("bg-slate-400",  "Inactive", "bg-slate-100 text-slate-600"),
+                            ClassStatus.COMPLETED => ("bg-blue-400",   "Completed","bg-blue-100 text-blue-700"),
+                            _                     => ("bg-slate-300",  Detail.Status.ToString(), "bg-slate-100 text-slate-500")
+                        };
+                    }
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold @color">
+                        <span class="size-1.5 rounded-full @dot"></span>
+                        @badge
+                    </span>
+                </div>
+                <p class="text-slate-500 text-sm mt-0.5 flex items-center gap-3">
+                    <span class="flex items-center gap-1">
+                        <span class="material-symbols-outlined text-[14px]">book</span>@Detail.Subject
+                    </span>
+                    <span class="flex items-center gap-1">
+                        <span class="material-symbols-outlined text-[14px]">calendar_today</span>Tạo @Detail.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy")
+                    </span>
+                </p>
+            </div>
+        </div>
+        <div class="flex items-center gap-2">
+            <a href="/teacher/classes/@ClassId/edit"
+               class="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-slate-200 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors">
+                <span class="material-symbols-outlined text-[18px]">settings</span>Cài đặt
+            </a>
+            <button @onclick="OpenAddStudentModal"
+                    class="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary hover:bg-blue-600 text-white text-sm font-medium transition-all shadow-sm">
+                <span class="material-symbols-outlined text-[18px]">person_add</span>Thêm học sinh
+            </button>
+        </div>
+    </div>
+
+    <!-- ── Stats Cards ─────────────────────────────────────────────────────── -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-7">
+        @foreach (var stat in GetStats())
+        {
+            <div class="bg-white border border-slate-200 rounded-xl shadow-sm p-4">
+                <p class="text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">@stat.Label</p>
+                <div class="flex items-end justify-between">
+                    <span class="text-3xl font-bold text-slate-900">@stat.Value</span>
+                    <span class="material-symbols-outlined text-[28px] @stat.IconColor">@stat.Icon</span>
+                </div>
+                @if (!string.IsNullOrEmpty(stat.Sub))
+                {
+                    <p class="text-xs text-slate-400 mt-1">@stat.Sub</p>
+                }
+            </div>
+        }
+    </div>
+
+    <!-- ── Tab Bar ─────────────────────────────────────────────────────────── -->
+    <div class="flex items-center gap-1 border-b border-slate-200 mb-6 overflow-x-auto">
+        @foreach (var tab in Tabs)
+        {
+            <button @onclick="() => ActiveTab = tab.Key"
+                    class="flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 transition-all whitespace-nowrap
+                           @(ActiveTab == tab.Key
+                               ? "border-primary text-primary"
+                               : "border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300")">
+                <span class="material-symbols-outlined text-[18px]">@tab.Icon</span>
+                @tab.Label
+                @if (tab.Count > 0)
+                {
+                    <span class="ml-1 flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full text-[10px] font-bold
+                                 @(ActiveTab == tab.Key ? "bg-primary text-white" : "bg-slate-100 text-slate-500")">
+                        @tab.Count
+                    </span>
+                }
+            </button>
+        }
+    </div>
+
+    <!-- ── Tab Content ─────────────────────────────────────────────────────── -->
+
+    @* STUDENTS TAB *@
+    @if (ActiveTab == "students")
+    {
+        <div class="flex items-center justify-between mb-4">
+            <p class="text-sm text-slate-500">@Detail.Students.Count / @Detail.MaxStudents học sinh</p>
+            <button @onclick="OpenAddStudentModal"
+                    class="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary hover:bg-blue-600 text-white text-sm font-medium transition-all shadow-sm">
+                <span class="material-symbols-outlined text-[18px]">person_add</span>Thêm học sinh
+            </button>
+        </div>
+        @if (Detail.Students.Count == 0)
+        {
+            <div class="flex flex-col items-center justify-center py-16 text-center">
+                <span class="material-symbols-outlined text-slate-200 text-6xl mb-3">group</span>
+                <p class="text-slate-400 text-sm">Chưa có học sinh nào trong lớp.</p>
+                <button @onclick="OpenAddStudentModal" class="mt-4 text-primary text-sm font-medium hover:underline flex items-center gap-1">
+                    <span class="material-symbols-outlined text-[16px]">add</span>Thêm học sinh đầu tiên
+                </button>
+            </div>
+        }
+        else
+        {
+            <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                <div class="p-4 border-b border-slate-100 flex items-center justify-between">
+                    <p class="font-semibold text-slate-900 text-sm">@Detail.Students.Count / @Detail.MaxStudents học sinh</p>
+                    <div class="w-40 bg-slate-100 rounded-full h-1.5">
+                        <div class="bg-primary h-1.5 rounded-full transition-all"
+                             style="width: @Math.Min(100, Detail.Students.Count * 100 / Detail.MaxStudents)%"></div>
+                    </div>
+                </div>
+                <div class="divide-y divide-slate-100">
+                    @foreach (var s in Detail.Students)
+                    {
+                        <div class="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 transition-colors group">
+                            <div class="size-9 rounded-full overflow-hidden bg-slate-100 flex items-center justify-center shrink-0">
+                                @if (!string.IsNullOrEmpty(s.AvatarUrl))
+                                {
+                                    <img src="@s.AvatarUrl" alt="@s.FullName" class="size-9 object-cover" />
+                                }
+                                else
+                                {
+                                    <span class="text-sm font-bold text-slate-400">@s.FullName[0]</span>
+                                }
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="font-medium text-slate-900 text-sm truncate">@s.FullName</p>
+                                <p class="text-xs text-slate-400 truncate">@s.Email</p>
+                            </div>
+                            @if (!string.IsNullOrEmpty(s.GradeLevel))
+                            {
+                                <span class="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 font-medium shrink-0">
+                                    Lớp @s.GradeLevel
+                                </span>
+                            }
+                            <span class="text-xs text-slate-400 shrink-0 hidden sm:block">
+                                Tham gia @s.JoinedAt.ToLocalTime().ToString("dd/MM/yy")
+                            </span>
+                            <button @onclick="() => ConfirmRemoveStudent(s)"
+                                    title="Xóa khỏi lớp"
+                                    class="size-8 flex items-center justify-center rounded-lg hover:bg-red-50 text-slate-200 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all shrink-0">
+                                <span class="material-symbols-outlined text-[18px]">person_remove</span>
+                            </button>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    }
+
+    @* ASSIGNMENTS TAB *@
+    else if (ActiveTab == "assignments")
+    {
+        <div class="flex justify-end mb-4">
+            <a href="/teacher/assignments/create?classId=@ClassId"
+               class="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary hover:bg-blue-600 text-white text-sm font-medium transition-all shadow-sm">
+                <span class="material-symbols-outlined text-[18px]">add</span> Tạo bài tập
+            </a>
+        </div>
+        @if (Detail.Assignments.Count == 0)
+        {
+            <div class="flex flex-col items-center justify-center py-16 text-center">
+                <span class="material-symbols-outlined text-slate-200 text-6xl mb-3">assignment</span>
+                <p class="text-slate-400 text-sm">Chưa có bài tập nào.</p>
+            </div>
+        }
+        else
+        {
+            <div class="flex flex-col gap-3">
+                @foreach (var a in Detail.Assignments)
+                {
+                    var (aColor, aBg) = a.Status switch
+                    {
+                        "PUBLISHED" => ("text-green-700",  "bg-green-50 border-green-200"),
+                        "DRAFT"     => ("text-slate-600",  "bg-slate-50 border-slate-200"),
+                        "CLOSED"    => ("text-orange-700", "bg-orange-50 border-orange-200"),
+                        _           => ("text-slate-500",  "bg-slate-50 border-slate-200")
+                    };
+                    int pct = a.Total > 0 ? a.Submitted * 100 / a.Total : 0;
+
+                    <a href="/teacher/classes/@ClassId/assignments/@a.Id" class="block bg-white border border-slate-200 rounded-xl shadow-sm p-4 hover:border-primary/30 hover:shadow-md transition-all">
+                        <div class="flex items-start gap-3">
+                            <div class="size-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                                <span class="material-symbols-outlined text-primary text-[22px]">assignment</span>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center gap-2 flex-wrap mb-1">
+                                    <p class="font-semibold text-slate-900 text-sm">@a.Title</p>
+                                    <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full border @aColor @aBg">@a.Status</span>
+                                </div>
+                                @if (a.DueDate.HasValue)
+                                {
+                                    <p class="text-xs text-slate-500 flex items-center gap-1 mb-2">
+                                        <span class="material-symbols-outlined text-[14px]">event</span>
+                                        Hạn nộp: @a.DueDate.Value.ToString("dd/MM/yyyy HH:mm")
+                                    </p>
+                                }
+                                <!-- Submission progress -->
+                                <div class="flex items-center gap-2">
+                                    <div class="flex-1 bg-slate-100 rounded-full h-1.5">
+                                        <div class="bg-primary h-1.5 rounded-full transition-all" style="width: @pct%"></div>
+                                    </div>
+                                    <span class="text-xs text-slate-500 shrink-0">@a.Submitted/@a.Total đã nộp</span>
+                                </div>
+                            </div>
+                        </div>
+                    </a>
+                }
+            </div>
+        }
+    }
+
+    @* MATERIALS TAB *@
+    else if (ActiveTab == "materials")
+    {
+        <div class="flex justify-end mb-4">
+            <button @onclick="OpenUploadModal"
+                    class="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary hover:bg-blue-600 text-white text-sm font-medium transition-all shadow-sm">
+                <span class="material-symbols-outlined text-[18px]">upload</span> Tải lên tài liệu
+            </button>
+        </div>
+        @if (Detail.Materials.Count == 0)
+        {
+            <div class="flex flex-col items-center justify-center py-16 text-center">
+                <span class="material-symbols-outlined text-slate-200 text-6xl mb-3">folder_open</span>
+                <p class="text-slate-400 text-sm">Chưa có tài liệu nào.</p>
+                <p class="text-slate-300 text-xs mt-1">Nhấn "Tải lên tài liệu" để bắt đầu chia sẻ tài liệu với học sinh.</p>
+            </div>
+        }
+        else
+        {
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                @foreach (var m in Detail.Materials)
+                {
+                    var (fileIcon, fileColor) = GetFileStyle(m.FileType);
+                    <div class="bg-white border border-slate-200 rounded-xl shadow-sm p-4 hover:border-primary/30 hover:shadow-md transition-all group">
+                        <div class="flex items-start gap-3">
+                            <div class="size-10 rounded-lg @fileColor flex items-center justify-center shrink-0">
+                                <span class="material-symbols-outlined text-[22px] text-white">@fileIcon</span>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="font-medium text-slate-900 text-sm truncate mb-0.5">@m.Title</p>
+                                @if (!string.IsNullOrEmpty(m.Description))
+                                {
+                                    <p class="text-xs text-slate-400 line-clamp-1 mb-1">@m.Description</p>
+                                }
+                                <div class="flex items-center gap-2 text-xs text-slate-400">
+                                    <span>@m.UploadedAt.ToString("dd/MM/yyyy")</span>
+                                    @if (m.FileSizeBytes.HasValue)
+                                    {
+                                        <span>•</span>
+                                        <span>@FormatFileSize(m.FileSizeBytes.Value)</span>
+                                    }
+                                    <span class="uppercase font-semibold text-slate-500">@m.FileType</span>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-1 shrink-0">
+                                <button @onclick="() => DownloadMaterial(m)"
+                                        class="size-8 flex items-center justify-center rounded-lg hover:bg-slate-100 text-slate-400 hover:text-blue-600 transition-colors"
+                                        title="Tải xuống">
+                                    <span class="material-symbols-outlined text-[20px]">download</span>
+                                </button>
+                                <button @onclick="() => ConfirmDeleteMaterial(m)"
+                                        class="size-8 flex items-center justify-center rounded-lg hover:bg-red-50 text-slate-300 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
+                                        title="Xóa tài liệu">
+                                    <span class="material-symbols-outlined text-[20px]">delete</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    }
+
+    @* SCHEDULE TAB *@
+    else if (ActiveTab == "schedule")
+    {
+        <div class="flex justify-end mb-4">
+            <a href="/teacher/schedule/class/@ClassId"
+               class="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary hover:bg-blue-600 text-white text-sm font-medium transition-all shadow-sm">
+                <span class="material-symbols-outlined text-[18px]">add</span> Thêm buổi học
+            </a>
+        </div>
+        @if (Detail.Schedules.Count == 0)
+        {
+            <div class="flex flex-col items-center justify-center py-16 text-center">
+                <span class="material-symbols-outlined text-slate-200 text-6xl mb-3">calendar_month</span>
+                <p class="text-slate-400 text-sm">Chưa có lịch học nào.</p>
+            </div>
+        }
+        else
+        {
+            <div class="flex flex-col gap-3">
+                @foreach (var s in Detail.Schedules)
+                {
+                    bool isPast    = s.StartTime < DateTime.Now;
+                    bool isToday   = s.StartTime.Date == DateTime.Today;
+                    var  rowStyle  = isToday   ? "border-primary/40 bg-blue-50/40" :
+                                    isPast     ? "opacity-60" :
+                                    "hover:border-primary/30 hover:shadow-sm";
+                    var (typeIcon, typeBg) = s.Type switch
+                    {
+                        "ONLINE"  => ("videocam",   "bg-blue-500"),
+                        "OFFLINE" => ("location_on", "bg-green-500"),
+                        _         => ("event",       "bg-slate-500")
+                    };
+                    <div class="bg-white border border-slate-200 rounded-xl shadow-sm p-4 flex items-center gap-4 transition-all @rowStyle">
+                        <!-- Date block -->
+                        <div class="flex flex-col items-center min-w-[52px] text-center">
+                            <span class="text-xs font-semibold text-slate-400 uppercase">@s.StartTime.ToString("ddd")</span>
+                            <span class="text-2xl font-bold @(isToday ? "text-primary" : "text-slate-900")">@s.StartTime.ToString("dd")</span>
+                            <span class="text-xs text-slate-400">@s.StartTime.ToString("MMM")</span>
+                        </div>
+                        <div class="w-px h-10 bg-slate-100"></div>
+                        <!-- Time -->
+                        <div class="min-w-[90px]">
+                            <p class="text-sm font-semibold text-slate-900">@s.StartTime.ToString("HH:mm")</p>
+                            <p class="text-xs text-slate-400">→ @s.EndTime.ToString("HH:mm")</p>
+                        </div>
+                        <!-- Title + type -->
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center gap-2">
+                                <p class="font-medium text-slate-900 text-sm truncate">@s.Title</p>
+                                @if (s.IsTrial)
+                                {
+                                    <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-700">Trial</span>
+                                }
+                            </div>
+                        </div>
+                        <span class="size-8 rounded-lg @typeBg flex items-center justify-center shrink-0">
+                            <span class="material-symbols-outlined text-white text-[18px]">@typeIcon</span>
+                        </span>
+                        @{
+                            var (sLabel, sBg2) = s.Status switch
+                            {
+                                "SCHEDULED"  => ("Sắp tới",  "bg-slate-100 text-slate-600"),
+                                "ONGOING"    => ("Đang diễn ra", "bg-green-100 text-green-700"),
+                                "COMPLETED"  => ("Đã xong",  "bg-blue-100 text-blue-700"),
+                                _            => (s.Status, "bg-slate-100 text-slate-500")
+                            };
+                        }
+                        <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full @sBg2 shrink-0">@sLabel</span>
+                    </div>
+                }
+            </div>
+        }
+    }
+}
+
+@* ═══════════════════════════════════════════════════════════════════════════════
+   ADD STUDENT MODAL
+   ═══════════════════════════════════════════════════════════════════════════════ *@
+@if (ShowAddStudentModal)
+{
+    <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+         @onclick="CloseAddStudentModal">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden"
+             @onclick:stopPropagation="true">
+
+            <!-- Header -->
+            <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+                <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-primary text-[24px]">person_add</span>
+                    <h2 class="text-lg font-bold text-slate-900">Thêm học sinh</h2>
+                </div>
+                <button @onclick="CloseAddStudentModal"
+                        class="size-8 flex items-center justify-center rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+
+            <!-- Body -->
+            <div class="px-6 py-5 space-y-4">
+                <!-- Search input -->
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1.5">
+                        Tìm theo email <span class="text-red-400">*</span>
+                    </label>
+                    <div class="flex gap-2">
+                        <div class="relative flex-1">
+                            <span class="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-400 text-[20px]">search</span>
+                            <input @bind="SearchEmail" @bind:event="oninput"
+                                   @onkeydown="OnSearchKeyDown"
+                                   placeholder="student@example.com"
+                                   class="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all" />
+                        </div>
+                        <button @onclick="HandleSearchStudent"
+                                disabled="@(IsSearching || string.IsNullOrWhiteSpace(SearchEmail))"
+                                class="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-900 text-white text-sm font-medium transition-all disabled:opacity-50 whitespace-nowrap">
+                            @if (IsSearching)
+                            {
+                                <span class="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>
+                            }
+                            else
+                            {
+                                <span>Tìm</span>
+                            }
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Error banner -->
+                @if (!string.IsNullOrEmpty(AddStudentError))
+                {
+                    <div class="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+                        <span class="material-symbols-outlined text-red-500 text-[18px]">error</span>
+                        <p class="text-sm text-red-600">@AddStudentError</p>
+                    </div>
+                }
+
+                <!-- Success banner -->
+                @if (AddStudentSuccess)
+                {
+                    <div class="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg">
+                        <span class="material-symbols-outlined text-green-600 text-[18px]">check_circle</span>
+                        <p class="text-sm text-green-700">Thêm học sinh thành công!</p>
+                    </div>
+                }
+
+                <!-- Search result preview -->
+                @if (SearchResult is not null)
+                {
+                    <div class="p-4 rounded-xl border-2 @(SearchResult.AlreadyInClass ? "border-amber-200 bg-amber-50" : "border-green-200 bg-green-50")">
+                        <div class="flex items-center gap-3">
+                            <div class="size-11 rounded-full overflow-hidden bg-slate-200 flex items-center justify-center shrink-0">
+                                @if (!string.IsNullOrEmpty(SearchResult.AvatarUrl))
+                                {
+                                    <img src="@SearchResult.AvatarUrl" alt="" class="size-11 object-cover" />
+                                }
+                                else
+                                {
+                                    <span class="text-base font-bold text-slate-400">@SearchResult.FullName[0]</span>
+                                }
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="font-semibold text-slate-900 text-sm">@SearchResult.FullName</p>
+                                <p class="text-xs text-slate-500">@SearchResult.Email</p>
+                                @if (!string.IsNullOrEmpty(SearchResult.GradeLevel))
+                                {
+                                    <p class="text-xs text-slate-400">Lớp @SearchResult.GradeLevel</p>
+                                }
+                            </div>
+                            @if (SearchResult.AlreadyInClass)
+                            {
+                                <span class="text-xs font-semibold px-2 py-1 rounded-full bg-amber-100 text-amber-700">Đã trong lớp</span>
+                            }
+                            else
+                            {
+                                <span class="text-xs font-semibold px-2 py-1 rounded-full bg-green-100 text-green-700">Sẵn sàng</span>
+                            }
+                        </div>
+                    </div>
+                }
+                else if (SearchDone && !IsSearching)
+                {
+                    <div class="p-4 rounded-xl border border-slate-200 bg-slate-50 text-center">
+                        <span class="material-symbols-outlined text-slate-300 text-3xl">person_off</span>
+                        <p class="text-sm text-slate-400 mt-1">Không tìm thấy tài khoản với email này.</p>
+                    </div>
+                }
+            </div>
+
+            <!-- Footer -->
+            <div class="flex items-center justify-end gap-2 px-6 py-4 border-t border-slate-100 bg-slate-50/50">
+                <button @onclick="CloseAddStudentModal"
+                        class="px-4 py-2 rounded-lg border border-slate-200 text-sm font-medium text-slate-600 hover:bg-slate-100 transition-colors">
+                    Đóng
+                </button>
+                <button @onclick="HandleAddStudent"
+                        disabled="@(IsAdding || SearchResult is null || SearchResult.AlreadyInClass)"
+                        class="flex items-center gap-1.5 px-5 py-2 rounded-lg bg-primary hover:bg-blue-600 text-white text-sm font-medium transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
+                    @if (IsAdding)
+                    {
+                        <span class="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>
+                    }
+                    else
+                    {
+                        <span class="material-symbols-outlined text-[18px]">person_add</span>
+                    }
+                    Thêm vào lớp
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@* ═══════════════════════════════════════════════════════════════════════════════
+   REMOVE STUDENT MODAL
+   ═══════════════════════════════════════════════════════════════════════════════ *@
+@if (ShowRemoveStudentConfirm && StudentToRemove is not null)
+{
+    <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+         @onclick="() => ShowRemoveStudentConfirm = false">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-6 text-center"
+             @onclick:stopPropagation="true">
+            <div class="size-14 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
+                <span class="material-symbols-outlined text-red-500 text-3xl">person_remove</span>
+            </div>
+            <h3 class="text-lg font-bold text-slate-900 mb-1">Xóa học sinh?</h3>
+            <p class="text-sm text-slate-500 mb-5">
+                Bạn có chắc muốn xóa <span class="font-semibold text-slate-800">@StudentToRemove.FullName</span> khỏi lớp?
+            </p>
+            <div class="flex items-center justify-center gap-3">
+                <button @onclick="() => ShowRemoveStudentConfirm = false"
+                        class="px-4 py-2 rounded-lg border border-slate-200 text-sm font-medium text-slate-600 hover:bg-slate-100 transition-colors">
+                    Hủy
+                </button>
+                <button @onclick="HandleRemoveStudent" disabled="@IsRemovingStudent"
+                        class="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-red-500 hover:bg-red-600 text-white text-sm font-medium transition-all disabled:opacity-50">
+                    @if (IsRemovingStudent)
+                    {
+                        <span class="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>
+                    }
+                    Xóa khỏi lớp
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@* ═══════════════════════════════════════════════════════════════════════════════
+   UPLOAD MATERIAL MODAL
+   ═══════════════════════════════════════════════════════════════════════════════ *@
+@if (ShowUploadModal)
+
+{
+    <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+         @onclick="CloseUploadModal">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden animate-scale-in"
+             @onclick:stopPropagation="true">
+
+            <!-- Modal Header -->
+            <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+                <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-primary text-[24px]">upload_file</span>
+                    <h2 class="text-lg font-bold text-slate-900">Tải lên tài liệu</h2>
+                </div>
+                <button @onclick="CloseUploadModal"
+                        class="size-8 flex items-center justify-center rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+
+            <!-- Modal Body -->
+            <div class="px-6 py-5 space-y-4">
+                <!-- Drop zone / File picker -->
+                <div class="relative border-2 border-dashed rounded-xl p-8 text-center transition-all
+                            @(SelectedFile is not null ? "border-primary bg-blue-50/50" : "border-slate-200 hover:border-primary/50 hover:bg-slate-50")">
+                    @if (SelectedFile is null)
+                    {
+                        <span class="material-symbols-outlined text-slate-300 text-5xl mb-3">cloud_upload</span>
+                        <p class="text-sm font-medium text-slate-600 mb-1">Kéo thả file vào đây hoặc nhấn để chọn</p>
+                        <p class="text-xs text-slate-400">PDF, Word, Excel, PowerPoint, Hình ảnh, ZIP — Tối đa 50 MB</p>
+                    }
+                    else
+                    {
+                        var (fIcon, fColor) = GetFileStyle(Path.GetExtension(SelectedFile.Name).TrimStart('.'));
+                        <div class="flex items-center gap-3 justify-center">
+                            <div class="size-10 rounded-lg @fColor flex items-center justify-center shrink-0">
+                                <span class="material-symbols-outlined text-white text-[22px]">@fIcon</span>
+                            </div>
+                            <div class="text-left">
+                                <p class="font-medium text-slate-900 text-sm truncate max-w-[280px]">@SelectedFile.Name</p>
+                                <p class="text-xs text-slate-400">@FormatFileSize(SelectedFile.Size)</p>
+                            </div>
+                            <button @onclick="ClearSelectedFile"
+                                    class="size-7 flex items-center justify-center rounded-full hover:bg-red-50 text-slate-300 hover:text-red-500 transition-colors">
+                                <span class="material-symbols-outlined text-[18px]">close</span>
+                            </button>
+                        </div>
+                    }
+                    <InputFile OnChange="OnFileSelected"
+                               accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png,.gif,.zip,.rar,.txt"
+                               class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+                </div>
+
+                <!-- Title -->
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Tiêu đề <span class="text-red-400">*</span></label>
+                    <input @bind="UploadTitle"
+                           placeholder="Nhập tiêu đề tài liệu..."
+                           class="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all" />
+                </div>
+
+                <!-- Description (optional) -->
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Mô tả <span class="text-slate-300 text-xs">(tuỳ chọn)</span></label>
+                    <textarea @bind="UploadDescription" rows="2"
+                              placeholder="Ghi chú thêm về tài liệu này..."
+                              class="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all resize-none"></textarea>
+                </div>
+
+                <!-- Error message -->
+                @if (!string.IsNullOrEmpty(UploadError))
+                {
+                    <div class="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+                        <span class="material-symbols-outlined text-red-500 text-[18px]">error</span>
+                        <p class="text-sm text-red-600">@UploadError</p>
+                    </div>
+                }
+
+                <!-- Upload progress -->
+                @if (IsUploading)
+                {
+                    <div class="space-y-2">
+                        <div class="flex items-center gap-2">
+                            <span class="material-symbols-outlined animate-spin text-primary text-[18px]">progress_activity</span>
+                            <p class="text-sm text-slate-600">Đang tải lên...</p>
+                        </div>
+                        <div class="w-full bg-slate-100 rounded-full h-2">
+                            <div class="bg-primary h-2 rounded-full transition-all animate-pulse" style="width: 60%"></div>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="flex items-center justify-end gap-2 px-6 py-4 border-t border-slate-100 bg-slate-50/50">
+                <button @onclick="CloseUploadModal"
+                        disabled="@IsUploading"
+                        class="px-4 py-2 rounded-lg border border-slate-200 text-sm font-medium text-slate-600 hover:bg-slate-100 transition-colors disabled:opacity-50">
+                    Hủy
+                </button>
+                <button @onclick="HandleUpload"
+                        disabled="@(IsUploading || SelectedFile is null || string.IsNullOrWhiteSpace(UploadTitle))"
+                        class="flex items-center gap-1.5 px-5 py-2 rounded-lg bg-primary hover:bg-blue-600 text-white text-sm font-medium transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
+                    <span class="material-symbols-outlined text-[18px]">cloud_upload</span>
+                    Tải lên
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@* ═══════════════════════════════════════════════════════════════════════════════
+   DELETE CONFIRMATION MODAL
+   ═══════════════════════════════════════════════════════════════════════════════ *@
+@if (ShowDeleteConfirm && MaterialToDelete is not null)
+{
+    <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+         @onclick="() => ShowDeleteConfirm = false">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-6 text-center animate-scale-in"
+             @onclick:stopPropagation="true">
+            <div class="size-14 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
+                <span class="material-symbols-outlined text-red-500 text-3xl">delete_forever</span>
+            </div>
+            <h3 class="text-lg font-bold text-slate-900 mb-1">Xóa tài liệu?</h3>
+            <p class="text-sm text-slate-500 mb-5">
+                Bạn có chắc muốn xóa "<span class="font-medium text-slate-700">@MaterialToDelete.Title</span>"?
+                Thao tác này không thể hoàn tác.
+            </p>
+            <div class="flex items-center justify-center gap-3">
+                <button @onclick="() => ShowDeleteConfirm = false"
+                        class="px-4 py-2 rounded-lg border border-slate-200 text-sm font-medium text-slate-600 hover:bg-slate-100 transition-colors">
+                    Hủy
+                </button>
+                <button @onclick="HandleDeleteMaterial"
+                        disabled="@IsDeleting"
+                        class="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-red-500 hover:bg-red-600 text-white text-sm font-medium transition-all disabled:opacity-50">
+                    @if (IsDeleting)
+                    {
+                        <span class="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>
+                    }
+                    Xóa
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Shared empty state component -->
+@code {
+    [Parameter] public long ClassId { get; set; }
+
+
+    private TeacherClassDetailDto? Detail;
+    private bool IsLoading = true;
+    private string ActiveTab = "students";
+
+    // ── Add Student Modal state ───────────────────────────────────────────────
+    private bool                  ShowAddStudentModal;
+    private string                SearchEmail       = "";
+    private bool                  IsSearching;
+    private bool                  SearchDone;
+    private StudentSearchResultDto? SearchResult;
+    private string?               AddStudentError;
+    private bool                  IsAdding;
+    private bool                  AddStudentSuccess;
+
+    // ── Remove Student state ─────────────────────────────────────────────────
+    private bool                  ShowRemoveStudentConfirm;
+    private bool                  IsRemovingStudent;
+    private TeacherStudentItemDto? StudentToRemove;
+
+    // ── Upload Modal state ───────────────────────────────────────────────────
+    private bool ShowUploadModal;
+    private bool IsUploading;
+    private IBrowserFile? SelectedFile;
+    private string UploadTitle = "";
+    private string? UploadDescription;
+    private string? UploadError;
+
+    // ── Delete state ─────────────────────────────────────────────────────────
+    private bool ShowDeleteConfirm;
+    private bool IsDeleting;
+    private TeacherMaterialItemDto? MaterialToDelete;
+
+    // ── Tab definitions ─────────────────────────────────────────────────────
+    private IEnumerable<(string Key, string Label, string Icon, int Count)> Tabs =>
+        Detail is null ? [] :
+        [
+            ("students",    "Học sinh",  "group",          Detail.TotalStudents),
+            ("assignments", "Bài tập",   "assignment",     Detail.TotalAssignments),
+            ("materials",   "Tài liệu",  "folder_open",    Detail.TotalMaterials),
+            ("schedule",    "Lịch học",  "calendar_month", Detail.TotalSchedules)
+        ];
+
+    // ── Lifecycle ───────────────────────────────────────────────────────────
+    protected override async Task OnInitializedAsync()
+    {
+        long teacherId = Session.UserId > 0 ? Session.UserId : 2;
+        try { Detail = await ClassService.GetTeacherClassDetailAsync(ClassId, teacherId); }
+        catch { }
+        finally { IsLoading = false; }
+    }
+
+    // ── Meeting Link Methods ────────────────────────────────────────────────
+    private bool isEditingMeetLink;
+    private string? tempMeetLink;
+    private bool isSavingMeetLink;
+
+    private void StartEditingMeetLink()
+    {
+        tempMeetLink = Detail?.MeetingLink;
+        isEditingMeetLink = true;
+    }
+
+    private async Task SaveMeetLink()
+    {
+        if (Detail == null) return;
+        isSavingMeetLink = true;
+        try
+        {
+            long teacherId = Session.UserId > 0 ? Session.UserId : 2;
+            var success = await ClassService.UpdateMeetingLinkAsync(ClassId, teacherId, tempMeetLink);
+            if (success)
+            {
+                Detail.MeetingLink = tempMeetLink;
+                isEditingMeetLink = false;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error saving meet link: {ex.Message}");
+        }
+        finally
+        {
+            isSavingMeetLink = false;
+        }
+    }
+
+    // ── Add Student Modal Methods ──────────────────────────────────────────
+    private void OpenAddStudentModal()
+    {
+        SearchEmail        = "";
+        SearchResult       = null;
+        AddStudentError    = null;
+        AddStudentSuccess  = false;
+        SearchDone         = false;
+        IsSearching        = false;
+        IsAdding           = false;
+        ShowAddStudentModal = true;
+    }
+
+    private void CloseAddStudentModal() => ShowAddStudentModal = false;
+
+    private async Task OnSearchKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter") await HandleSearchStudent();
+    }
+
+    private async Task HandleSearchStudent()
+    {
+        if (string.IsNullOrWhiteSpace(SearchEmail)) return;
+        IsSearching     = true;
+        SearchResult    = null;
+        AddStudentError = null;
+        SearchDone      = false;
+        StateHasChanged();
+        try
+        {
+            SearchResult = await ClassService.SearchStudentByEmailAsync(SearchEmail.Trim(), ClassId);
+            SearchDone   = true;
+        }
+        catch (Exception ex) { AddStudentError = ex.Message; }
+        finally { IsSearching = false; StateHasChanged(); }
+    }
+
+    private async Task HandleAddStudent()
+    {
+        if (SearchResult is null || SearchResult.AlreadyInClass) return;
+        IsAdding        = true;
+        AddStudentError = null;
+        StateHasChanged();
+        try
+        {
+            long teacherId = Session.UserId > 0 ? Session.UserId : 2;
+            var error = await ClassService.AddStudentToClassAsync(ClassId, teacherId, SearchResult.Email);
+            if (error is not null)
+            {
+                AddStudentError = error;
+            }
+            else
+            {
+                // Add to local list
+                Detail!.Students.Add(new TeacherStudentItemDto
+                {
+                    StudentId  = SearchResult.UserId,
+                    FullName   = SearchResult.FullName,
+                    Email      = SearchResult.Email,
+                    AvatarUrl  = SearchResult.AvatarUrl,
+                    GradeLevel = SearchResult.GradeLevel,
+                    Status     = "ACTIVE",
+                    JoinedAt   = DateTime.Now
+                });
+                Detail.TotalStudents = Detail.Students.Count;
+                AddStudentSuccess    = true;
+                SearchResult.AlreadyInClass = true;
+                SearchEmail         = "";
+                SearchResult        = null;
+                SearchDone          = false;
+            }
+        }
+        catch (Exception ex) { AddStudentError = ex.Message; }
+        finally { IsAdding = false; StateHasChanged(); }
+    }
+
+    // ── Remove Student Methods ─────────────────────────────────────────────────
+    private void ConfirmRemoveStudent(TeacherStudentItemDto s)
+    {
+        StudentToRemove          = s;
+        ShowRemoveStudentConfirm = true;
+    }
+
+    private async Task HandleRemoveStudent()
+    {
+        if (StudentToRemove is null) return;
+        IsRemovingStudent = true;
+        StateHasChanged();
+        try
+        {
+            long teacherId = Session.UserId > 0 ? Session.UserId : 2;
+            var ok = await ClassService.RemoveStudentFromClassAsync(ClassId, teacherId, StudentToRemove.StudentId);
+            if (ok)
+            {
+                Detail!.Students.RemoveAll(s => s.StudentId == StudentToRemove.StudentId);
+                Detail.TotalStudents = Detail.Students.Count;
+            }
+            ShowRemoveStudentConfirm = false;
+            StudentToRemove = null;
+        }
+        catch { }
+        finally { IsRemovingStudent = false; StateHasChanged(); }
+    }
+
+    // ── Upload Modal Methods ─────────────────────────────────────────────────
+    private void OpenUploadModal()
+    {
+        ShowUploadModal = true;
+        SelectedFile = null;
+        UploadTitle = "";
+        UploadDescription = null;
+        UploadError = null;
+        IsUploading = false;
+    }
+
+    private void CloseUploadModal()
+    {
+        if (IsUploading) return;
+        ShowUploadModal = false;
+    }
+
+    private void OnFileSelected(InputFileChangeEventArgs e)
+    {
+        UploadError = null;
+        var file = e.File;
+
+        // Check file size (50 MB max)
+        if (file.Size > 50 * 1024 * 1024)
+        {
+            UploadError = $"File quá lớn ({file.Size / 1024 / 1024} MB). Tối đa 50 MB.";
+            return;
+        }
+
+        SelectedFile = file;
+
+        // Auto-fill title from filename if empty
+        if (string.IsNullOrWhiteSpace(UploadTitle))
+        {
+            UploadTitle = Path.GetFileNameWithoutExtension(file.Name);
+        }
+    }
+
+    private void ClearSelectedFile()
+    {
+        SelectedFile = null;
+    }
+
+    private async Task HandleUpload()
+    {
+        if (SelectedFile is null || string.IsNullOrWhiteSpace(UploadTitle)) return;
+
+        IsUploading = true;
+        UploadError = null;
+        StateHasChanged();
+
+        try
+        {
+            long teacherId = Session.UserId > 0 ? Session.UserId : 2;
+
+            await using var stream = SelectedFile.OpenReadStream(maxAllowedSize: 50 * 1024 * 1024);
+
+            var newMaterial = await ClassService.UploadMaterialAsync(
+                ClassId, teacherId,
+                SelectedFile.Name, UploadTitle, UploadDescription,
+                stream, SelectedFile.ContentType, SelectedFile.Size);
+
+            // Add to the list and update count
+            Detail!.Materials.Insert(0, newMaterial);
+            Detail.TotalMaterials = Detail.Materials.Count;
+
+            ShowUploadModal = false;
+        }
+        catch (Exception ex)
+        {
+            UploadError = ex.Message;
+        }
+        finally
+        {
+            IsUploading = false;
+            StateHasChanged();
+        }
+    }
+
+    // ── Download Material ────────────────────────────────────────────────────
+    private async Task DownloadMaterial(TeacherMaterialItemDto m)
+    {
+        try
+        {
+            var url = await FileStorage.GetUrlAsync(m.FileUrl, expirySeconds: 3600);
+            Nav.NavigateTo(url, forceLoad: true);
+        }
+        catch
+        {
+            // If presigned URL fails, try direct URL
+            if (!string.IsNullOrEmpty(m.FileUrl))
+                Nav.NavigateTo(m.FileUrl, forceLoad: true);
+        }
+    }
+
+    // ── Delete Material ──────────────────────────────────────────────────────
+    private void ConfirmDeleteMaterial(TeacherMaterialItemDto m)
+    {
+        MaterialToDelete = m;
+        ShowDeleteConfirm = true;
+    }
+
+    private async Task HandleDeleteMaterial()
+    {
+        if (MaterialToDelete is null) return;
+
+        IsDeleting = true;
+        StateHasChanged();
+
+        try
+        {
+            long teacherId = Session.UserId > 0 ? Session.UserId : 2;
+            await ClassService.DeleteMaterialAsync(ClassId, teacherId, MaterialToDelete.Id);
+
+            Detail!.Materials.RemoveAll(m => m.Id == MaterialToDelete.Id);
+            Detail.TotalMaterials = Detail.Materials.Count;
+            ShowDeleteConfirm = false;
+            MaterialToDelete = null;
+        }
+        catch { }
+        finally
+        {
+            IsDeleting = false;
+            StateHasChanged();
+        }
+    }
+
+    // ── Stats ───────────────────────────────────────────────────────────────
+    private IEnumerable<(string Label, string Value, string Icon, string IconColor, string Sub)> GetStats() =>
+        Detail is null ? [] :
+        [
+            ("Học sinh",    Detail.TotalStudents.ToString(),
+             "group",       "text-blue-400",
+             $"/ {Detail.MaxStudents} tối đa"),
+            ("Bài tập",     Detail.TotalAssignments.ToString(),
+             "assignment",  "text-purple-400",
+             Detail.Assignments.Count(a => a.Status == "PUBLISHED") + " đang mở"),
+            ("Lịch học",    Detail.TotalSchedules.ToString(),
+             "calendar_month","text-green-400",
+             Detail.Schedules.Count(s => s.StartTime >= DateTime.Now) + " sắp tới"),
+            ("Tài liệu",    Detail.TotalMaterials.ToString(),
+             "folder_open", "text-orange-400",
+             "tài liệu đang hoạt động")
+        ];
+
+    // ── Format file size ─────────────────────────────────────────────────────
+    private static string FormatFileSize(long bytes)
+    {
+        if (bytes < 1024) return $"{bytes} B";
+        if (bytes < 1024 * 1024) return $"{bytes / 1024.0:F1} KB";
+        return $"{bytes / (1024.0 * 1024.0):F1} MB";
+    }
+
+    // ── Subject theming ─────────────────────────────────────────────────────
+    private static string GetSubjectBg(string s) => s.ToLower() switch
+    {
+        var x when x.Contains("toán") || x.Contains("math")    => "bg-blue-100",
+        var x when x.Contains("lý")   || x.Contains("physics") => "bg-purple-100",
+        var x when x.Contains("hóa")  || x.Contains("chem")    => "bg-orange-100",
+        var x when x.Contains("sinh") || x.Contains("bio")     => "bg-green-100",
+        var x when x.Contains("văn")  || x.Contains("liter")   => "bg-pink-100",
+        var x when x.Contains("tin")  || x.Contains("comp")    => "bg-cyan-100",
+        _                                                        => "bg-indigo-100"
+    };
+
+    private static string GetSubjectText(string s) => s.ToLower() switch
+    {
+        var x when x.Contains("toán") || x.Contains("math")    => "text-blue-600",
+        var x when x.Contains("lý")   || x.Contains("physics") => "text-purple-600",
+        var x when x.Contains("hóa")  || x.Contains("chem")    => "text-orange-600",
+        var x when x.Contains("sinh") || x.Contains("bio")     => "text-green-600",
+        var x when x.Contains("văn")  || x.Contains("liter")   => "text-pink-600",
+        var x when x.Contains("tin")  || x.Contains("comp")    => "text-cyan-600",
+        _                                                        => "text-indigo-600"
+    };
+
+    private static string GetSubjectIcon(string s) => s.ToLower() switch
+    {
+        var x when x.Contains("toán") || x.Contains("math")    => "calculate",
+        var x when x.Contains("lý")   || x.Contains("physics") => "science",
+        var x when x.Contains("hóa")  || x.Contains("chem")    => "biotech",
+        var x when x.Contains("sinh") || x.Contains("bio")     => "eco",
+        var x when x.Contains("văn")  || x.Contains("liter")   => "menu_book",
+        var x when x.Contains("tin")  || x.Contains("comp")    => "terminal",
+        _                                                        => "class"
+    };
+
+    private static (string icon, string bg) GetFileStyle(string fileType) =>
+        fileType.ToLower() switch
+        {
+            "pdf"                      => ("picture_as_pdf", "bg-red-500"),
+            "doc" or "docx"           => ("description",    "bg-blue-500"),
+            "xls" or "xlsx"           => ("table_chart",    "bg-green-500"),
+            "ppt" or "pptx"           => ("slideshow",      "bg-orange-500"),
+            "mp4" or "mov" or "avi"   => ("play_circle",    "bg-purple-500"),
+            "jpg" or "jpeg" or "png"  => ("image",          "bg-pink-500"),
+            "zip" or "rar"            => ("folder_zip",     "bg-yellow-500"),
+            _                         => ("insert_drive_file","bg-slate-500")
+        };
+}
+
+

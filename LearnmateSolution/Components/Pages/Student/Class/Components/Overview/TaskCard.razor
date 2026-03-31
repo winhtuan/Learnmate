@@ -1,0 +1,33 @@
+@using LearnmateSolution.Components.Pages.Student.Class.Models
+
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-4 p-5 rounded-[1.5rem] bg-slate-50 border border-slate-100 hover:border-primary/30 transition-all group cursor-pointer @(Task.Locked ? "opacity-75" : "")">
+    <div class="flex items-start gap-4">
+        <div class="mt-1 flex-shrink-0 size-10 rounded-full @Task.IconBg @Task.IconColor flex items-center justify-center">
+            <span class="material-symbols-outlined text-[20px]">@Task.Icon</span>
+        </div>
+        <div>
+            <h3 class="font-bold text-slate-900 text-lg group-hover:text-primary transition-colors">@Task.Title</h3>
+            <p class="text-slate-500 text-sm mt-0.5">@Task.Due</p>
+        </div>
+    </div>
+    <div class="flex items-center gap-3">
+        <div class="hidden md:block text-right mr-4">
+            <span class="block text-xs font-bold text-slate-400 uppercase tracking-wide">Status</span>
+            <span class="block text-sm font-semibold text-slate-700">@Task.Status</span>
+        </div>
+        @if (Task.Locked)
+        {
+            <span class="material-symbols-outlined text-slate-400">lock</span>
+        }
+        else
+        {
+            <button class="w-full md:w-auto px-5 py-2.5 bg-white text-slate-900 text-sm font-bold rounded-xl border border-slate-200 hover:bg-primary hover:text-white hover:border-primary transition-all shadow-sm">
+                Start
+            </button>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter] public TaskItem Task { get; set; } = null!;
+}
