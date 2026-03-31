@@ -742,17 +742,18 @@
                 var objectPath = $"compliance/{fileName}";
                 
                 using var stream = file.OpenReadStream(maxAllowedSize: 5 * 1024 * 1024);
-                await StorageService.UploadAsync(objectPath, stream, file.ContentType);
-                
-                var url = await StorageService.GetUrlAsync(objectPath);
                 
                 if (currentUploadCategory == "Avatar")
                 {
-                    profile.AvatarUrl = url;
+                    var avatarUrl = await StorageService.UploadImageAsync("avatars", Guid.NewGuid().ToString(), stream, file.ContentType);
+                    profile.AvatarUrl = avatarUrl;
                     StateHasChanged();
-                    return; // Done for avatar
+                    continue;
                 }
 
+                await StorageService.UploadAsync(objectPath, stream, file.ContentType);
+                var url = await StorageService.GetUrlAsync(objectPath);
+                
                 uploadedFiles.Add(new TeacherDocumentRequestDto
                 {
                     Name = file.Name,
