@@ -45,6 +45,10 @@ else
     <!-- ── Header ─────────────────────────────────────────────────────────── -->
     <div class="flex items-start justify-between gap-4 mb-6 flex-wrap">
         <div class="flex items-center gap-4">
+            <button @onclick='() => Nav.NavigateTo("/teacher/classes")' 
+                    class="size-10 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center shrink-0 transition-colors shadow-sm">
+                <span class="material-symbols-outlined text-[20px]">arrow_back</span>
+            </button>
             <!-- Subject Icon -->
             <div class="size-14 rounded-xl @GetSubjectBg(Detail.Subject) flex items-center justify-center shrink-0 shadow-sm">
                 <span class="material-symbols-outlined text-3xl @GetSubjectText(Detail.Subject)">@GetSubjectIcon(Detail.Subject)</span>
@@ -187,7 +191,7 @@ else
     else if (ActiveTab == "assignments")
     {
         <div class="flex justify-end mb-4">
-            <a href="/teacher/classes/@ClassId/assignments/create"
+            <a href="/teacher/assignments/create?classId=@ClassId"
                class="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary hover:bg-blue-600 text-white text-sm font-medium transition-all shadow-sm">
                 <span class="material-symbols-outlined text-[18px]">add</span> Tạo bài tập
             </a>
@@ -312,9 +316,10 @@ else
     else if (ActiveTab == "schedule")
     {
         <div class="flex justify-end mb-4">
-            <button class="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary hover:bg-blue-600 text-white text-sm font-medium transition-all shadow-sm">
+            <a href="/teacher/schedule/class/@ClassId"
+               class="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary hover:bg-blue-600 text-white text-sm font-medium transition-all shadow-sm">
                 <span class="material-symbols-outlined text-[18px]">add</span> Thêm buổi học
-            </button>
+            </a>
         </div>
         @if (Detail.Schedules.Count == 0)
         {

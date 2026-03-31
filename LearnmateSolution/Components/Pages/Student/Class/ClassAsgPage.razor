@@ -193,6 +193,20 @@
     {
         var dueLabel = a.DueDateLocal is { } d ? d.ToString("MMMM d, yyyy 'at' h:mm tt") : "No due date";
 
+        var resources = new List<AssignmentResource>();
+        if (!string.IsNullOrEmpty(a.FileUrl))
+        {
+            resources.Add(new AssignmentResource(
+                Id: a.Id,
+                Title: "Đề bài - " + a.Title,
+                Size: "Download",
+                Icon: "description",
+                IconBg: "bg-blue-50",
+                IconColor: "text-blue-500",
+                Href: a.FileUrl
+            ));
+        }
+
         return new AssignmentDetail(
             Id:               a.Id,
             ClassId:          Id,
@@ -205,7 +219,7 @@
                 Text:  a.Description ?? "No description provided.",
                 Items: []
             ),
-            Resources:        [],
+            Resources:        resources,
             UploadText:       "Upload your submission",
             UploadSubtext:    "PDF, DOCX, or ZIP up to 50 MB"
         );

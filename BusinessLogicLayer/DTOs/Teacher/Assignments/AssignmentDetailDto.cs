@@ -12,6 +12,7 @@ public class AssignmentDetailDto
     public DateTime? DueDate { get; set; }
     public string ClassName { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; }
+    public string? FileUrl { get; set; }
     public List<AssignmentQuestionDetailDto> Questions { get; set; } = new();
 }
 

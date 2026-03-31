@@ -62,12 +62,11 @@ public class StudentClassService(
             TeacherAvatarUrl: teacherProfile?.AvatarUrl,
             TeacherBio: teacherProfile?.Bio,
             TeacherSubjects: teacherProfile?.Subjects ?? "",
-            ActiveAssignments: cls.Assignments.Select(a =>
-                    MapAssignment(a, a.Submissions.FirstOrDefault())
-                )
-                .ToList(),
+            ActiveAssignments: await Task.WhenAll(cls.Assignments.Select(a =>
+                    MapAssignmentAsync(a, a.Submissions.FirstOrDefault())
+                )),
             UpcomingSchedules: cls.Schedules.Select(MapSchedule).ToList(),
-            RecentMaterials: cls.Materials.Select(MapMaterial).ToList()
+            RecentMaterials: await Task.WhenAll(cls.Materials.Select(MapMaterialAsync))
         );
 
         return ApiResponse<ClassDetailDto>.Ok(dto);
@@ -85,8 +84,8 @@ public class StudentClassService(
             );
 
         var pairs = await classRepo.GetAssignmentsWithSubmissionsAsync(classId, studentId, ct);
-        var dtos = pairs.Select(p => MapAssignment(p.Assignment, p.Submission)).ToList();
-        return ApiResponse<IReadOnlyList<ClassAssignmentDto>>.Ok(dtos);
+        var dtos = await Task.WhenAll(pairs.Select(p => MapAssignmentAsync(p.Assignment, p.Submission)));
+        return ApiResponse<IReadOnlyList<ClassAssignmentDto>>.Ok(dtos.ToList());
     }
 
     public async Task<ApiResponse<IReadOnlyList<ClassScheduleItemDto>>> GetClassSchedulesAsync(
@@ -117,8 +116,8 @@ public class StudentClassService(
             );
 
         var materials = await classRepo.GetMaterialsAsync(classId, ct);
-        var dtos = materials.Select(MapMaterial).ToList();
-        return ApiResponse<IReadOnlyList<ClassMaterialDto>>.Ok(dtos);
+        var dtos = await Task.WhenAll(materials.Select(MapMaterialAsync));
+        return ApiResponse<IReadOnlyList<ClassMaterialDto>>.Ok(dtos.ToList());
     }
 
     // ── Student Actions ───────────────────────────────────────────────────────
@@ -217,7 +216,7 @@ public class StudentClassService(
 
         var saved = await classRepo.CreateMaterialAsync(material, ct);
         return ApiResponse<ClassMaterialDto>.Ok(
-            MapMaterial(saved),
+            await MapMaterialAsync(saved),
             "Material uploaded successfully."
         );
     }
@@ -257,7 +256,7 @@ public class StudentClassService(
 
     // ── Mapping ───────────────────────────────────────────────────────────────
 
-    private static ClassAssignmentDto MapAssignment(Assignment a, Submission? sub)
+    private async Task<ClassAssignmentDto> MapAssignmentAsync(Assignment a, Submission? sub)
     {
         var nowUtc = DateTime.UtcNow;
 
@@ -275,6 +274,19 @@ public class StudentClassService(
 
         var totalPoints = a.Questions.Count > 0 ? a.Questions.Sum(q => q.Points) : (decimal?)null;
 
+        // Resolve assignment file URL
+        string? resolvedFileUrl = null;
+        if (!string.IsNullOrEmpty(a.FileUrl))
+        {
+            try
+            {
+                resolvedFileUrl = a.FileUrl.StartsWith("http", StringComparison.OrdinalIgnoreCase)
+                    ? a.FileUrl
+                    : await fileStorage.GetUrlAsync(a.FileUrl);
+            }
+            catch { resolvedFileUrl = a.FileUrl; }
+        }
+
         return new ClassAssignmentDto(
             Id: a.Id,
             Title: a.Title,
@@ -283,7 +295,8 @@ public class StudentClassService(
             SubmissionStatus: status,
             Score: sub?.Score,
             TotalQuestions: a.Questions.Count > 0 ? a.Questions.Count : null,
-            TotalPoints: totalPoints
+            TotalPoints: totalPoints,
+            FileUrl: resolvedFileUrl
         );
     }
 
@@ -297,14 +310,24 @@ public class StudentClassService(
             Status: s.Status.ToString()
         );
 
-    private static ClassMaterialDto MapMaterial(Material m) =>
-        new(
+    private async Task<ClassMaterialDto> MapMaterialAsync(Material m)
+    {
+        string resolvedUrl = m.FileUrl;
+        try
+        {
+            if (!string.IsNullOrEmpty(m.FileUrl) && !m.FileUrl.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+                resolvedUrl = await fileStorage.GetUrlAsync(m.FileUrl);
+        }
+        catch { }
+
+        return new ClassMaterialDto(
             Id: m.Id,
             Title: m.Title,
             Description: m.Description,
             FileType: m.FileType,
-            FileUrl: m.FileUrl,
+            FileUrl: resolvedUrl,
             UploadedAtLocal: m.CreatedAt.ToLocalTime(),
             FileSizeBytes: m.FileSizeBytes
         );
+    }
 }
