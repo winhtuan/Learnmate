@@ -25,6 +25,10 @@ public class Class : SoftDeletableEntity
 
     public int MaxStudents { get; set; } = 30;
 
+    public DateTime? StartDate { get; set; }
+    public DateTime? EndDate { get; set; }
+    public int? TotalSessions { get; set; }
+
     [MaxLength(500)]
     public string? ThumbnailUrl { get; set; } = "https://placehold.co/400?text=Course";
 

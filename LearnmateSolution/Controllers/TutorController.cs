@@ -24,6 +24,17 @@ public class TutorController(ITutorService tutorService) : ControllerBase
         return result.Success ? Ok(result) : BadRequest(result);
     }
 
+    /// <summary>GET /api/tutors/classes — Danh sách lớp học đang ACTIVE.</summary>
+    [HttpGet("api/tutors/classes")]
+    public async Task<IActionResult> GetClassListings(
+        [FromQuery] string? subject,
+        [FromQuery] decimal? maxRate,
+        CancellationToken ct)
+    {
+        var result = await tutorService.GetClassListingsAsync(subject, maxRate, ct);
+        return result.Success ? Ok(result) : BadRequest(result);
+    }
+
     /// <summary>POST /api/tutors/{teacherId}/book — Tạo booking request.</summary>
     [HttpPost("api/tutors/{teacherId:long}/book")]
     public async Task<IActionResult> Book(long teacherId, [FromBody] CreateBookingRequestDto dto, CancellationToken ct)

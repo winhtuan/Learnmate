@@ -18,7 +18,11 @@ public sealed record TutorListItem(
     string ResponseTime,
     int TotalLessons,
     string FullBio,
-    string[] AvailableSlots
+    string[] AvailableSlots,
+    BusinessLogicLayer.DTOs.Tutor.ClassScheduleDto[] Schedules,
+    DateTime? StartDate,
+    DateTime? EndDate,
+    int? TotalSessions
 );
 
 public sealed record ClassListItem(
@@ -37,7 +41,11 @@ public sealed record ClassListItem(
     int ReviewCount,
     string[] Subjects,
     decimal HourlyRate,
-    string Bio
+    string Bio,
+    BusinessLogicLayer.DTOs.Tutor.ClassScheduleDto[] Schedules,
+    DateTime? StartDate,
+    DateTime? EndDate,
+    int? TotalSessions
 );
 
 public enum AvailabilityStatus { AvailableToday, NextSlot, FullyBooked }

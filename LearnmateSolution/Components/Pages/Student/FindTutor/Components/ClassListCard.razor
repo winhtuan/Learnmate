@@ -36,6 +36,14 @@
             <span class="font-medium">@Class.ScheduleSummary</span>
         </div>
     }
+    
+    @if (Class.StartDate.HasValue && Class.EndDate.HasValue && Class.TotalSessions.HasValue)
+    {
+        <div class="flex items-center gap-1.5 text-sm text-slate-600 -mt-2">
+            <span class="material-symbols-outlined text-[16px] text-slate-400">calendar_month</span>
+            <span class="font-medium">@Class.StartDate.Value.ToString("dd/MM/yyyy") – @Class.EndDate.Value.ToString("dd/MM/yyyy") (@Class.TotalSessions buổi)</span>
+        </div>
+    }
 
     <!-- Divider -->
     <div class="border-t border-slate-100"></div>
@@ -67,7 +75,7 @@
             <button class="bg-indigo-600 text-white text-sm font-semibold px-3 py-1.5 rounded-xl hover:bg-indigo-700 transition-colors shadow-sm shadow-indigo-200"
                     @onclick:stopPropagation
                     @onclick="() => OnSelected.InvokeAsync(Class)">
-                Book
+                Enroll
             </button>
         </div>
     </div>

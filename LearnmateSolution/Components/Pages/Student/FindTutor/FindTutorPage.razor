@@ -270,13 +270,13 @@
                 _           => null
             };
 
-            var url = "api/tutors";
+            var url = "api/tutors/classes";
             var query = new List<string>();
             if (subject is not null) query.Add($"subject={Uri.EscapeDataString(subject)}");
             if (max.HasValue) query.Add($"maxRate={max.Value}");
             if (query.Count > 0) url += "?" + string.Join("&", query);
 
-            var resp = await client.GetFromJsonAsync<ApiResponse<IReadOnlyList<TutorSummaryDto>>>(url);
+            var resp = await client.GetFromJsonAsync<ApiResponse<IReadOnlyList<ClassListingDto>>>(url);
             _classes = resp?.Data?.Select(MapToClassItem).ToList() ?? [];
         }
         catch
@@ -286,31 +286,34 @@
         }
     }
 
-    private static ClassListItem MapToClassItem(TutorSummaryDto dto)
+    private static ClassListItem MapToClassItem(ClassListingDto dto)
     {
-        var initials = dto.FullName.Length >= 2
-            ? dto.FullName[..2].ToUpper()
-            : dto.FullName.ToUpper();
+        var initials = dto.TeacherName.Length >= 2
+            ? dto.TeacherName[..2].ToUpper()
+            : dto.TeacherName.ToUpper();
 
         var subjects = dto.Subjects.Split(',').Select(s => s.Trim()).Where(s => s.Length > 0).ToArray();
-        var primarySubject = subjects.FirstOrDefault() ?? "General";
 
         return new ClassListItem(
-            ClassId:          dto.TeacherUserId,   // tạm dùng TeacherUserId, sẽ thay bằng ClassId thật sau
-            ClassName:        $"{primarySubject} — {dto.FullName}",
-            Description:      dto.Bio,
-            Subject:          primarySubject,
-            ScheduleSummary:  "",                  // sẽ có khi API trả về class thật
-            EnrolledCount:    0,
-            MaxStudents:      30,
-            TeacherId:        dto.TeacherUserId,
-            TeacherName:      dto.FullName,
-            TeacherAvatarUrl: dto.AvatarUrl ?? $"https://placehold.co/200/e0e7ff/4f46e5?text={Uri.EscapeDataString(initials)}",
-            Rating:           dto.RatingAvg,
-            ReviewCount:      dto.TotalRatingCount,
+            ClassId:          dto.ClassId,
+            ClassName:        dto.ClassName,
+            Description:      dto.Description,
+            Subject:          dto.Subject,
+            ScheduleSummary:  dto.ScheduleSummary,
+            EnrolledCount:    dto.EnrolledCount,
+            MaxStudents:      dto.MaxStudents,
+            TeacherId:        dto.TeacherId,
+            TeacherName:      dto.TeacherName,
+            TeacherAvatarUrl: dto.TeacherAvatarUrl ?? $"https://placehold.co/200/e0e7ff/4f46e5?text={Uri.EscapeDataString(initials)}",
+            Rating:           dto.Rating,
+            ReviewCount:      dto.ReviewCount,
             Subjects:         subjects,
             HourlyRate:       dto.HourlyRate,
-            Bio:              dto.Bio ?? ""
+            Bio:              dto.Bio ?? "",
+            Schedules:        dto.Schedules,
+            StartDate:        dto.StartDate,
+            EndDate:          dto.EndDate,
+            TotalSessions:    dto.TotalSessions
         );
     }
 
@@ -332,7 +335,11 @@
         ResponseTime:     "",
         TotalLessons:     0,
         FullBio:          cls.Bio,
-        AvailableSlots:   []
+        AvailableSlots:   [],
+        Schedules:        cls.Schedules,
+        StartDate:        cls.StartDate,
+        EndDate:          cls.EndDate,
+        TotalSessions:    cls.TotalSessions
     );
 
     private void SetSubject(string chip) { _activeSubject = chip; ApplyFilter(); }
