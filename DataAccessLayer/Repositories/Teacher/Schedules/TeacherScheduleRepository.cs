@@ -58,6 +58,20 @@ public class TeacherScheduleRepository(AppDbContext db) : ITeacherScheduleReposi
         await db.SaveChangesAsync();
     }
 
+    public async Task<bool> HasOverlappingScheduleAsync(
+        long classId,
+        DateTime startTime,
+        DateTime endTime,
+        long? excludeScheduleId = null)
+    {
+        return await db.Schedules
+            .Where(s => s.ClassId == classId
+                && (excludeScheduleId == null || s.Id != excludeScheduleId)
+                && s.StartTime < endTime
+                && s.EndTime > startTime)
+            .AnyAsync();
+    }
+
     public async Task<List<User>> GetClassStudentsAsync(long classId)
     {
         var studentIds = await db.ClassMembers

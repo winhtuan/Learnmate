@@ -6,6 +6,7 @@
 @using BusinessLogicLayer.Services.Interfaces
 @using BusinessObject.Enum
 @using LearnmateSolution.AppState
+@using LearnmateSolution.Components.Shared
 @using Microsoft.AspNetCore.Components.Forms
 @inject ITeacherCourseService ClassService
 @inject IFileStorageService FileStorage
@@ -123,6 +124,10 @@ else
             </div>
         </div>
         <div class="flex items-center gap-2">
+            <button @onclick="() => IsChatDrawerOpen = true"
+                    class="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-amber-50 text-amber-600 hover:bg-amber-100 text-sm font-medium transition-colors shadow-sm border border-amber-200">
+                <span class="material-symbols-outlined text-[18px]">forum</span>Thảo luận
+            </button>
             <a href="/teacher/classes/@ClassId/edit"
                class="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-slate-200 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors">
                 <span class="material-symbols-outlined text-[18px]">settings</span>Cài đặt
@@ -133,6 +138,8 @@ else
             </button>
         </div>
     </div>
+
+    <ClassChatDrawer @bind-IsOpen="IsChatDrawerOpen" ClassId="ClassId" />
 
     <!-- ── Stats Cards ─────────────────────────────────────────────────────── -->
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-7">
@@ -393,51 +400,81 @@ else
                 {
                     bool isPast    = s.StartTime < DateTime.Now;
                     bool isToday   = s.StartTime.Date == DateTime.Today;
-                    var  rowStyle  = isToday   ? "border-primary/40 bg-blue-50/40" :
-                                    isPast     ? "opacity-60" :
-                                    "hover:border-primary/30 hover:shadow-sm";
-                    var (typeIcon, typeBg) = s.Type switch
+                    bool isOngoing = s.StartTime <= DateTime.Now && s.EndTime >= DateTime.Now;
+                    
+                    var  rowStyle  = isOngoing ? "border-primary/50 bg-blue-50/50 ring-2 ring-primary/10 shadow-md" :
+                                     isToday   ? "border-primary/40 bg-blue-50/30" :
+                                     isPast     ? "opacity-60 bg-slate-50" :
+                                     "hover:border-primary/30 hover:shadow-sm";
+                                     
+                    var (typeIcon, typeBg, typeName) = s.Type switch
                     {
-                        "ONLINE"  => ("videocam",   "bg-blue-500"),
-                        "OFFLINE" => ("location_on", "bg-green-500"),
-                        _         => ("event",       "bg-slate-500")
+                        "ONLINE"  => ("videocam",   "bg-blue-600", "Trực tuyến"),
+                        "OFFLINE" => ("location_on", "bg-emerald-600", "Tại chỗ"),
+                        _         => ("event",       "bg-slate-600", "Buổi học")
                     };
-                    <div class="bg-white border border-slate-200 rounded-xl shadow-sm p-4 flex items-center gap-4 transition-all @rowStyle">
+                    
+                    <div class="bg-white border border-slate-200 rounded-2xl p-5 flex items-center gap-5 transition-all @rowStyle">
                         <!-- Date block -->
-                        <div class="flex flex-col items-center min-w-[52px] text-center">
-                            <span class="text-xs font-semibold text-slate-400 uppercase">@s.StartTime.ToString("ddd")</span>
-                            <span class="text-2xl font-bold @(isToday ? "text-primary" : "text-slate-900")">@s.StartTime.ToString("dd")</span>
-                            <span class="text-xs text-slate-400">@s.StartTime.ToString("MMM")</span>
+                        <div class="flex flex-col items-center min-w-[60px] text-center border-r border-slate-100 pr-5">
+                            <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">THÁNG @s.StartTime.ToString("MM")</span>
+                            <span class="text-3xl font-black @(isToday || isOngoing ? "text-primary" : "text-slate-900")">@s.StartTime.ToString("dd")</span>
+                            <span class="text-[11px] font-bold text-slate-500">@s.StartTime.ToString("dddd")</span>
                         </div>
-                        <div class="w-px h-10 bg-slate-100"></div>
-                        <!-- Time -->
-                        <div class="min-w-[90px]">
-                            <p class="text-sm font-semibold text-slate-900">@s.StartTime.ToString("HH:mm")</p>
-                            <p class="text-xs text-slate-400">→ @s.EndTime.ToString("HH:mm")</p>
-                        </div>
-                        <!-- Title + type -->
+                        
+                        <!-- Time & Details -->
                         <div class="flex-1 min-w-0">
-                            <div class="flex items-center gap-2">
-                                <p class="font-medium text-slate-900 text-sm truncate">@s.Title</p>
+                            <div class="flex items-center gap-2 mb-1">
+                                <h4 class="font-bold text-slate-900 truncate">@s.Title</h4>
+                                @if (isOngoing)
+                                {
+                                    <span class="flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-500 text-white text-[10px] font-black animate-pulse">
+                                        <span class="size-1.5 rounded-full bg-white"></span>
+                                        LIVE
+                                    </span>
+                                }
+                            </div>
+                            
+                            <div class="flex items-center gap-4 text-xs font-medium text-slate-500">
+                                <span class="flex items-center gap-1">
+                                    <span class="material-symbols-outlined text-[16px]">schedule</span>
+                                    @s.StartTime.ToString("HH:mm") — @s.EndTime.ToString("HH:mm")
+                                </span>
+                                <span class="flex items-center gap-1">
+                                    <span class="material-symbols-outlined text-[16px]">@typeIcon</span>
+                                    @typeName
+                                </span>
                                 @if (s.IsTrial)
                                 {
-                                    <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-700">Trial</span>
+                                    <span class="text-[10px] font-black px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 uppercase tracking-tighter">Học thử</span>
                                 }
                             </div>
                         </div>
-                        <span class="size-8 rounded-lg @typeBg flex items-center justify-center shrink-0">
-                            <span class="material-symbols-outlined text-white text-[18px]">@typeIcon</span>
-                        </span>
-                        @{
-                            var (sLabel, sBg2) = s.Status switch
+
+                        <!-- Action Buttons -->
+                        <div class="flex items-center gap-2 shrink-0">
+                            @if (s.Type == "ONLINE" && !string.IsNullOrEmpty(Detail.MeetingLink))
                             {
-                                "SCHEDULED"  => ("Sắp tới",  "bg-slate-100 text-slate-600"),
-                                "ONGOING"    => ("Đang diễn ra", "bg-green-100 text-green-700"),
-                                "COMPLETED"  => ("Đã xong",  "bg-blue-100 text-blue-700"),
-                                _            => (s.Status, "bg-slate-100 text-slate-500")
-                            };
-                        }
-                        <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full @sBg2 shrink-0">@sLabel</span>
+                                <a href="@Detail.MeetingLink" target="_blank" 
+                                   class="px-4 py-2 rounded-xl bg-primary hover:bg-blue-600 text-white text-xs font-black transition-all flex items-center gap-1.5 shadow-lg shadow-primary/20">
+                                    <span class="material-symbols-outlined text-[18px]">videocam</span>
+                                    VÀO LỚP
+                                </a>
+                            }
+                            
+                            <div class="hidden sm:block">
+                                @{
+                                    var (sLabel, sBg2) = s.Status switch
+                                    {
+                                        "SCHEDULED"  => ("Sắp tới",  "bg-slate-100 text-slate-600"),
+                                        "ONGOING"    => ("Đang dạy", "bg-green-100 text-green-700"),
+                                        "COMPLETED"  => ("Đã xong",  "bg-blue-100 text-blue-700"),
+                                        _            => (s.Status, "bg-slate-100 text-slate-500")
+                                    };
+                                }
+                                <span class="text-[11px] font-bold px-3 py-1 rounded-full @sBg2 border border-current opacity-70">@sLabel</span>
+                            </div>
+                        </div>
                     </div>
                 }
             </div>
@@ -774,6 +811,7 @@ else
     private TeacherClassDetailDto? Detail;
     private bool IsLoading = true;
     private string ActiveTab = "students";
+    private bool IsChatDrawerOpen = false;
 
     // ── Add Student Modal state ───────────────────────────────────────────────
     private bool                  ShowAddStudentModal;

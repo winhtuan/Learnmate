@@ -8,6 +8,7 @@
 @inject NavigationManager Nav
 @inject UserSessionService Session
 @inject ITeacherComplianceService ComplianceService
+@inject ToastService ToastService
 @inject IJSRuntime JS
 
 <HeadContent>
@@ -330,11 +331,11 @@
         if (result.Success)
         {
             await LoadApplications();
-            await JS.InvokeVoidAsync("alert", $"Successfully updated to {status}");
+            ToastService.ShowSuccess($"Successfully updated to {status}");
         }
         else
         {
-            await JS.InvokeVoidAsync("alert", result.Message);
+            ToastService.ShowError(result.Message);
         }
     }
 }

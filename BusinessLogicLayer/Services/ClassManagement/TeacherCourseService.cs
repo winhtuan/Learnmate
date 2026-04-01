@@ -92,8 +92,8 @@ public class TeacherCourseService(
                 {
                     Id        = s.Id,
                     Title     = s.Title,
-                    StartTime = s.StartTime.ToLocalTime(),
-                    EndTime   = s.EndTime.ToLocalTime(),
+                    StartTime = s.StartTime,
+                    EndTime   = s.EndTime,
                     Type      = s.Type.ToString(),
                     Status    = s.Status.ToString(),
                     IsTrial   = s.IsTrial

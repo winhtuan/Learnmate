@@ -1,3 +1,4 @@
+using BusinessObject.Enum;
 using BusinessObject.Models;
 using DataAccessLayer.Data;
 using DataAccessLayer.Repositories.Interfaces;
@@ -33,4 +34,22 @@ public class TutorBookingRepository(AppDbContext db) : ITutorBookingRepository
         db.TutorBookingRequests.Update(request);
         await db.SaveChangesAsync(ct);
     }
+
+    public async Task<IReadOnlyList<TutorBookingRequest>> GetExpiredAwaitingPaymentAsync(CancellationToken ct = default) =>
+        await db.TutorBookingRequests
+            .Where(r => r.Status == BookingRequestStatus.AWAITING_PAYMENT
+                     && r.PaymentDeadline != null
+                     && r.PaymentDeadline < DateTime.UtcNow
+                     && r.DeletedAt == null)
+            .ToListAsync(ct);
+
+    public async Task<IReadOnlyList<TutorBookingRequest>> GetByStudentWithClassAsync(long studentId, CancellationToken ct = default) =>
+        await db.TutorBookingRequests
+            .AsNoTracking()
+            .Where(r => r.StudentId == studentId && r.DeletedAt == null)
+            .Include(r => r.Teacher).ThenInclude(t => t.TeacherProfile)
+            .Include(r => r.LinkedClass)
+            .Include(r => r.ResultClass)
+            .OrderByDescending(r => r.CreatedAt)
+            .ToListAsync(ct);
 }

@@ -14,6 +14,7 @@
 @inject IHttpClientFactory HttpClientFactory
 @inject NavigationManager Nav
 @inject UserSessionService Session
+@inject ToastService ToastService
 @inject IJSRuntime JS
 
 <PageTitle>Tutor Onboarding | LearnMate</PageTitle>
@@ -632,16 +633,16 @@
             if (result.Success)
             {
                 showOtpSection = true;
-                await JS.InvokeVoidAsync("alert", "Account created! Please check your email for the verification code.");
+                ToastService.ShowSuccess("Account created! Please check your email for the verification code.");
             }
             else
             {
-                await JS.InvokeVoidAsync("alert", result.Message);
+                ToastService.ShowError(result.Message);
             }
         }
         catch (Exception ex)
         {
-            await JS.InvokeVoidAsync("alert", "Registration failed: " + ex.Message);
+            ToastService.ShowError("Registration failed: " + ex.Message);
         }
         finally
         {
@@ -678,12 +679,12 @@
             }
             else
             {
-                await JS.InvokeVoidAsync("alert", result.Message);
+                ToastService.ShowError(result.Message);
             }
         }
         catch (Exception ex)
         {
-            await JS.InvokeVoidAsync("alert", "Verification failed: " + ex.Message);
+            ToastService.ShowError("Verification failed: " + ex.Message);
         }
         finally
         {
@@ -742,17 +743,18 @@
                 var objectPath = $"compliance/{fileName}";
                 
                 using var stream = file.OpenReadStream(maxAllowedSize: 5 * 1024 * 1024);
-                await StorageService.UploadAsync(objectPath, stream, file.ContentType);
-                
-                var url = await StorageService.GetUrlAsync(objectPath);
                 
                 if (currentUploadCategory == "Avatar")
                 {
-                    profile.AvatarUrl = url;
+                    var avatarUrl = await StorageService.UploadImageAsync("avatars", Guid.NewGuid().ToString(), stream, file.ContentType);
+                    profile.AvatarUrl = avatarUrl;
                     StateHasChanged();
-                    return; // Done for avatar
+                    continue;
                 }
 
+                await StorageService.UploadAsync(objectPath, stream, file.ContentType);
+                var url = await StorageService.GetUrlAsync(objectPath);
+                
                 uploadedFiles.Add(new TeacherDocumentRequestDto
                 {
                     Name = file.Name,
@@ -765,7 +767,7 @@
         }
         catch (Exception ex)
         {
-            await JS.InvokeVoidAsync("alert", $"Upload failed: {ex.Message}");
+            ToastService.ShowError($"Upload failed: {ex.Message}");
         }
     }
 
@@ -774,7 +776,7 @@
         if (isSubmitting) return;
         if (uploadedFiles.Count == 0)
         {
-            await JS.InvokeVoidAsync("alert", "Please upload at least one document for verification.");
+            ToastService.ShowWarning("Please upload at least one document for verification.");
             return;
         }
 
@@ -784,7 +786,7 @@
             var profileResult = await ProfileService.UpdateProfileAsync(Session.UserId, profile);
             if (!profileResult.Success)
             {
-                await JS.InvokeVoidAsync("alert", $"Profile update failed: {profileResult.Message}");
+                ToastService.ShowError($"Profile update failed: {profileResult.Message}");
                 return;
             }
 
@@ -792,17 +794,17 @@
             
             if (result.Success)
             {
-                await JS.InvokeVoidAsync("alert", "Application submitted successfully! Our team will review it within 24-48 hours.");
+                ToastService.ShowSuccess("Application submitted successfully! Our team will review it within 24-48 hours.");
                 Nav.NavigateTo("/teacher/dashboard");
             }
             else
             {
-                await JS.InvokeVoidAsync("alert", $"Submission failed: {result.Message}");
+                ToastService.ShowError($"Submission failed: {result.Message}");
             }
         }
         catch (Exception ex)
         {
-            await JS.InvokeVoidAsync("alert", $"Submission failed: {ex.Message}");
+            ToastService.ShowError($"Submission failed: {ex.Message}");
         }
         finally { isSubmitting = false; }
     }

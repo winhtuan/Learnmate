@@ -1,0 +1,527 @@
+@page "/teacher/messages"
+@layout LearnmateSolution.Components.Layout.TeacherLayout
+@rendermode InteractiveServer
+@using BusinessLogicLayer.DTOs
+@using BusinessLogicLayer.DTOs.Messaging
+@using LearnmateSolution.AppState
+@using Microsoft.AspNetCore.SignalR.Client
+@inject NavigationManager Nav
+@inject UserSessionService Session
+@inject IJSRuntime JS
+@inject IHttpClientFactory HttpClientFactory
+@implements IAsyncDisposable
+
+<PageTitle>Tin nhắn | LearnMate</PageTitle>
+
+<div class="mb-6">
+    <h1 class="text-3xl font-bold tracking-tight text-slate-900 mb-1">Tin nhắn</h1>
+    <p class="text-slate-500 font-normal">Trò chuyện và hỗ trợ trực tiếp với học sinh của bạn.</p>
+</div>
+
+<div class="flex h-[calc(100vh-14rem)] bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+    <!-- Left sidebar: conversation list -->
+    <div class="w-[320px] shrink-0 flex flex-col border-r border-slate-100 bg-slate-50/50">
+        <div class="px-5 py-4 border-b border-slate-100 bg-white">
+            <h2 class="text-base font-bold text-slate-900">Danh sách hội thoại</h2>
+        </div>
+
+        @if (!_ready)
+        {
+            <div class="flex items-center justify-center flex-1 text-slate-400 text-sm">Đang tải...</div>
+        }
+        else if (_conversations.Count == 0)
+        {
+            <div class="flex flex-col items-center justify-center flex-1 gap-3 text-slate-400 px-6 text-center">
+                <span class="material-symbols-outlined text-4xl opacity-50">chat_bubble_outline</span>
+                <p class="text-sm font-medium">Chưa có cuộc hội thoại nào.</p>
+            </div>
+        }
+        else
+        {
+            <div class="flex-1 overflow-y-auto divide-y divide-slate-100 scrollbar-hide">
+                @foreach (var conv in _conversations)
+                {
+                    var isSelected = _selectedConvId == conv.Id;
+                    <button class="w-full flex items-start gap-3 px-5 py-4 hover:bg-white transition-all text-left @(isSelected ? "bg-white border-l-4 border-l-primary" : "border-l-4 border-l-transparent bg-transparent")"
+                            @onclick="() => SelectConversationAsync(conv)">
+                        <!-- Avatar -->
+                        <div class="size-11 rounded-full bg-slate-200 flex items-center justify-center shrink-0 overflow-hidden mt-0.5 border border-slate-100 shadow-sm">
+                            @if (!string.IsNullOrEmpty(conv.OtherUserAvatar))
+                            {
+                                <img src="@conv.OtherUserAvatar" class="size-11 object-cover rounded-full" alt="" />
+                            }
+                            else
+                            {
+                                <span class="text-slate-600 font-bold text-sm">@Initials(conv.OtherUserName)</span>
+                            }
+                        </div>
+                        <!-- Info -->
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center justify-between gap-1 mb-0.5">
+                                <p class="text-sm font-bold text-slate-900 truncate @(isSelected ? "text-primary" : "")">@conv.OtherUserName</p>
+                                @if (conv.LastMessageAtLocal.HasValue)
+                                {
+                                    <span class="text-[10px] font-semibold text-slate-400 shrink-0">@FormatTime(conv.LastMessageAtLocal.Value)</span>
+                                }
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <p class="text-xs text-slate-500 truncate flex-1 @(conv.UnreadCount > 0 ? "font-semibold text-slate-700" : "")">@(conv.LastMessagePreview ?? "Chưa có tin nhắn")</p>
+                                @if (conv.UnreadCount > 0)
+                                {
+                                    <span class="px-1.5 py-0.5 min-w-[18px] rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center shrink-0 leading-none shadow-sm">@conv.UnreadCount</span>
+                                }
+                            </div>
+                        </div>
+                    </button>
+                }
+            </div>
+        }
+    </div>
+
+    <!-- Right: chat pane -->
+    <div class="flex-1 flex flex-col min-w-0 bg-white relative">
+        @if (_selectedConv is null)
+        {
+            <div class="flex flex-col items-center justify-center flex-1 text-slate-400 gap-3">
+                <div class="size-16 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-300">
+                    <span class="material-symbols-outlined text-3xl">forum</span>
+                </div>
+                <p class="text-sm font-medium">Chọn một hội thoại để bắt đầu</p>
+            </div>
+        }
+        else
+        {
+            <!-- Chat header -->
+            <div class="flex items-center gap-3 px-6 py-4 border-b border-slate-100 shrink-0 bg-white/80 backdrop-blur-md z-10 sticky top-0 shadow-sm">
+                <div class="size-10 rounded-full bg-slate-200 flex items-center justify-center shrink-0 overflow-hidden shadow-sm border border-slate-100">
+                    @if (!string.IsNullOrEmpty(_selectedConv.OtherUserAvatar))
+                    {
+                        <img src="@_selectedConv.OtherUserAvatar" class="size-10 object-cover rounded-full" alt="" />
+                    }
+                    else
+                    {
+                        <span class="text-slate-600 font-bold text-sm">@Initials(_selectedConv.OtherUserName)</span>
+                    }
+                </div>
+                <div>
+                    <p class="text-sm font-bold text-slate-900 leading-tight">@_selectedConv.OtherUserName</p>
+                    @if (_otherUserTyping)
+                    {
+                        <p class="text-[11px] font-medium text-emerald-500 italic mt-0.5">đang nhập...</p>
+                    }
+                    else
+                    {
+                         <p class="text-[11px] font-medium text-slate-400 mt-0.5">Học sinh</p>
+                    }
+                </div>
+            </div>
+
+            <!-- Messages -->
+            <div @ref="_messagesContainer" class="flex-1 overflow-y-auto px-6 py-5 flex flex-col gap-4 bg-slate-50/30">
+                @if (_loadingMessages)
+                {
+                    <div class="flex items-center justify-center flex-1">
+                        <span class="material-symbols-outlined animate-spin text-primary text-3xl">progress_activity</span>
+                    </div>
+                }
+                else
+                {
+                    <!-- Load more button -->
+                    @if (_hasMore)
+                    {
+                        <div class="flex justify-center mb-2">
+                            <button class="text-xs font-semibold text-primary hover:underline bg-blue-50/50 py-1.5 px-4 rounded-full transition-colors disabled:opacity-40"
+                                    disabled="@_loadingMore"
+                                    @onclick="LoadMoreAsync">
+                                @(_loadingMore ? "Đang tải..." : "Tải tin nhắn cũ")
+                            </button>
+                        </div>
+                    }
+
+                    @foreach (var msg in _messages)
+                    {
+                        if (msg.IsMine)
+                        {
+                            <div class="flex justify-end ml-12">
+                                <div class="bg-primary text-white rounded-2xl rounded-tr-sm px-4 py-2.5 shadow-sm">
+                                    <p class="text-sm break-words whitespace-pre-wrap leading-relaxed">@msg.Content</p>
+                                    <p class="text-[10px] text-white/70 mt-1.5 text-right font-medium">@msg.SentAtLocal.ToString("HH:mm")</p>
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="flex gap-2.5 mr-12">
+                                <div class="size-8 rounded-full bg-slate-200 flex items-center justify-center shrink-0 mt-0.5 overflow-hidden shadow-sm border border-slate-100">
+                                    @if (!string.IsNullOrEmpty(_selectedConv.OtherUserAvatar))
+                                    {
+                                        <img src="@_selectedConv.OtherUserAvatar" class="size-8 object-cover rounded-full" alt="" />
+                                    }
+                                    else
+                                    {
+                                        <span class="text-slate-600 font-bold text-xs">@Initials(_selectedConv.OtherUserName)</span>
+                                    }
+                                </div>
+                                <div class="bg-white border border-slate-100 rounded-2xl rounded-tl-sm px-4 py-2.5 shadow-sm">
+                                    <p class="text-sm text-slate-800 break-words whitespace-pre-wrap leading-relaxed">@msg.Content</p>
+                                    <p class="text-[10px] text-slate-400 mt-1.5 font-medium">@msg.SentAtLocal.ToString("HH:mm")</p>
+                                </div>
+                            </div>
+                        }
+                    }
+
+                    <!-- Typing indicator -->
+                    @if (_otherUserTyping)
+                    {
+                         <div class="flex gap-2.5 items-end">
+                            <div class="size-6 rounded-full bg-slate-200 flex items-center justify-center shrink-0">
+                                <span class="material-symbols-outlined text-[14px]">more_horiz</span>
+                            </div>
+                            <div class="bg-white border border-slate-100 rounded-2xl rounded-tl-sm px-3.5 py-2.5 shadow-sm flex items-center gap-2">
+                                <span class="text-[11px] text-slate-500 font-medium italic">Đang nhập...</span>
+                                <div class="flex items-center gap-1">
+                                    <span class="size-1.5 bg-slate-400 rounded-full animate-bounce" style="animation-delay: 0ms"></span>
+                                    <span class="size-1.5 bg-slate-400 rounded-full animate-bounce" style="animation-delay: 150ms"></span>
+                                    <span class="size-1.5 bg-slate-400 rounded-full animate-bounce" style="animation-delay: 300ms"></span>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
+
+            <!-- Input -->
+            <div class="px-5 py-4 border-t border-slate-100 flex items-end gap-3 shrink-0 bg-white">
+                <textarea @ref="_inputRef"
+                          class="flex-1 resize-none rounded-xl border border-slate-200 bg-slate-50 focus-within:bg-white
+                                 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400
+                                 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/50 transition-all shadow-sm
+                                 min-h-[46px] max-h-32 leading-relaxed scrollbar-hide"
+                          placeholder="Nhập tin nhắn hỗ trợ học sinh..."
+                          rows="1"
+                          @bind="_draft"
+                          @oninput="OnDraftInput"
+                          @onkeydown="OnKeyDown"></textarea>
+                <button class="shrink-0 size-[46px] rounded-xl bg-primary hover:bg-blue-600 transition-all shadow-sm shadow-primary/20
+                               flex items-center justify-center disabled:opacity-40 disabled:shadow-none"
+                        disabled="@(string.IsNullOrWhiteSpace(_draft) || _sending)"
+                        @onclick="SendMessageAsync">
+                    <span class="material-symbols-outlined text-white text-[20px] ml-1">send</span>
+                </button>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    private bool _ready;
+    private bool _loadingMessages;
+    private bool _loadingMore;
+    private bool _hasMore;
+    private bool _sending;
+    private bool _otherUserTyping;
+    private bool _isTypingNotified;
+    private bool _needsScrollAdjust;
+    private double _prevScrollHeight;
+    private int _skip;
+    private const int Take = 50;
+    private long _selectedConvId;
+    private string _draft = "";
+    private ElementReference _messagesContainer;
+    private ElementReference _inputRef;
+    private HubConnection? _hub;
+    private CancellationTokenSource? _typingCts;
+
+    private List<ConversationSummaryDto> _conversations = [];
+    private ConversationSummaryDto? _selectedConv;
+    private List<MessageDto> _messages = [];
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            if (!Session.IsAuthenticated)
+            {
+                var email  = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_email");
+                var role   = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_role");
+                var token  = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_token");
+                var uidStr = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_userid");
+                var avatar = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_avatar");
+                var fullName = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_fullname");
+                
+                if (!string.IsNullOrEmpty(email) && !string.IsNullOrEmpty(role) && !string.IsNullOrEmpty(token))
+                {
+                    var uid = long.TryParse(uidStr, out var id) ? id : 0;
+                    Session.SetSession(email, role, token, avatar, uid, fullName);
+                }
+            }
+
+            if (!Session.IsAuthenticated) { Nav.NavigateTo("/login", replace: true); return; }
+            if (Session.Role != "TEACHER") { Nav.NavigateTo("/", replace: true); return; }
+
+            await LoadConversationsAsync();
+            _ready = true;
+            StateHasChanged();
+        }
+
+        if (_needsScrollAdjust)
+        {
+            _needsScrollAdjust = false;
+            try { await JS.InvokeVoidAsync("adjustScrollAfterPrepend", _messagesContainer, _prevScrollHeight); }
+            catch { }
+        }
+    }
+
+    private async Task LoadConversationsAsync()
+    {
+        try
+        {
+            var resp = await CreateClient()
+                .GetFromJsonAsync<ApiResponse<IReadOnlyList<ConversationSummaryDto>>>("api/conversations");
+            _conversations = resp?.Data?.ToList() ?? [];
+        }
+        catch
+        {
+            _conversations = [];
+        }
+    }
+
+    private async Task SelectConversationAsync(ConversationSummaryDto conv)
+    {
+        if (_selectedConvId == conv.Id) return;
+
+        if (_hub is not null && _selectedConvId != 0)
+        {
+            try { await _hub.InvokeAsync("LeaveConversation", _selectedConvId); } catch { }
+        }
+
+        _selectedConv   = conv;
+        _selectedConvId = conv.Id;
+        _messages.Clear();
+        _loadingMessages = true;
+        _hasMore = false;
+        _skip = 0;
+        _otherUserTyping = false;
+        StateHasChanged();
+
+        try
+        {
+            var msgResp = await CreateClient()
+                .GetFromJsonAsync<ApiResponse<IReadOnlyList<MessageDto>>>(
+                    $"api/conversations/{conv.Id}/messages?skip=0&take={Take}");
+            var loaded = msgResp?.Data?.ToList() ?? [];
+            _messages = loaded;
+            _skip = loaded.Count;
+            _hasMore = loaded.Count == Take;
+
+            await EnsureHubAsync();
+            await _hub!.InvokeAsync("JoinConversation", conv.Id);
+
+            _ = CreateClient().PostAsync($"api/conversations/{conv.Id}/read", null);
+
+            var idx = _conversations.FindIndex(c => c.Id == conv.Id);
+            if (idx >= 0 && _conversations[idx].UnreadCount > 0)
+                _conversations[idx] = _conversations[idx] with { UnreadCount = 0 };
+        }
+        catch { }
+
+        _loadingMessages = false;
+        StateHasChanged();
+        await ScrollBottomAsync();
+    }
+
+    private async Task LoadMoreAsync()
+    {
+        if (_loadingMore || !_hasMore || _selectedConvId == 0) return;
+
+        _loadingMore = true;
+        StateHasChanged();
+
+        try
+        {
+            var msgResp = await CreateClient()
+                .GetFromJsonAsync<ApiResponse<IReadOnlyList<MessageDto>>>(
+                    $"api/conversations/{_selectedConvId}/messages?skip={_skip}&take={Take}");
+            var loaded = msgResp?.Data?.ToList() ?? [];
+
+            if (loaded.Count > 0)
+            {
+                _prevScrollHeight = await JS.InvokeAsync<double>("getScrollHeight", _messagesContainer);
+                _messages.InsertRange(0, loaded);
+                _skip += loaded.Count;
+                _hasMore = loaded.Count == Take;
+                _needsScrollAdjust = true;
+            }
+            else
+            {
+                _hasMore = false;
+            }
+        }
+        catch { }
+
+        _loadingMore = false;
+        StateHasChanged();
+    }
+
+    private async Task EnsureHubAsync()
+    {
+        if (_hub?.State == HubConnectionState.Connected) return;
+
+        if (_hub is not null)
+        {
+            try { await _hub.DisposeAsync(); } catch { }
+        }
+
+        _hub = new HubConnectionBuilder()
+            .WithUrl(Nav.ToAbsoluteUri("/hubs/chat"), opts =>
+            {
+                opts.AccessTokenProvider = () => Task.FromResult<string?>(Session.AccessToken);
+            })
+            .WithAutomaticReconnect()
+            .Build();
+
+        _hub.On<MessageDto>("ReceiveMessage", async msg =>
+        {
+            var corrected = msg with { IsMine = msg.SenderId == Session.UserId };
+            if (_messages.All(m => m.Id != msg.Id))
+                _messages.Add(corrected);
+                
+            // Update conversation snippet
+            var idx = _conversations.FindIndex(c => c.Id == _selectedConvId);
+            if(idx >= 0)
+            {
+                _conversations[idx] = _conversations[idx] with { 
+                    LastMessagePreview = msg.Content, 
+                    LastMessageAtLocal = msg.SentAtLocal,
+                    UnreadCount = corrected.IsMine ? 0 : 0 // we are looking at it
+                };
+                
+                // Reorder conversations if needed to bump to top 
+                var conv = _conversations[idx];
+                _conversations.RemoveAt(idx);
+                _conversations.Insert(0, conv);
+            }
+            
+            await InvokeAsync(StateHasChanged);
+            await ScrollBottomAsync();
+        });
+
+        _hub.On<bool>("UserTyping", async isTyping =>
+        {
+            _otherUserTyping = isTyping;
+            await InvokeAsync(StateHasChanged);
+            if (isTyping) await ScrollBottomAsync();
+        });
+
+        await _hub.StartAsync();
+    }
+
+    private void OnDraftInput(ChangeEventArgs e)
+    {
+        _draft = e.Value?.ToString() ?? "";
+        try { _ = JS.InvokeVoidAsync("autoResizeTextarea", _inputRef); } catch { }
+        _ = NotifyTypingAsync();
+    }
+
+    private async Task NotifyTypingAsync()
+    {
+        if (_hub?.State != HubConnectionState.Connected || _selectedConvId == 0) return;
+
+        _typingCts?.Cancel();
+        _typingCts = new CancellationTokenSource();
+
+        if (!_isTypingNotified)
+        {
+            _isTypingNotified = true;
+            try { await _hub.InvokeAsync("StartTyping", _selectedConvId); } catch { }
+        }
+
+        var cts = _typingCts;
+        try
+        {
+            await Task.Delay(2000, cts.Token);
+            _isTypingNotified = false;
+            try { await _hub.InvokeAsync("StopTyping", _selectedConvId); } catch { }
+        }
+        catch (OperationCanceledException) { }
+    }
+
+    private async Task OnKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && !e.ShiftKey)
+            await SendMessageAsync();
+    }
+
+    private async Task SendMessageAsync()
+    {
+        var text = _draft.Trim();
+        if (string.IsNullOrEmpty(text) || _sending || _selectedConvId == 0) return;
+
+        _sending = true;
+        _draft = "";
+        StateHasChanged();
+
+        _typingCts?.Cancel();
+        _isTypingNotified = false;
+        try { await _hub!.InvokeAsync("StopTyping", _selectedConvId); } catch { }
+
+        try
+        {
+            await CreateClient().PostAsJsonAsync(
+                $"api/conversations/{_selectedConvId}/messages",
+                new SendMessageDto { Content = text });
+        }
+        catch { }
+        finally
+        {
+            _sending = false;
+            StateHasChanged();
+            try { await JS.InvokeVoidAsync("resetTextareaHeight", _inputRef); } catch { }
+        }
+    }
+
+    private async Task ScrollBottomAsync()
+    {
+        try
+        { 
+            await Task.Delay(50);
+            await JS.InvokeVoidAsync("scrollToBottom", _messagesContainer); 
+        } catch { }
+    }
+
+    private HttpClient CreateClient()
+    {
+        var client = HttpClientFactory.CreateClient("learnmate");
+        client.BaseAddress = new Uri(Nav.BaseUri);
+        client.DefaultRequestHeaders.Authorization =
+            new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", Session.AccessToken);
+        return client;
+    }
+
+    private static string Initials(string name)
+    {
+        if(string.IsNullOrWhiteSpace(name)) return "U";
+        return string.Concat(name.Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                          .Take(2)
+                          .Select(w => char.ToUpper(w[0])));
+    }
+
+    private static string FormatTime(DateTime dt)
+    {
+        var diff = DateTime.Now.Date - dt.Date;
+        return diff.TotalDays < 1 ? dt.ToString("HH:mm")
+             : diff.TotalDays < 7 ? dt.ToString("ddd")
+             : dt.ToString("dd/MM");
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        _typingCts?.Cancel();
+        _typingCts?.Dispose();
+        if (_hub is not null)
+        {
+            try { await _hub.StopAsync(); } catch { }
+            await _hub.DisposeAsync();
+        }
+    }
+}

@@ -1,0 +1,401 @@
+@using BusinessLogicLayer.DTOs
+@using BusinessLogicLayer.DTOs.Messaging
+@using LearnmateSolution.AppState
+@using Microsoft.AspNetCore.SignalR.Client
+@inject NavigationManager Nav
+@inject UserSessionService Session
+@inject IHttpClientFactory HttpClientFactory
+@inject IJSRuntime JS
+@implements IAsyncDisposable
+
+<div class="fixed inset-y-0 right-0 w-full md:w-[400px] bg-white shadow-2xl z-50 transform transition-transform duration-300 ease-in-out flex flex-col border-l border-slate-100
+            @(IsOpen ? "translate-x-0" : "translate-x-full")">
+    
+    <!-- Drawer Header -->
+    <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100 bg-[#37352F] text-white">
+        <div class="flex items-center gap-3 w-full max-w-full min-w-0">
+            <span class="material-symbols-outlined text-amber-400 text-[24px] shrink-0">forum</span>
+            <div class="min-w-0 flex-1">
+                <h3 class="font-bold text-base truncate pr-2">Lớp Học: Thảo luận</h3>
+                <p class="text-xs text-white/70">Mọi thành viên trong lớp đều có thể xem</p>
+            </div>
+            <button @onclick="CloseDrawer" class="size-8 flex items-center justify-center rounded-lg hover:bg-white/10 transition-colors shrink-0">
+                <span class="material-symbols-outlined text-[20px]">close</span>
+            </button>
+        </div>
+    </div>
+
+    @if (IsOpen)
+    {
+        <!-- Messages Area -->
+        <div class="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-4 bg-slate-50/50" @ref="_messagesContainer">
+            @if (_loading)
+            {
+                <div class="flex-1 flex items-center justify-center">
+                    <span class="material-symbols-outlined animate-spin text-primary text-3xl">progress_activity</span>
+                </div>
+            }
+            else if (_messages.Count == 0)
+            {
+                <div class="flex-1 flex flex-col items-center justify-center text-slate-400">
+                    <span class="material-symbols-outlined text-5xl mb-2 text-slate-300">chat_bubble_outline</span>
+                    <p class="text-sm font-medium">Chưa có tin nhắn nào</p>
+                    <p class="text-xs text-slate-500 mt-1 text-center px-4">Hãy là người đầu tiên gửi tin nhắn thảo luận trong lớp!</p>
+                </div>
+            }
+            else
+            {
+                @if (_hasMore)
+                {
+                    <div class="flex justify-center mb-2">
+                        <button class="text-xs text-primary font-medium hover:underline py-1.5 px-3 rounded-full hover:bg-blue-50 transition-colors disabled:opacity-50"
+                                disabled="@_loadingMore"
+                                @onclick="LoadMoreAsync">
+                            @(_loadingMore ? "Đang tải..." : "Tải thêm tin nhắn cũ")
+                        </button>
+                    </div>
+                }
+
+                @foreach (var msg in _messages)
+                {
+                    if (msg.IsMine)
+                    {
+                        <div class="flex justify-end gap-2">
+                            <div class="bg-primary/90 text-white rounded-2xl rounded-tr-sm px-3.5 py-2.5 max-w-[85%] shadow-sm">
+                                <p class="text-sm break-words whitespace-pre-wrap leading-relaxed">@msg.Content</p>
+                                <p class="text-[10px] text-white/70 mt-1.5 text-right font-medium">@msg.SentAtLocal.ToString("HH:mm")</p>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="flex gap-2.5">
+                            <div class="size-8 rounded-full bg-slate-200 flex items-center justify-center shrink-0 mt-0.5 overflow-hidden border border-slate-100 shadow-sm">
+                                @if (!string.IsNullOrEmpty(msg.SenderAvatar))
+                                {
+                                    <img src="@msg.SenderAvatar" alt="@msg.SenderName" class="size-8 object-cover rounded-full" />
+                                }
+                                else
+                                {
+                                    <span class="text-slate-600 font-bold text-xs">@Initials(msg.SenderName)</span>
+                                }
+                            </div>
+                            <div class="max-w-[75%]">
+                                <span class="text-[11px] font-semibold text-slate-500 ml-1 mb-0.5 block">@msg.SenderName</span>
+                                <div class="bg-white border border-slate-100 rounded-2xl rounded-tl-sm px-3.5 py-2.5 shadow-sm">
+                                    <p class="text-sm text-slate-800 break-words whitespace-pre-wrap leading-relaxed">@msg.Content</p>
+                                </div>
+                                <p class="text-[10px] text-slate-400 mt-1 ml-1 font-medium">@msg.SentAtLocal.ToString("HH:mm")</p>
+                            </div>
+                        </div>
+                    }
+                }
+
+                <!-- Typing Indicator -->
+                @if (_typingUsers.Any())
+                {
+                    <div class="flex gap-2.5 items-end">
+                        <div class="size-6 rounded-full bg-slate-200 flex items-center justify-center shrink-0">
+                            <span class="material-symbols-outlined text-[14px]">more_horiz</span>
+                        </div>
+                        <div class="bg-white border border-slate-100 rounded-2xl rounded-tl-sm px-3.5 py-2 shadow-sm flex items-center gap-2">
+                            <span class="text-xs text-slate-500 font-medium italic">@string.Join(", ", _typingUsers) đang nhập...</span>
+                            <div class="flex items-center gap-1">
+                                <span class="size-1 bg-slate-400 rounded-full animate-bounce" style="animation-delay: 0ms"></span>
+                                <span class="size-1 bg-slate-400 rounded-full animate-bounce" style="animation-delay: 150ms"></span>
+                                <span class="size-1 bg-slate-400 rounded-full animate-bounce" style="animation-delay: 300ms"></span>
+                            </div>
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+
+        <!-- Input Area -->
+        <div class="px-4 py-3 border-t border-slate-100 bg-white">
+            <div class="flex items-end gap-2 bg-slate-50 border border-slate-200 focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/10 rounded-xl px-2 py-2 transition-all">
+                <textarea @ref="_inputRef"
+                          class="flex-1 resize-none bg-transparent placeholder:text-slate-400 text-sm text-slate-900 border-none focus:outline-none focus:ring-0 pl-2 leading-relaxed max-h-32 min-h-[22px]"
+                          placeholder="Nhập tin nhắn..."
+                          rows="1"
+                          @bind="_draft"
+                          @oninput="OnDraftInput"
+                          @onkeydown="OnKeyDown"></textarea>
+                <button class="shrink-0 size-8 rounded-lg bg-primary hover:bg-blue-600 text-white flex items-center justify-center disabled:opacity-50 disabled:bg-slate-300 transition-colors shadow-sm mb-0.5"
+                        disabled="@(string.IsNullOrWhiteSpace(_draft) || _sending)"
+                        @onclick="SendMessageAsync">
+                    <span class="material-symbols-outlined text-[16px] pl-0.5">send</span>
+                </button>
+            </div>
+            <p class="text-[10px] text-slate-400 text-center mt-2 flex items-center justify-center gap-1">
+                <span class="material-symbols-outlined text-[12px]">lock</span> Chat được mã hóa riêng cho lớp này
+            </p>
+        </div>
+    }
+</div>
+
+@if (IsOpen)
+{
+    <!-- Mobile Backdrop -->
+    <div class="fixed inset-0 bg-slate-900/20 backdrop-blur-sm z-40 md:hidden" @onclick="CloseDrawer"></div>
+}
+
+@code {
+    [Parameter]
+    public bool IsOpen { get; set; }
+
+    [Parameter]
+    public EventCallback<bool> IsOpenChanged { get; set; }
+
+    [Parameter]
+    public long ClassId { get; set; }
+
+    private bool _loading = true;
+    private bool _sending;
+    private bool _loadingMore;
+    private bool _hasMore = false;
+    private int _skip = 0;
+    private const int Take = 50;
+    
+    private string _draft = "";
+    private HubConnection? _hub;
+    private ElementReference _messagesContainer;
+    private ElementReference _inputRef;
+    private List<ClassMessageDto> _messages = new();
+    
+    private HashSet<string> _typingUsers = new();
+    private CancellationTokenSource? _typingCts;
+    private bool _isTypingNotified;
+    private bool _needsScrollAdjust;
+    private double _prevScrollHeight;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsOpen && _hub == null)
+        {
+            await InitChatAsync();
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_needsScrollAdjust)
+        {
+            _needsScrollAdjust = false;
+            try { await JS.InvokeVoidAsync("adjustScrollAfterPrepend", _messagesContainer, _prevScrollHeight); } catch { }
+        }
+    }
+
+    private async Task InitChatAsync()
+    {
+        _loading = true;
+        _messages.Clear();
+        _skip = 0;
+        StateHasChanged();
+
+        try
+        {
+            await LoadInitialMessagesAsync();
+            await EnsureHubAsync();
+            await _hub!.InvokeAsync("JoinClassConversation", ClassId);
+        }
+        catch { }
+
+        _loading = false;
+        StateHasChanged();
+        await ScrollBottomAsync();
+    }
+
+    private async Task LoadInitialMessagesAsync()
+    {
+        var client = CreateClient();
+        var resp = await client.GetFromJsonAsync<ApiResponse<IReadOnlyList<ClassMessageDto>>>($"api/classes/{ClassId}/messages?skip=0&take={Take}");
+        var loaded = resp?.Data?.ToList() ?? new();
+        _messages = loaded;
+        _skip = loaded.Count;
+        _hasMore = loaded.Count == Take;
+    }
+
+    private async Task LoadMoreAsync()
+    {
+        if (_loadingMore || !_hasMore) return;
+        
+        _loadingMore = true;
+        StateHasChanged();
+
+        try
+        {
+            var client = CreateClient();
+            var resp = await client.GetFromJsonAsync<ApiResponse<IReadOnlyList<ClassMessageDto>>>($"api/classes/{ClassId}/messages?skip={_skip}&take={Take}");
+            var loaded = resp?.Data?.ToList() ?? new();
+
+            if (loaded.Count > 0)
+            {
+                _prevScrollHeight = await JS.InvokeAsync<double>("getScrollHeight", _messagesContainer);
+                _messages.InsertRange(0, loaded);
+                _skip += loaded.Count;
+                _hasMore = loaded.Count == Take;
+                _needsScrollAdjust = true;
+            }
+            else
+            {
+                _hasMore = false;
+            }
+        }
+        catch { }
+
+        _loadingMore = false;
+        StateHasChanged();
+    }
+
+    private async Task EnsureHubAsync()
+    {
+        if (_hub?.State == HubConnectionState.Connected) return;
+
+        if (_hub != null) await _hub.DisposeAsync();
+
+        _hub = new HubConnectionBuilder()
+            .WithUrl(Nav.ToAbsoluteUri("/hubs/chat"), opts =>
+            {
+                opts.AccessTokenProvider = () => Task.FromResult<string?>(Session.AccessToken);
+            })
+            .WithAutomaticReconnect()
+            .Build();
+
+        _hub.On<ClassMessageDto>("ReceiveClassMessage", async msg =>
+        {
+            var corrected = msg with { IsMine = msg.SenderId == Session.UserId };
+            if (_messages.All(m => m.Id != msg.Id))
+            {
+                _messages.Add(corrected);
+                _typingUsers.Remove(msg.SenderName);
+            }
+            await InvokeAsync(StateHasChanged);
+            await ScrollBottomAsync();
+        });
+
+        _hub.On<string, bool>("ClassUserTyping", async (userName, isTyping) =>
+        {
+            if (isTyping) _typingUsers.Add(userName);
+            else _typingUsers.Remove(userName);
+            
+            await InvokeAsync(StateHasChanged);
+            if (isTyping) await ScrollBottomAsync();
+        });
+
+        await _hub.StartAsync();
+    }
+
+    private async Task SendMessageAsync()
+    {
+        var text = _draft.Trim();
+        if (string.IsNullOrWhiteSpace(text) || _sending) return;
+
+        _sending = true;
+        _draft = "";
+        StateHasChanged();
+
+        _typingCts?.Cancel();
+        _isTypingNotified = false;
+        try { await _hub!.InvokeAsync("StopClassTyping", ClassId, Session.FullName ?? Session.Email ?? "User"); } catch { }
+
+        try
+        {
+            var client = CreateClient();
+            await client.PostAsJsonAsync($"api/classes/{ClassId}/messages", new SendClassMessageDto { Content = text });
+        }
+        catch { }
+        finally
+        {
+            _sending = false;
+            StateHasChanged();
+            await JS.InvokeVoidAsync("resetTextareaHeight", _inputRef);
+            await ScrollBottomAsync();
+        }
+    }
+
+    private void OnDraftInput(ChangeEventArgs e)
+    {
+        _draft = e.Value?.ToString() ?? "";
+        try { _ = JS.InvokeVoidAsync("autoResizeTextarea", _inputRef); } catch { }
+        _ = NotifyTypingAsync();
+    }
+
+    private async Task NotifyTypingAsync()
+    {
+        if (_hub?.State != HubConnectionState.Connected) return;
+
+        _typingCts?.Cancel();
+        _typingCts = new CancellationTokenSource();
+
+        if (!_isTypingNotified)
+        {
+            _isTypingNotified = true;
+            try { await _hub.InvokeAsync("StartClassTyping", ClassId, Session.FullName ?? Session.Email ?? "User"); } catch { }
+        }
+
+        var cts = _typingCts;
+        try
+        {
+            await Task.Delay(2000, cts.Token);
+            _isTypingNotified = false;
+            try { await _hub.InvokeAsync("StopClassTyping", ClassId, Session.FullName ?? Session.Email ?? "User"); } catch { }
+        }
+        catch (OperationCanceledException) { }
+    }
+
+    private async Task OnKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && !e.ShiftKey)
+        {
+            await SendMessageAsync();
+        }
+    }
+
+    private async Task CloseDrawer()
+    {
+        IsOpen = false;
+        await IsOpenChanged.InvokeAsync(false);
+    }
+
+    private async Task ScrollBottomAsync()
+    {
+        try
+        {
+            await Task.Delay(50); // Small delay for rendering
+            await JS.InvokeVoidAsync("scrollToBottom", _messagesContainer);
+        }
+        catch { }
+    }
+
+    private HttpClient CreateClient()
+    {
+        var client = HttpClientFactory.CreateClient("learnmate");
+        client.BaseAddress = new Uri(Nav.BaseUri);
+        client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", Session.AccessToken);
+        return client;
+    }
+
+    private string Initials(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name)) return "U";
+        var parts = name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        return string.Join("", parts.Take(2).Select(p => p[0])).ToUpper();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        _typingCts?.Cancel();
+        _typingCts?.Dispose();
+        if (_hub is not null)
+        {
+            try 
+            {
+                await _hub.InvokeAsync("LeaveClassConversation", ClassId);
+                await _hub.StopAsync(); 
+            } 
+            catch { }
+            await _hub.DisposeAsync();
+        }
+    }
+}

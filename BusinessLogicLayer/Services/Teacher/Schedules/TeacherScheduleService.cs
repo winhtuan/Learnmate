@@ -99,6 +99,13 @@ public class TeacherScheduleService(ITeacherScheduleRepository repo) : ITeacherS
         if (dto.StartTime >= dto.EndTime)
             return ApiResponse<object>.Fail("End time must be after start time.");
 
+        if ((dto.EndTime - dto.StartTime).TotalHours < 1)
+            return ApiResponse<object>.Fail("Schedule duration must be at least 1 hour.");
+
+        var isOverlapping = await repo.HasOverlappingScheduleAsync(dto.ClassId, dto.StartTime, dto.EndTime);
+        if (isOverlapping)
+            return ApiResponse<object>.Fail("This time slot overlaps with an existing schedule in this class.");
+
         var schedule = new Schedule
         {
             ClassId = dto.ClassId,
@@ -132,6 +139,13 @@ public class TeacherScheduleService(ITeacherScheduleRepository repo) : ITeacherS
 
         if (dto.StartTime >= dto.EndTime)
             return ApiResponse<object>.Fail("End time must be after start time.");
+
+        if ((dto.EndTime - dto.StartTime).TotalHours < 1)
+            return ApiResponse<object>.Fail("Schedule duration must be at least 1 hour.");
+
+        var isOverlapping = await repo.HasOverlappingScheduleAsync(schedule.ClassId, dto.StartTime, dto.EndTime, scheduleId);
+        if (isOverlapping)
+            return ApiResponse<object>.Fail("This time slot overlaps with an existing schedule in this class.");
 
         schedule.Title = dto.Title;
         schedule.StartTime = dto.StartTime;

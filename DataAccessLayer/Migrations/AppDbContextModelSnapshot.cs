@@ -889,6 +889,49 @@ namespace DataAccessLayer.Migrations
                         });
                 });
 
+            modelBuilder.Entity("BusinessObject.Models.ClassMessage", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<long>("ClassId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("class_id");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)")
+                        .HasColumnName("content");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<long>("SenderId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("sender_id");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_class_messages");
+
+                    b.HasIndex("ClassId")
+                        .HasDatabaseName("ix_class_messages_class_id");
+
+                    b.HasIndex("SenderId")
+                        .HasDatabaseName("ix_class_messages_sender_id");
+
+                    b.ToTable("class_messages", (string)null);
+                });
+
             modelBuilder.Entity("BusinessObject.Models.Conversation", b =>
                 {
                     b.Property<long>("Id")
@@ -1374,6 +1417,15 @@ namespace DataAccessLayer.Migrations
                         .HasColumnType("numeric(12,2)")
                         .HasColumnName("amount");
 
+                    b.Property<string>("BankCode")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("bank_code");
+
+                    b.Property<long?>("BookingId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("booking_id");
+
                     b.Property<long>("ClassId")
                         .HasColumnType("bigint")
                         .HasColumnName("class_id");
@@ -1385,6 +1437,10 @@ namespace DataAccessLayer.Migrations
                     b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("timestamp without time zone")
                         .HasColumnName("deleted_at");
+
+                    b.Property<DateTime?>("ExpiredAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("expired_at");
 
                     b.Property<long?>("InvoiceId")
                         .HasColumnType("bigint")
@@ -1413,6 +1469,16 @@ namespace DataAccessLayer.Migrations
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp without time zone")
                         .HasColumnName("updated_at");
+
+                    b.Property<string>("VnpTransactionNo")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("vnp_transaction_no");
+
+                    b.Property<string>("VnpTxnRef")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("vnp_txn_ref");
 
                     b.HasKey("Id")
                         .HasName("pk_payments");
@@ -2783,6 +2849,15 @@ namespace DataAccessLayer.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
 
+                    b.Property<string>("CancelReason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("cancel_reason");
+
+                    b.Property<long?>("ClassId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("class_id");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp without time zone")
                         .HasColumnName("created_at");
@@ -2795,6 +2870,10 @@ namespace DataAccessLayer.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)")
                         .HasColumnName("note");
+
+                    b.Property<DateTime?>("PaymentDeadline")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("payment_deadline");
 
                     b.Property<DateTime>("RequestedEndTime")
                         .HasColumnType("timestamp without time zone")
@@ -3228,6 +3307,27 @@ namespace DataAccessLayer.Migrations
                     b.Navigation("Class");
 
                     b.Navigation("Student");
+                });
+
+            modelBuilder.Entity("BusinessObject.Models.ClassMessage", b =>
+                {
+                    b.HasOne("BusinessObject.Models.Class", "Class")
+                        .WithMany()
+                        .HasForeignKey("ClassId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_class_messages_classes_class_id");
+
+                    b.HasOne("BusinessObject.Models.User", "Sender")
+                        .WithMany()
+                        .HasForeignKey("SenderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_class_messages_users_sender_id");
+
+                    b.Navigation("Class");
+
+                    b.Navigation("Sender");
                 });
 
             modelBuilder.Entity("BusinessObject.Models.Conversation", b =>

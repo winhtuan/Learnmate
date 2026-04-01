@@ -1,0 +1,342 @@
+@startuml user_account_management_communication
+
+!theme plain
+scale max 1200 width
+title User Management: Block/Unlock Account - Communication Diagram (Sequence + Component Interaction)
+
+note top
+  **System Components:**
+  - Blazor UI (Admin_UserManagement.razor)
+  - Business Logic Service (UserManagementService)
+  - EF Core DbContext (AppDbContext)
+  - PostgreSQL Database (users table)
+  
+  **Scenario:** Admin blocks a Teacher account for policy violation
+end note
+
+actor Admin #FFFFFF
+
+participant "Blazor UI Component\n(Admin_UserManagement.razor)\n(LearnmateSolution)" as UI
+participant "UserManagementService\n(BusinessLogicLayer)" as Service
+participant "AppDbContext\n(EF Core ORM)\n(DataAccessLayer)" as DbContext
+database "PostgreSQL Database\nusers Table" as DB
+
+' ════════════════════════════════════════════════════░
+' PHASE 1: LOAD USER LIST
+' ════════════════════════════════════════════════════
+
+rect rgb(200, 220, 255)
+    Note over Admin, DB
+      **PHASE 1: LOAD USER LIST**
+      Navigation: /admin/users
+    end note
+end
+
+Admin -> UI: **1:** Navigate to User Management Page
+activate UI
+
+UI -> UI: **2:** OnInitialized() / LoadUsers()
+
+UI -> Service: **3:** GetUsersAsync(\n  roleFilter: "",\n  statusFilter: "",\n  searchQuery: "")
+activate Service
+
+Service -> Service: **4:** Build LINQ Query
+note right of Service
+  db.Users.AsQueryable()
+    .Include(u => u.StudentProfile)
+    .Include(u => u.TeacherProfile)
+    .Where(...)
+    .OrderByDescending(u => u.CreatedAt)
+end note
+
+Service -> DbContext: **5:** Execute Query (ToListAsync)
+activate DbContext
+
+DbContext -> DB: **6:** SELECT * FROM users\nWHERE conditions\nJOIN student_profiles\nJOIN teacher_profiles
+activate DB
+
+DB --> DbContext: **7:** User Records (ORM mapped to User entities)
+deactivate DB
+
+DbContext --> Service: **8:** IEnumerable<User>
+deactivate DbContext
+
+Service -> Service: **9:** Map User [] → UserRowDto []
+note right of Service
+  foreach User u:
+    UserRowDto dto = new() {
+      Id = u.Id,
+      Email = u.Email,
+      Role = u.Role (TEACHER/STUDENT/ADMIN),
+      Status = u.IsActive ? "Active" : "Blocked",
+      Name = u.StudentProfile?.FullName
+             ?? u.TeacherProfile?.FullName,
+      AvatarUrl = u.AvatarUrl
+    }
+end note
+
+Service --> UI: **10:** IEnumerable<UserRowDto>
+deactivate Service
+
+UI -> UI: **11:** Bind to table component\nusers = result.ToList()
+
+UI --> Admin: **12:** Display User Management Page
+note right of UI
+  - Stats cards: Total, Active, Blocked users
+  - Filter controls: Role, Status, Search
+  - User table with rows
+  - Action buttons: Block, Unblock, Delete
+end note
+
+' ════════════════════════════════════════════════════░
+' PHASE 2: ADMIN SELECTS USER & OPENS MODAL
+' ════════════════════════════════════════════════════
+
+rect rgb(255, 240, 200)
+    Note over Admin, UI
+      **PHASE 2: SELECT USER & OPEN MODAL**
+      Admin clicks "Block" button on Teacher row
+    end note
+end
+
+Admin -> UI: **13:** Click "Block" button\non Teacher "John Smith" row
+activate UI
+
+UI -> UI: **14:** OpenBlockModal(userRowDto)
+note right of UI
+  selectedUser = {
+    Id: 5,
+    Email: "john@teacher.com",
+    Name: "John Smith",
+    Role: "Instructor"
+  }
+end note
+
+UI -> UI: **15:** Initialize Modal State
+note right of UI
+  blockReason = ""
+  blockNotes = ""
+  formError = ""
+  showBlockModal = true
+end note
+
+UI --> Admin: **16:** Display "Confirm Block User" Modal\nwith Form Fields
+note right of UI
+  Modal Contents:
+  - User Info (name, email, role)
+  - Reason dropdown (Teacher Violation,
+    Account Abuse, etc.)
+  - Optional Notes textarea
+  - Cancel / Confirm Block buttons
+end note
+
+' ════════════════════════════════════════════════════░
+' PHASE 3: ADMIN SUBMITS BLOCK REQUEST
+' ════════════════════════════════════════════════════
+
+rect rgb(255, 220, 220)
+    Note over Admin, UI
+      **PHASE 3: SUBMIT BLOCK REQUEST**
+      Admin fills form and clicks Confirm
+    end note
+end
+
+Admin -> UI: **17:** Select Reason: "Teacher Violation"\nEnter Notes: "Violated T&C Section 3.2"\nClick "Confirm Block"
+activate UI
+
+UI -> UI: **18:** ConfirmBlock() handler (click event)
+
+UI -> UI: **19:** Validate Form
+note right of UI
+  if (string.IsNullOrWhiteSpace(blockReason)) {
+    formError = "Please select reason";
+    return;  // Stop here
+  }
+end note
+
+UI -> Service: **20:** ChangeUserStatusAsync(\n  userId: 5,\n  isActive: **false**,\n  reason: "Teacher Violation",\n  notes: "Violated T&C Section 3.2")
+activate Service
+
+' ════════════════════════════════════════════════════░
+' PHASE 4: DATABASE UPDATE
+' ════════════════════════════════░════════════════════
+
+rect rgb(255, 250, 200)
+    Note over Service, DB
+      **PHASE 4: DATABASE UPDATE**
+      Service processes block request
+    end note
+end
+
+Service -> DbContext: **21:** db.Users.FindAsync(userId: 5)
+activate DbContext
+
+DbContext -> DB: **22:** SELECT * FROM users\nWHERE id = 5
+activate DB
+
+DB --> DbContext: **23:** User entity (John Smith, IsActive=true)
+deactivate DB
+
+DbContext --> Service: **24:** User object
+deactivate DbContext
+
+Service -> Service: **25:** Check if user exists
+note right of Service
+  if (user == null) {
+    return ApiResponse.Fail(
+      "User not found.");
+  }
+end note
+
+alt ✅ User Found
+    Service -> Service: **26a:** Update User Object
+    note right of Service
+      user.IsActive = false
+      user.UpdatedAt = DateTime.UtcNow()
+    end note
+    
+    Service -> DbContext: **27a:** db.Users.Update(user)
+    activate DbContext
+    
+    DbContext -> DB: **28a:** UPDATE users\nSET is_active = false,\n    updated_at = NOW()\nWHERE id = 5
+    activate DB
+    
+    DB --> DbContext: **29a:** 1 row affected
+    deactivate DB
+    
+    DbContext -> DbContext: **30a:** await SaveChangesAsync()
+    note right of DbContext
+      Commits transaction to PostgreSQL
+      Change persisted
+    end note
+    
+    DbContext --> Service: **31a:** SaveSuccessful
+    deactivate DbContext
+    
+    Service -> Service: **32a:** Prepare Success Response
+    note right of Service
+      ApiResponse<object?>.Ok(null,
+        "User blocked successfully.")
+    end note
+    
+    Service --> UI: **33a:** ApiResponse\n{ Success: true,\n  Message: "User blocked successfully." }
+    
+else ❌ User Not Found
+    Service --> UI: **33b:** ApiResponse\n{ Success: false,\n  Message: "User not found." }
+end
+
+deactivate Service
+
+' ════════════════════════════════░════════════════════
+' PHASE 5: UI REACTION & RELOAD
+' ════════════════════════════════░════════════════════
+
+rect rgb(200, 240, 200)
+    Note over UI, DB
+      **PHASE 5: UI RESPONSE & RELOAD LIST**
+      UI processes response
+    end note
+end
+
+alt ✅ Block Success
+    UI -> UI: **34a:** Close Modal\nCloseAllModals()
+    note right of UI
+      showBlockModal = false
+      selectedUser = null
+      blockReason = ""
+    end note
+    
+    UI -> UI: **35a:** Reload User List
+    
+    UI -> Service: **36a:** GetUsersAsync() [REFRESH]
+    activate Service
+    
+    Service -> DbContext: **37a:** Query users (same as Phase 1)
+    activate DbContext
+    
+    DbContext -> DB: **38a:** SELECT * FROM users WHERE...\nJOIN student_profiles\nJOIN teacher_profiles
+    activate DB
+    
+    DB --> DbContext: **39a:** User records (John now has is_active=false)
+    deactivate DB
+    
+    DbContext --> Service: **40a:** IEnumerable<User>
+    deactivate DbContext
+    
+    Service -> Service: **41a:** Map to DTOs\n(John's Status now = "Blocked")
+    
+    Service --> UI: **42a:** Updated IEnumerable<UserRowDto>
+    deactivate Service
+    
+    UI -> UI: **43a:** Update Table\nusers = result.ToList()
+    
+    UI -> UI: **44a:** Highlight blocked user row\n(different styling)
+    note right of UI
+      CSS class: um-row--blocked
+      Visual indicator: red/lock icon
+    end note
+    
+    UI -> UI: **45a:** Display Toast Notification\n"User blocked successfully"
+    
+    UI --> Admin: **46a:** Show Updated User List\nwith John Smith in "Blocked" status
+    
+else ❌ Block Failed
+    UI -> UI: **34b:** Show Error Toast\nformError = response.Message
+    
+    UI --> Admin: **35b:** Display Error:\n"User not found" or other error
+end
+
+deactivate UI
+
+' ════════════════════════════════░════════════════════
+' PHASE 6: UNBLOCK (SIMILAR PROCESS)
+' ════════════════════════════════░════════════════════
+
+rect rgb(200, 240, 200)
+    Note over Admin, DB
+      **PHASE 6: UNBLOCK USER (Similar Process)**
+      When admin clicks "Unblock" on blocked user:
+      - Steps 13-20 similar (different modal)
+      - ChangeUserStatusAsync(userId, **true**, reason)
+      - isActive set to **true** instead of false
+      - User status returns to "Active"
+    end note
+end
+
+' ════════════════════════════════░════════════════════
+' LEGEND
+' ════════════════════════════════░════════════════════
+
+note over Admin, DB
+  **LEGEND:**
+  
+  **Key Transitions:**
+  ① Admin triggers action
+  ② UI calls Service method
+  ③ Service queries/updates database via DbContext
+  ④ EF Core translates to SQL
+  ⑤ PostgreSQL executes and returns result
+  ⑥ Response flows back to UI
+  ⑦ UI updates and redisplays data
+  
+  **Key Objects:**
+  • User: { Id, Email, IsActive, DeletedAt, Role }
+  • UserRowDto: { Id, Email, Role, Status, Name }
+  • ApiResponse<T>: { Success, Message, Data }
+  
+  **Key Method:**
+  UserManagementService.ChangeUserStatusAsync(userId, isActive, reason, notes)
+  
+  **Key Database:**
+  TABLE users(
+    id BIGINT PRIMARY KEY,
+    email VARCHAR(255) UNIQUE,
+    is_active BOOLEAN DEFAULT true,
+    deleted_at TIMESTAMPTZ NULL,
+    role VARCHAR(50),
+    updated_at TIMESTAMPTZ,
+    ...
+  )
+end note
+
+@enduml

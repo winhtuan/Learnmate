@@ -1,0 +1,178 @@
+@startuml admin_user_account_management_activity
+
+title User Management: Block/Unlock Account - Activity Diagram
+note top
+  **Scenario:** Admin blocks or unblocks a user account (Teacher/Student/Admin)
+  due to violation, policy breach, or appeal approval
+end note
+
+start
+
+:Admin Access User Management Page (/admin/users);
+note right
+  Authorized role: ADMIN only
+end note
+
+:UI Loads: GetUsersAsync(roleFilter, statusFilter, searchQuery);
+note right
+  Parameters:
+  - roleFilter: "TEACHER", "STUDENT", "ADMIN"
+  - statusFilter: "Active", "Blocked"
+  - searchQuery: email, name, or user ID
+end note
+
+:📊 Display User List Table;
+note right
+  Columns: User ID, Name, Role, Status, Last Login, Actions
+  Stats cards: Total Users, Active Users, Blocked Users
+end note
+
+:Admin Search/Filter Users;
+
+:Admin Selects User from Table;
+
+split
+  :--- BLOCK USER PATH ---,
+  :Admin Clicks "Block" Button on User Row;
+  :UI Function: OpenBlockModal(userRowDto);
+  :📝 Display Block Modal with Form;
+  :Admin Enters Block Reason (required);
+  note right
+    Typical reasons:
+    - Teacher Violation
+    - Account Abuse
+    - Policy Breach
+    - Compliance Rejection
+  end note
+  
+  :Admin Enters Optional Notes;
+  :Admin Clicks "Confirm Block" Button;
+  
+  :🔍 Validation Check;
+  if (blockReason != empty?) then
+    :✅ Validation PASSED;
+    :🔄 Call ChangeUserStatusAsync(
+      userId = selectedUser.Id,
+      isActive = **false**,
+      reason = blockReason,
+      notes = blockNotes);
+    note right
+      Service Method Location:
+      BusinessLogicLayer/Services/UserManagementService.cs
+    end note
+    
+    :🔎 Service: Find User in Database;
+    :db.Users.FindAsync(userId);
+    
+    if (User Found?) then
+      :✅ User Record Retrieved;
+      :⚙️ Update User Entity;
+      :Set user.IsActive = **false**;
+      :Update user.UpdatedAt = DateTime.UtcNow();
+      
+      :💾 Save Changes to Database;
+      :db.Users.Update(user);
+      :await db.SaveChangesAsync();
+      note right
+        SQL: UPDATE users
+             SET is_active = false,
+                 updated_at = NOW()
+             WHERE id = {userId}
+      end note
+      
+      :✅ Return ApiResponse.Ok();
+      :Message: "User blocked successfully.";
+    else
+      :❌ User Not Found;
+      :Return ApiResponse.Fail();
+      :Message: "User not found.";
+    endif
+    
+  else
+    :❌ Validation FAILED;
+    :⚠️ Display Error Message;
+    :Message: "Please select a reason for blocking.";
+  endif
+
+split again
+  :--- UNBLOCK USER PATH ---,
+  :Admin Clicks "Unblock" Button on Blocked User;
+  :UI Function: OpenUnblockModal(userRowDto);
+  :📝 Display Unblock Modal with Form;
+  :Admin Enters Unblock Reason (required);
+  note right
+    Typical reasons:
+    - Appeal Approved
+    - Temporary Suspension Expired
+    - Verification Received
+  end note
+  
+  :Admin Clicks "Confirm Unblock" Button;
+  
+  :🔍 Validation Check;
+  if (unblockReason != empty?) then
+    :✅ Validation PASSED;
+    :🔄 Call ChangeUserStatusAsync(
+      userId = selectedUser.Id,
+      isActive = **true**,
+      reason = unblockReason);
+    
+    :🔎 Service: Find User in Database;
+    :db.Users.FindAsync(userId);
+    
+    if (User Found?) then
+      :✅ User Record Retrieved;
+      :⚙️ Update User Entity;
+      :Set user.IsActive = **true**;
+      :Update user.UpdatedAt = DateTime.UtcNow();
+      
+      :💾 Save Changes to Database;
+      :db.Users.Update(user);
+      :await db.SaveChangesAsync();
+      note right
+        SQL: UPDATE users
+             SET is_active = true,
+                 updated_at = NOW()
+             WHERE id = {userId}
+      end note
+      
+      :✅ Return ApiResponse.Ok();
+      :Message: "User unblocked successfully.";
+    else
+      :❌ User Not Found;
+      :Return ApiResponse.Fail();
+      :Message: "User not found.";
+    endif
+    
+  else
+    :❌ Validation FAILED;
+    :⚠️ Display Error Message;
+    :Message: "Please select a reason for unblocking.";
+  endif
+
+end split
+
+:--- COMMON CONTINUATION ---,
+
+:🔄 Close Modal: CloseAllModals();
+
+:🔄 Reload User List;
+:Call GetUsersAsync(filterRole, filterStatus, searchQuery);
+note right
+  Fetches updated user records with new status
+end note
+
+:📊 Update Table with Latest Data;
+note right
+  - User status now shows "Blocked" or "Active"
+  - Blocked users displayed with different styling
+  - Action buttons updated accordingly
+end note
+
+:🎉 Display Success Toast Message;
+
+:✅ Admin Sees Updated User Management Page;
+
+stop
+
+@enduml
