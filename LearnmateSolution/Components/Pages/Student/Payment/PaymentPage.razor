@@ -1,0 +1,261 @@
+@page "/student/payment/{InvoiceId:long}"
+@layout DashboardLayout
+@rendermode InteractiveServer
+@using BusinessLogicLayer.DTOs
+@using BusinessLogicLayer.DTOs.Payment
+@using BusinessObject.Enum
+@using LearnmateSolution.Components.Layout
+@inject IHttpClientFactory HttpClientFactory
+@inject NavigationManager Nav
+@inject UserSessionService Session
+@inject IJSRuntime JS
+
+<PageTitle>Thanh toán - LearnMate</PageTitle>
+
+<HeadContent>
+    <link rel="stylesheet" href="/css/payment/payment.css" />
+</HeadContent>
+
+@if (_loading)
+{
+    <div class="payment-loading">
+        <span class="material-symbols-outlined text-5xl text-indigo-300 mb-3">hourglass_top</span>
+        <p>Đang tải thông tin thanh toán...</p>
+    </div>
+}
+else if (_invoice == null)
+{
+    <div class="payment-error-state">
+        <span class="material-symbols-outlined text-5xl text-rose-300 mb-3">error_outline</span>
+        <p>Không tìm thấy hoá đơn.</p>
+        <a href="/student/find-tutor" class="payment-link">Quay lại tìm lớp</a>
+    </div>
+}
+else if (_invoice.Status != InvoiceStatus.PENDING)
+{
+    <div class="payment-done-state">
+        <span class="material-symbols-outlined text-5xl text-emerald-400 mb-3">check_circle</span>
+        <p class="font-semibold text-slate-800">Hoá đơn đã được xử lý (@_invoice.Status)</p>
+        <a href="/classes/@_invoice.ClassId" class="payment-link mt-2">Vào lớp học</a>
+    </div>
+}
+else
+{
+    <div class="payment-container">
+        <!-- Header -->
+        <div class="payment-header">
+            <button @onclick="GoBack" class="payment-back">
+                <span class="material-symbols-outlined text-[18px]">arrow_back</span>
+                Quay lại
+            </button>
+            <h2>Xác nhận đăng ký lớp học</h2>
+        </div>
+
+        <!-- Summary -->
+        <div class="payment-summary">
+            <div class="summary-row">
+                <span class="summary-label">Lớp học</span>
+                <span class="summary-value font-semibold">@_invoice.ClassName</span>
+            </div>
+            <div class="summary-row">
+                <span class="summary-label">Gia sư</span>
+                <span class="summary-value">@_invoice.TeacherName</span>
+            </div>
+            @if (!string.IsNullOrEmpty(_invoice.Schedule))
+            {
+                <div class="summary-row">
+                    <span class="summary-label">Lịch học</span>
+                    <span class="summary-value">@_invoice.Schedule</span>
+                </div>
+            }
+            <div class="summary-row summary-total">
+                <span class="summary-label">Học phí</span>
+                <span class="summary-value text-indigo-600 text-xl font-bold">@_invoice.Amount.ToString("N0") VND</span>
+            </div>
+        </div>
+
+        <!-- Payment method -->
+        <div class="payment-method-section">
+            <h3>Phương thức thanh toán</h3>
+            <div class="method-list">
+                @foreach (var m in _methods)
+                {
+                    <label class="method-card @(_selectedMethod == m.Value ? "selected" : "")">
+                        <input type="radio" name="method" @onchange="() => _selectedMethod = m.Value" />
+                        <span class="material-symbols-outlined text-[20px]">@m.Icon</span>
+                        @m.Label
+                    </label>
+                }
+            </div>
+        </div>
+
+        <!-- Error -->
+        @if (!string.IsNullOrEmpty(_errorMessage))
+        {
+            <div class="payment-error-msg">
+                <span class="material-symbols-outlined text-[16px]">error</span>
+                @_errorMessage
+            </div>
+        }
+
+        <!-- Actions -->
+        <div class="payment-actions">
+            <button class="btn-cancel" @onclick="HandleCancel" disabled="@_processing">
+                Huỷ
+            </button>
+            <button class="btn-pay" @onclick="HandlePayment" disabled="@_processing">
+                @(_processing ? "Đang xử lý..." : $"Thanh toán {_invoice.Amount:N0} VND")
+            </button>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public long InvoiceId { get; set; }
+
+    private record MethodOption(PaymentMethod Value, string Label, string Icon);
+
+    private static readonly MethodOption[] _methods =
+    [
+        new(PaymentMethod.VNPAY,         "VNPay",          "credit_card"),
+        new(PaymentMethod.MOMO,          "MoMo",           "smartphone"),
+        new(PaymentMethod.BANK_TRANSFER, "Chuyển khoản",   "account_balance"),
+    ];
+
+    private InvoiceDetailDto? _invoice;
+    private PaymentMethod     _selectedMethod = PaymentMethod.VNPAY;
+    private bool              _loading        = true;
+    private bool              _processing;
+    private string            _errorMessage   = "";
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        await LoadSessionAsync();
+
+        if (!Session.IsAuthenticated || Session.Role != "STUDENT")
+        {
+            Nav.NavigateTo("/login", replace: true);
+            return;
+        }
+
+        await LoadInvoiceAsync();
+    }
+
+    private async Task LoadSessionAsync()
+    {
+        if (Session.IsAuthenticated) return;
+        var email  = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_email");
+        var role   = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_role");
+        var token  = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_token");
+        var avatar = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_avatar");
+        var uidStr = await JS.InvokeAsync<string?>("sessionStorage.getItem", "lm_userid");
+        if (!string.IsNullOrEmpty(email) && !string.IsNullOrEmpty(role) && !string.IsNullOrEmpty(token))
+        {
+            var uid = long.TryParse(uidStr, out var id) ? id : 0;
+            Session.SetSession(email, role, token, avatar, uid);
+        }
+    }
+
+    private async Task LoadInvoiceAsync()
+    {
+        try
+        {
+            var http = HttpClientFactory.CreateClient("learnmate");
+            http.BaseAddress = new Uri(Nav.BaseUri);
+            http.DefaultRequestHeaders.Authorization =
+                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", Session.AccessToken);
+
+            var resp = await http.GetFromJsonAsync<ApiResponse<InvoiceDetailDto>>(
+                $"api/enrollment/invoice/{InvoiceId}");
+            _invoice = resp?.Data;
+        }
+        catch
+        {
+            _errorMessage = "Không thể tải thông tin hoá đơn.";
+        }
+        finally
+        {
+            _loading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task HandlePayment()
+    {
+        _processing   = true;
+        _errorMessage = "";
+        StateHasChanged();
+
+        try
+        {
+            var http = HttpClientFactory.CreateClient("learnmate");
+            http.BaseAddress = new Uri(Nav.BaseUri);
+            http.DefaultRequestHeaders.Authorization =
+                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", Session.AccessToken);
+
+            if (_selectedMethod == PaymentMethod.VNPAY)
+            {
+                // Gọi API initiate-vnpay → nhận URL sandbox → redirect ra ngoài
+                var resp   = await http.PostAsync($"api/enrollment/{InvoiceId}/initiate-vnpay", null);
+                var result = await resp.Content.ReadFromJsonAsync<ApiResponse<string>>();
+
+                if (result?.Success == true && !string.IsNullOrEmpty(result.Data))
+                {
+                    // Redirect bằng JS vì NavigationManager không hỗ trợ external URL
+                    await JS.InvokeVoidAsync("window.location.replace", result.Data);
+                    return; // Trang sẽ chuyển sang VNPay Sandbox
+                }
+
+                _errorMessage = result?.Message ?? "Không thể tạo liên kết thanh toán VNPay.";
+            }
+            else
+            {
+                // Mock cho MoMo / Chuyển khoản (dev testing)
+                var request = new ConfirmPaymentRequestDto(InvoiceId, _selectedMethod, "SUCCESS");
+                var resp    = await http.PostAsJsonAsync("api/enrollment/confirm", request);
+                var result  = await resp.Content.ReadFromJsonAsync<ApiResponse<ConfirmPaymentResponseDto>>();
+
+                if (result?.Data?.Success == true && result.Data.ClassId.HasValue)
+                {
+                    Nav.NavigateTo($"/classes/{result.Data.ClassId.Value}");
+                    return;
+                }
+
+                _errorMessage = result?.Data?.Message ?? "Thanh toán thất bại. Vui lòng thử lại.";
+            }
+        }
+        catch
+        {
+            _errorMessage = "Lỗi kết nối. Vui lòng thử lại.";
+        }
+        finally
+        {
+            _processing = false;
+            StateHasChanged();
+        }
+    }
+
+    private void GoBack() => Nav.NavigateTo("/student/find-tutor");
+
+
+    private async Task HandleCancel()
+    {
+        _processing = true;
+        StateHasChanged();
+
+        try
+        {
+            var http = HttpClientFactory.CreateClient("learnmate");
+            http.BaseAddress = new Uri(Nav.BaseUri);
+            http.DefaultRequestHeaders.Authorization =
+                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", Session.AccessToken);
+
+            await http.PostAsync($"api/enrollment/invoice/{InvoiceId}/cancel", null);
+        }
+        finally
+        {
+            Nav.NavigateTo("/student/find-tutor");
+        }
+    }
+}

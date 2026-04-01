@@ -34,6 +34,13 @@ public class Payment : SoftDeletableEntity
     [MaxLength(100)]
     public string? VnpTransactionNo { get; set; }
 
+    /// <summary>Phương thức thanh toán (enrollment flow).</summary>
+    public PaymentMethod? Method { get; set; }
+
+    /// <summary>Lý do thất bại (enrollment flow).</summary>
+    [MaxLength(500)]
+    public string? FailureReason { get; set; }
+
     /// <summary>Thông tin ngân hàng thanh toán</summary>
     [MaxLength(50)]
     public string? BankCode { get; set; }

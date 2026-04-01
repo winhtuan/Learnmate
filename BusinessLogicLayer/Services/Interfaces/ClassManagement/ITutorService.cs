@@ -16,4 +16,7 @@ public interface ITutorService
 
     Task<ApiResponse<bool>> CancelBookingAsync(
         long bookingId, long studentId, CancellationToken ct = default);
+
+    Task<ApiResponse<IReadOnlyList<ClassListingDto>>> GetClassListingsAsync(
+        string? subject, decimal? maxRate, CancellationToken ct = default);
 }

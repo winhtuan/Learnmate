@@ -3,6 +3,7 @@ using System;
 using DataAccessLayer.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace DataAccessLayer.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260331172818_UpdateSeedDurations")]
+    partial class UpdateSeedDurations
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -330,12 +333,6 @@ namespace DataAccessLayer.Migrations
                         .HasColumnType("character varying(200)")
                         .HasColumnName("name");
 
-                    b.Property<decimal>("Price")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("numeric(12,2)")
-                        .HasDefaultValue(0m)
-                        .HasColumnName("price");
-
                     b.Property<DateTime?>("StartDate")
                         .HasColumnType("timestamp without time zone")
                         .HasColumnName("start_date");
@@ -390,7 +387,6 @@ namespace DataAccessLayer.Migrations
                             EndDate = new DateTime(2026, 6, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             MaxStudents = 20,
                             Name = "Toán 12 — Luyện thi THPT",
-                            Price = 1500000m,
                             StartDate = new DateTime(2026, 3, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Status = "ACTIVE",
                             Subject = "Toán",
@@ -406,7 +402,6 @@ namespace DataAccessLayer.Migrations
                             Description = "Cross-Platform Mobile App Development With .NET MAUI",
                             MaxStudents = 30,
                             Name = "PRN222",
-                            Price = 2000000m,
                             Status = "ACTIVE",
                             Subject = "PRN222",
                             TeacherId = 2L,
@@ -420,7 +415,6 @@ namespace DataAccessLayer.Migrations
                             Description = "Unity Game Development — Scripting & Physics",
                             MaxStudents = 30,
                             Name = "PRU213",
-                            Price = 2000000m,
                             Status = "ACTIVE",
                             Subject = "PRU213",
                             TeacherId = 2L,
@@ -435,7 +429,6 @@ namespace DataAccessLayer.Migrations
                             EndDate = new DateTime(2026, 6, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             MaxStudents = 20,
                             Name = "Toán 12 — Luyện thi THPT Quốc Gia",
-                            Price = 1500000m,
                             StartDate = new DateTime(2026, 3, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Status = "ACTIVE",
                             Subject = "Mathematics",
@@ -452,7 +445,6 @@ namespace DataAccessLayer.Migrations
                             EndDate = new DateTime(2026, 6, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             MaxStudents = 15,
                             Name = "Vật Lý 11 — Điện và Từ Trường",
-                            Price = 1500000m,
                             StartDate = new DateTime(2026, 3, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Status = "ACTIVE",
                             Subject = "Science",
@@ -469,7 +461,6 @@ namespace DataAccessLayer.Migrations
                             EndDate = new DateTime(2026, 8, 15, 0, 0, 0, 0, DateTimeKind.Utc),
                             MaxStudents = 18,
                             Name = "Hóa Học 12 — Hữu Cơ & Vô Cơ",
-                            Price = 1500000m,
                             StartDate = new DateTime(2026, 4, 15, 0, 0, 0, 0, DateTimeKind.Utc),
                             Status = "ACTIVE",
                             Subject = "Science",
@@ -486,7 +477,6 @@ namespace DataAccessLayer.Migrations
                             EndDate = new DateTime(2026, 8, 15, 0, 0, 0, 0, DateTimeKind.Utc),
                             MaxStudents = 15,
                             Name = "Sinh Học 11 — Sinh Lý Thực Vật & Động Vật",
-                            Price = 1500000m,
                             StartDate = new DateTime(2026, 4, 15, 0, 0, 0, 0, DateTimeKind.Utc),
                             Status = "ACTIVE",
                             Subject = "Science",
@@ -503,7 +493,6 @@ namespace DataAccessLayer.Migrations
                             EndDate = new DateTime(2026, 8, 10, 0, 0, 0, 0, DateTimeKind.Utc),
                             MaxStudents = 12,
                             Name = "IELTS Preparation — Band 6.5+",
-                            Price = 2500000m,
                             StartDate = new DateTime(2026, 2, 10, 0, 0, 0, 0, DateTimeKind.Utc),
                             Status = "ACTIVE",
                             Subject = "English",
@@ -520,7 +509,6 @@ namespace DataAccessLayer.Migrations
                             EndDate = new DateTime(2026, 8, 10, 0, 0, 0, 0, DateTimeKind.Utc),
                             MaxStudents = 15,
                             Name = "English Communication — Intermediate",
-                            Price = 2000000m,
                             StartDate = new DateTime(2026, 2, 10, 0, 0, 0, 0, DateTimeKind.Utc),
                             Status = "ACTIVE",
                             Subject = "English",
@@ -537,7 +525,6 @@ namespace DataAccessLayer.Migrations
                             EndDate = new DateTime(2026, 6, 20, 0, 0, 0, 0, DateTimeKind.Utc),
                             MaxStudents = 20,
                             Name = "Python Cơ Bản đến Nâng Cao",
-                            Price = 2000000m,
                             StartDate = new DateTime(2026, 5, 5, 0, 0, 0, 0, DateTimeKind.Utc),
                             Status = "ACTIVE",
                             Subject = "Coding",
@@ -554,7 +541,6 @@ namespace DataAccessLayer.Migrations
                             EndDate = new DateTime(2026, 6, 20, 0, 0, 0, 0, DateTimeKind.Utc),
                             MaxStudents = 15,
                             Name = "Web Development với ASP.NET Core",
-                            Price = 2000000m,
                             StartDate = new DateTime(2026, 5, 5, 0, 0, 0, 0, DateTimeKind.Utc),
                             Status = "ACTIVE",
                             Subject = "Coding",
@@ -571,7 +557,6 @@ namespace DataAccessLayer.Migrations
                             EndDate = new DateTime(2026, 5, 20, 0, 0, 0, 0, DateTimeKind.Utc),
                             MaxStudents = 20,
                             Name = "Ngữ Văn 12 — Nghị Luận Xã Hội & Văn Học",
-                            Price = 1200000m,
                             StartDate = new DateTime(2026, 3, 20, 0, 0, 0, 0, DateTimeKind.Utc),
                             Status = "ACTIVE",
                             Subject = "English",
@@ -588,7 +573,6 @@ namespace DataAccessLayer.Migrations
                             EndDate = new DateTime(2026, 5, 20, 0, 0, 0, 0, DateTimeKind.Utc),
                             MaxStudents = 18,
                             Name = "Lịch Sử 12 — Ôn thi THPT Quốc Gia",
-                            Price = 1200000m,
                             StartDate = new DateTime(2026, 3, 20, 0, 0, 0, 0, DateTimeKind.Utc),
                             Status = "ACTIVE",
                             Subject = "English",
@@ -605,7 +589,6 @@ namespace DataAccessLayer.Migrations
                             EndDate = new DateTime(2026, 9, 30, 0, 0, 0, 0, DateTimeKind.Utc),
                             MaxStudents = 25,
                             Name = "Toán Cao Cấp A1 & A2 cho Sinh viên",
-                            Price = 1800000m,
                             StartDate = new DateTime(2026, 7, 10, 0, 0, 0, 0, DateTimeKind.Utc),
                             Status = "ACTIVE",
                             Subject = "Mathematics",
@@ -622,7 +605,6 @@ namespace DataAccessLayer.Migrations
                             EndDate = new DateTime(2026, 9, 30, 0, 0, 0, 0, DateTimeKind.Utc),
                             MaxStudents = 20,
                             Name = "Thống Kê Xác Suất & Ứng Dụng",
-                            Price = 1800000m,
                             StartDate = new DateTime(2026, 7, 10, 0, 0, 0, 0, DateTimeKind.Utc),
                             Status = "ACTIVE",
                             Subject = "Mathematics",
@@ -639,7 +621,6 @@ namespace DataAccessLayer.Migrations
                             EndDate = new DateTime(2026, 11, 30, 0, 0, 0, 0, DateTimeKind.Utc),
                             MaxStudents = 12,
                             Name = "Tiếng Anh Giao Tiếp — Beginner A1-A2",
-                            Price = 1500000m,
                             StartDate = new DateTime(2026, 8, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Status = "ACTIVE",
                             Subject = "English",
@@ -656,7 +637,6 @@ namespace DataAccessLayer.Migrations
                             EndDate = new DateTime(2026, 11, 30, 0, 0, 0, 0, DateTimeKind.Utc),
                             MaxStudents = 10,
                             Name = "Tiếng Pháp Cơ Bản A1-A2 (DELF)",
-                            Price = 1500000m,
                             StartDate = new DateTime(2026, 8, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Status = "ACTIVE",
                             Subject = "English",
@@ -673,7 +653,6 @@ namespace DataAccessLayer.Migrations
                             EndDate = new DateTime(2026, 5, 15, 0, 0, 0, 0, DateTimeKind.Utc),
                             MaxStudents = 20,
                             Name = "Vật Lý 12 — Luyện thi THPT Quốc Gia",
-                            Price = 1500000m,
                             StartDate = new DateTime(2026, 1, 15, 0, 0, 0, 0, DateTimeKind.Utc),
                             Status = "ACTIVE",
                             Subject = "Science",
@@ -690,7 +669,6 @@ namespace DataAccessLayer.Migrations
                             EndDate = new DateTime(2026, 5, 15, 0, 0, 0, 0, DateTimeKind.Utc),
                             MaxStudents = 18,
                             Name = "Hóa Học 11 — Hóa Hữu Cơ Cơ Bản",
-                            Price = 1500000m,
                             StartDate = new DateTime(2026, 1, 15, 0, 0, 0, 0, DateTimeKind.Utc),
                             Status = "ACTIVE",
                             Subject = "Science",
@@ -707,7 +685,6 @@ namespace DataAccessLayer.Migrations
                             EndDate = new DateTime(2026, 6, 15, 0, 0, 0, 0, DateTimeKind.Utc),
                             MaxStudents = 10,
                             Name = "Toán Chuyên — Luyện thi Olympic & Đại học",
-                            Price = 2500000m,
                             StartDate = new DateTime(2026, 4, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Status = "ACTIVE",
                             Subject = "Mathematics",
@@ -724,7 +701,6 @@ namespace DataAccessLayer.Migrations
                             EndDate = new DateTime(2026, 6, 15, 0, 0, 0, 0, DateTimeKind.Utc),
                             MaxStudents = 20,
                             Name = "Toán 10 — Đại Số, Hình Học & Lượng Giác",
-                            Price = 1200000m,
                             StartDate = new DateTime(2026, 4, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Status = "ACTIVE",
                             Subject = "Mathematics",
@@ -741,7 +717,6 @@ namespace DataAccessLayer.Migrations
                             EndDate = new DateTime(2027, 2, 28, 0, 0, 0, 0, DateTimeKind.Utc),
                             MaxStudents = 15,
                             Name = "Lập Trình C# — .NET Full Stack Developer",
-                            Price = 3000000m,
                             StartDate = new DateTime(2026, 9, 5, 0, 0, 0, 0, DateTimeKind.Utc),
                             Status = "ACTIVE",
                             Subject = "Coding",
@@ -758,7 +733,6 @@ namespace DataAccessLayer.Migrations
                             EndDate = new DateTime(2027, 2, 28, 0, 0, 0, 0, DateTimeKind.Utc),
                             MaxStudents = 20,
                             Name = "Toán Rời Rạc cho Sinh viên CNTT",
-                            Price = 1800000m,
                             StartDate = new DateTime(2026, 9, 5, 0, 0, 0, 0, DateTimeKind.Utc),
                             Status = "ACTIVE",
                             Subject = "Mathematics",
@@ -918,49 +892,6 @@ namespace DataAccessLayer.Migrations
                         });
                 });
 
-            modelBuilder.Entity("BusinessObject.Models.ClassMessage", b =>
-                {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint")
-                        .HasColumnName("id");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
-
-                    b.Property<long>("ClassId")
-                        .HasColumnType("bigint")
-                        .HasColumnName("class_id");
-
-                    b.Property<string>("Content")
-                        .IsRequired()
-                        .HasMaxLength(4000)
-                        .HasColumnType("character varying(4000)")
-                        .HasColumnName("content");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("created_at");
-
-                    b.Property<long>("SenderId")
-                        .HasColumnType("bigint")
-                        .HasColumnName("sender_id");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("updated_at");
-
-                    b.HasKey("Id")
-                        .HasName("pk_class_messages");
-
-                    b.HasIndex("ClassId")
-                        .HasDatabaseName("ix_class_messages_class_id");
-
-                    b.HasIndex("SenderId")
-                        .HasDatabaseName("ix_class_messages_sender_id");
-
-                    b.ToTable("class_messages", (string)null);
-                });
-
             modelBuilder.Entity("BusinessObject.Models.Conversation", b =>
                 {
                     b.Property<long>("Id")
@@ -1104,10 +1035,6 @@ namespace DataAccessLayer.Migrations
                         .HasDefaultValue("PENDING")
                         .HasColumnName("status");
 
-                    b.Property<long?>("StudentId")
-                        .HasColumnType("bigint")
-                        .HasColumnName("student_id");
-
                     b.Property<long>("TeacherId")
                         .HasColumnType("bigint")
                         .HasColumnName("teacher_id");
@@ -1125,9 +1052,6 @@ namespace DataAccessLayer.Migrations
 
                     b.HasIndex("ClassId")
                         .HasDatabaseName("ix_invoices_class_id");
-
-                    b.HasIndex("StudentId")
-                        .HasDatabaseName("ix_invoices_student_id");
 
                     b.HasIndex("TeacherId")
                         .HasDatabaseName("ix_invoices_teacher_id");
@@ -1453,15 +1377,6 @@ namespace DataAccessLayer.Migrations
                         .HasColumnType("numeric(12,2)")
                         .HasColumnName("amount");
 
-                    b.Property<string>("BankCode")
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
-                        .HasColumnName("bank_code");
-
-                    b.Property<long?>("BookingId")
-                        .HasColumnType("bigint")
-                        .HasColumnName("booking_id");
-
                     b.Property<long>("ClassId")
                         .HasColumnType("bigint")
                         .HasColumnName("class_id");
@@ -1474,22 +1389,9 @@ namespace DataAccessLayer.Migrations
                         .HasColumnType("timestamp without time zone")
                         .HasColumnName("deleted_at");
 
-                    b.Property<DateTime?>("ExpiredAt")
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("expired_at");
-
-                    b.Property<string>("FailureReason")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)")
-                        .HasColumnName("failure_reason");
-
                     b.Property<long?>("InvoiceId")
                         .HasColumnType("bigint")
                         .HasColumnName("invoice_id");
-
-                    b.Property<string>("Method")
-                        .HasColumnType("text")
-                        .HasColumnName("method");
 
                     b.Property<DateTime?>("PaidAt")
                         .HasColumnType("timestamp without time zone")
@@ -1514,16 +1416,6 @@ namespace DataAccessLayer.Migrations
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp without time zone")
                         .HasColumnName("updated_at");
-
-                    b.Property<string>("VnpTransactionNo")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)")
-                        .HasColumnName("vnp_transaction_no");
-
-                    b.Property<string>("VnpTxnRef")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)")
-                        .HasColumnName("vnp_txn_ref");
 
                     b.HasKey("Id")
                         .HasName("pk_payments");
@@ -2894,15 +2786,6 @@ namespace DataAccessLayer.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
 
-                    b.Property<string>("CancelReason")
-                        .HasMaxLength(1000)
-                        .HasColumnType("character varying(1000)")
-                        .HasColumnName("cancel_reason");
-
-                    b.Property<long?>("ClassId")
-                        .HasColumnType("bigint")
-                        .HasColumnName("class_id");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp without time zone")
                         .HasColumnName("created_at");
@@ -2915,10 +2798,6 @@ namespace DataAccessLayer.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)")
                         .HasColumnName("note");
-
-                    b.Property<DateTime?>("PaymentDeadline")
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("payment_deadline");
 
                     b.Property<DateTime>("RequestedEndTime")
                         .HasColumnType("timestamp without time zone")
@@ -2951,9 +2830,6 @@ namespace DataAccessLayer.Migrations
 
                     b.HasKey("Id")
                         .HasName("pk_tutor_booking_requests");
-
-                    b.HasIndex("ClassId")
-                        .HasDatabaseName("ix_tutor_booking_requests_class_id");
 
                     b.HasIndex("ResultClassId")
                         .HasDatabaseName("ix_tutor_booking_requests_result_class_id");
@@ -3357,27 +3233,6 @@ namespace DataAccessLayer.Migrations
                     b.Navigation("Student");
                 });
 
-            modelBuilder.Entity("BusinessObject.Models.ClassMessage", b =>
-                {
-                    b.HasOne("BusinessObject.Models.Class", "Class")
-                        .WithMany()
-                        .HasForeignKey("ClassId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_class_messages_classes_class_id");
-
-                    b.HasOne("BusinessObject.Models.User", "Sender")
-                        .WithMany()
-                        .HasForeignKey("SenderId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("fk_class_messages_users_sender_id");
-
-                    b.Navigation("Class");
-
-                    b.Navigation("Sender");
-                });
-
             modelBuilder.Entity("BusinessObject.Models.Conversation", b =>
                 {
                     b.HasOne("BusinessObject.Models.User", "ParticipantA")
@@ -3670,11 +3525,6 @@ namespace DataAccessLayer.Migrations
 
             modelBuilder.Entity("BusinessObject.Models.TutorBookingRequest", b =>
                 {
-                    b.HasOne("BusinessObject.Models.Class", "LinkedClass")
-                        .WithMany()
-                        .HasForeignKey("ClassId")
-                        .HasConstraintName("fk_tutor_booking_requests_classes_class_id");
-
                     b.HasOne("BusinessObject.Models.Class", "ResultClass")
                         .WithMany()
                         .HasForeignKey("ResultClassId")
@@ -3694,8 +3544,6 @@ namespace DataAccessLayer.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_tutor_booking_requests_users_teacher_id");
-
-                    b.Navigation("LinkedClass");
 
                     b.Navigation("ResultClass");
 

@@ -10,6 +10,9 @@ public class Invoice : SoftDeletableEntity
 {
     public long TeacherId { get; set; }
 
+    /// <summary>Student đăng ký lớp học — null nếu là invoice teacher payout.</summary>
+    public long? StudentId { get; set; }
+
     public long ClassId { get; set; }
 
     [Required]

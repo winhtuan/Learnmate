@@ -27,7 +27,10 @@ internal sealed class TeacherProfileConfiguration : IEntityTypeConfiguration<Tea
         builder.Property(p => p.RatingAvg).HasColumnType("numeric(5,2)");
         builder.Property(p => p.RatingAvg).HasDefaultValue(0m);
         builder.Property(p => p.TotalRatingCount).HasDefaultValue(0);
-        builder.Property(p => p.Status).HasConversion<string>().HasDefaultValue(ComplianceStatus.PENDING);
+        builder
+            .Property(p => p.Status)
+            .HasConversion<string>()
+            .HasDefaultValue(ComplianceStatus.PENDING);
 
         builder.ToTable(t =>
         {

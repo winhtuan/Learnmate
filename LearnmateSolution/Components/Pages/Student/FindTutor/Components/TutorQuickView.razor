@@ -43,6 +43,14 @@ else
                 <span class="px-2.5 py-0.5 text-xs bg-indigo-50 text-indigo-700 rounded-md font-medium border border-indigo-100">@subject</span>
             }
         </div>
+
+        @if (Tutor.StartDate.HasValue && Tutor.EndDate.HasValue && Tutor.TotalSessions.HasValue)
+        {
+            <div class="flex items-center justify-center gap-1.5 text-xs text-slate-600 mt-2 bg-slate-50 border border-slate-100 px-3 py-1.5 rounded-lg w-fit">
+                <span class="material-symbols-outlined text-[16px] text-slate-400">calendar_month</span>
+                <span class="font-medium">Từ @Tutor.StartDate.Value.ToString("dd/MM/yyyy") đến @Tutor.EndDate.Value.ToString("dd/MM/yyyy") (@Tutor.TotalSessions buổi)</span>
+            </div>
+        }
     </div>
 
     <!-- Price + Availability -->
@@ -100,28 +108,37 @@ else
                 {
                     <div class="py-2"></div>
                 }
-                else if (cell == _today.Day && _viewYear == _today.Year && _viewMonth == _today.Month)
+                else if (cell == _selectedDay)
                 {
-                    <div class="bg-indigo-600 text-white font-bold py-2 rounded-lg cursor-pointer shadow-sm shadow-indigo-300">@cell</div>
+                    <div class="bg-indigo-600 text-white font-bold py-2 rounded-lg cursor-pointer shadow-sm shadow-indigo-300" @onclick="() => SelectDay(cell)">@cell</div>
                 }
                 else if (_availableDays.Contains(cell))
                 {
-                    <div class="bg-indigo-100 text-indigo-700 font-semibold py-2 rounded-lg cursor-pointer hover:bg-indigo-200 transition-colors">@cell</div>
+                    <div class="bg-indigo-100 text-indigo-700 font-semibold py-2 rounded-lg cursor-pointer hover:bg-indigo-200 transition-colors" @onclick="() => SelectDay(cell)">@cell</div>
                 }
                 else
                 {
-                    <div class="text-slate-600 py-2 hover:bg-slate-100 rounded-lg cursor-pointer transition-colors">@cell</div>
+                    <div class="text-slate-400 py-2 rounded-lg cursor-pointer hover:bg-slate-50 transition-colors" @onclick="() => SelectDay(cell)">@cell</div>
                 }
             }
         </div>
 
-        @if (Tutor.AvailableSlots.Length > 0)
+        @if (_selectedSlots.Count > 0)
         {
-            <div class="flex flex-wrap gap-2 mt-1">
-                @foreach (var slot in Tutor.AvailableSlots)
+            <div class="flex flex-wrap gap-2 mt-2">
+                @foreach (var slot in _selectedSlots)
                 {
-                    <span class="text-xs px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 font-medium border border-emerald-200 hover:bg-emerald-100 transition-colors cursor-pointer">@slot</span>
+                    <span class="text-xs px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 font-medium border border-emerald-200 hover:bg-emerald-100 transition-colors cursor-pointer">
+                        <span class="material-symbols-outlined text-[14px] align-middle mr-1">schedule</span>
+                        @slot
+                    </span>
                 }
+            </div>
+        }
+        else if (_selectedDay is not null)
+        {
+            <div class="text-xs text-slate-400 mt-2 italic flex justify-center py-2 bg-slate-50 rounded-lg border border-slate-100">
+                No classes scheduled on this date.
             </div>
         }
     </div>
@@ -154,6 +171,8 @@ else
     private string _monthLabel = "";
     private List<int> _calendarCells = [];
     private HashSet<int> _availableDays = [];
+    private int? _selectedDay;
+    private List<string> _selectedSlots = [];
 
     protected override void OnInitialized()
     {
@@ -162,7 +181,25 @@ else
         RebuildCalendar();
     }
 
-    protected override void OnParametersSet() => RebuildCalendar();
+    protected override void OnParametersSet()
+    {
+        // When Tutor changes, reset selection
+        _selectedDay = null;
+        
+        if (Tutor?.Schedules is not null && Tutor.Schedules.Length > 0)
+        {
+            var first = Tutor.Schedules.OrderBy(s => s.StartTime).First();
+            _viewYear = first.StartTime.Year;
+            _viewMonth = first.StartTime.Month;
+        }
+        else
+        {
+            _viewYear = _today.Year;
+            _viewMonth = _today.Month;
+        }
+
+        RebuildCalendar();
+    }
 
     private void PrevMonth()
     {
@@ -190,12 +227,55 @@ else
 
         while (_calendarCells.Count % 7 != 0) _calendarCells.Add(0);
 
-        _availableDays = [.. Enumerable.Range(1, daysInMonth)
-            .Where(d =>
+        if (Tutor?.Schedules is not null)
+        {
+            _availableDays = Tutor.Schedules
+                .Where(s => s.StartTime.Year == _viewYear && s.StartTime.Month == _viewMonth)
+                .Select(s => s.StartTime.Day)
+                .ToHashSet();
+        }
+        else
+        {
+            _availableDays = [];
+        }
+
+        if (_selectedDay is null || _calendarCells.Contains(_selectedDay.Value) == false)
+        {
+            if (_availableDays.Contains(_today.Day) && _viewYear == _today.Year && _viewMonth == _today.Month)
             {
-                var dow = new DateTime(_viewYear, _viewMonth, d).DayOfWeek;
-                return dow is DayOfWeek.Monday or DayOfWeek.Wednesday or DayOfWeek.Friday;
-            })];
+                SelectDay(_today.Day);
+            }
+            else if (_availableDays.Count > 0)
+            {
+                SelectDay(_availableDays.Min());
+            }
+            else
+            {
+                _selectedDay = null;
+                _selectedSlots = [];
+            }
+        }
+        else
+        {
+            SelectDay(_selectedDay.Value);
+        }
+    }
+
+    private void SelectDay(int day)
+    {
+        _selectedDay = day;
+        if (Tutor?.Schedules is not null)
+        {
+            _selectedSlots = Tutor.Schedules
+                .Where(s => s.StartTime.Year == _viewYear && s.StartTime.Month == _viewMonth && s.StartTime.Day == day)
+                .OrderBy(s => s.StartTime)
+                .Select(s => $"{s.StartTime:HH:mm} – {s.EndTime:HH:mm}")
+                .ToList();
+        }
+        else
+        {
+            _selectedSlots = [];
+        }
     }
 
     private static (string text, string css) AvailBadge(AvailabilityStatus status) => status switch

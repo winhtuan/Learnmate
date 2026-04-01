@@ -9,9 +9,73 @@ namespace BusinessLogicLayer.Services;
 
 public class TutorService(
     ITeacherProfileRepository teacherProfileRepo,
-    ITutorBookingRepository bookingRepo
+    ITutorBookingRepository bookingRepo,
+    ITeacherCourseRepository teacherCourseRepo
 ) : ITutorService
 {
+    public async Task<ApiResponse<IReadOnlyList<ClassListingDto>>> GetClassListingsAsync(
+        string? subject, decimal? maxRate, CancellationToken ct = default)
+    {
+        var classes = await teacherCourseRepo.GetActiveClassListingsAsync(subject, maxRate, ct);
+
+        var dtos = classes.Select(c =>
+        {
+            var teacher = c.Teacher.TeacherProfile;
+            var initials = teacher?.FullName.Length >= 2
+                ? teacher.FullName[..2].ToUpper()
+                : teacher?.FullName.ToUpper() ?? "??";
+
+            return new ClassListingDto(
+                ClassId:          c.Id,
+                ClassName:        c.Name,
+                Description:      c.Description,
+                Subject:          c.Subject,
+                ScheduleSummary:  FormatScheduleSummary(c.Schedules),
+                EnrolledCount:    c.ClassMembers.Count,
+                MaxStudents:      c.MaxStudents,
+                TeacherId:        c.TeacherId,
+                TeacherName:      teacher?.FullName ?? c.Teacher.Email,
+                TeacherAvatarUrl: teacher?.AvatarUrl ?? c.Teacher.AvatarUrl ?? $"https://placehold.co/200/e0e7ff/4f46e5?text={Uri.EscapeDataString(initials)}",
+                Rating:           (double)(teacher?.RatingAvg ?? 0),
+                ReviewCount:      teacher?.TotalRatingCount ?? 0,
+                Subjects:         teacher?.Subjects ?? "",
+                HourlyRate:       teacher?.HourlyRate ?? 0,
+                Bio:              teacher?.Bio,
+                Schedules:        c.Schedules
+                                    .Where(s => s.Status != ScheduleStatus.CANCELLED)
+                                    .Select(s => new ClassScheduleDto(s.StartTime.ToLocalTime(), s.EndTime.ToLocalTime()))
+                                    .ToArray(),
+                StartDate:        c.StartDate?.ToLocalTime(),
+                EndDate:          c.EndDate?.ToLocalTime(),
+                TotalSessions:    c.TotalSessions
+            );
+        }).ToList();
+
+        return ApiResponse<IReadOnlyList<ClassListingDto>>.Ok(dtos);
+    }
+
+    private static string FormatScheduleSummary(IEnumerable<Schedule> schedules)
+    {
+        var active = schedules
+            .Where(s => s.Status != ScheduleStatus.CANCELLED)
+            .OrderBy(s => s.StartTime)
+            .ToList();
+
+        if (active.Count == 0) return "No schedule yet";
+
+        var first = active.First();
+        var startTime = first.StartTime.ToLocalTime();
+        var endTime = first.EndTime.ToLocalTime();
+
+        // Simple format: "Mon 18:00-20:00" or "Mon +2 more"
+        var day = startTime.ToString("ddd");
+        var timeRange = $"{startTime:HH:mm} – {endTime:HH:mm}";
+
+        return active.Count > 1
+            ? $"{day} {timeRange} (+{active.Count - 1} slots)"
+            : $"{day} {timeRange}";
+    }
+
     public async Task<ApiResponse<IReadOnlyList<TutorSummaryDto>>> GetTutorsAsync(
         string? subject, decimal? maxRate, CancellationToken ct = default)
     {

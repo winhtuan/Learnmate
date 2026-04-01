@@ -3,6 +3,7 @@ using System;
 using DataAccessLayer.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace DataAccessLayer.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260331162036_SeedTutorClasses")]
+    partial class SeedTutorClasses
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -309,10 +312,6 @@ namespace DataAccessLayer.Migrations
                         .HasColumnType("text")
                         .HasColumnName("description");
 
-                    b.Property<DateTime?>("EndDate")
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("end_date");
-
                     b.Property<int>("MaxStudents")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
@@ -329,16 +328,6 @@ namespace DataAccessLayer.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)")
                         .HasColumnName("name");
-
-                    b.Property<decimal>("Price")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("numeric(12,2)")
-                        .HasDefaultValue(0m)
-                        .HasColumnName("price");
-
-                    b.Property<DateTime?>("StartDate")
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("start_date");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -362,10 +351,6 @@ namespace DataAccessLayer.Migrations
                         .HasColumnType("character varying(500)")
                         .HasColumnName("thumbnail_url");
 
-                    b.Property<int?>("TotalSessions")
-                        .HasColumnType("integer")
-                        .HasColumnName("total_sessions");
-
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp without time zone")
                         .HasColumnName("updated_at");
@@ -387,16 +372,12 @@ namespace DataAccessLayer.Migrations
                             Id = 1L,
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Ôn luyện toàn bộ chương trình Toán lớp 12.",
-                            EndDate = new DateTime(2026, 6, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             MaxStudents = 20,
                             Name = "Toán 12 — Luyện thi THPT",
-                            Price = 1500000m,
-                            StartDate = new DateTime(2026, 3, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Status = "ACTIVE",
                             Subject = "Toán",
                             TeacherId = 2L,
                             ThumbnailUrl = "https://placehold.co/400?text=Course",
-                            TotalSessions = 24,
                             UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
@@ -406,7 +387,6 @@ namespace DataAccessLayer.Migrations
                             Description = "Cross-Platform Mobile App Development With .NET MAUI",
                             MaxStudents = 30,
                             Name = "PRN222",
-                            Price = 2000000m,
                             Status = "ACTIVE",
                             Subject = "PRN222",
                             TeacherId = 2L,
@@ -420,7 +400,6 @@ namespace DataAccessLayer.Migrations
                             Description = "Unity Game Development — Scripting & Physics",
                             MaxStudents = 30,
                             Name = "PRU213",
-                            Price = 2000000m,
                             Status = "ACTIVE",
                             Subject = "PRU213",
                             TeacherId = 2L,
@@ -432,16 +411,12 @@ namespace DataAccessLayer.Migrations
                             Id = 4L,
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Ôn luyện toàn bộ chương trình Toán 12: Giới hạn, Đạo hàm, Tích phân, Hình học không gian. Tập trung vào dạng đề thi THPT QG.",
-                            EndDate = new DateTime(2026, 6, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             MaxStudents = 20,
                             Name = "Toán 12 — Luyện thi THPT Quốc Gia",
-                            Price = 1500000m,
-                            StartDate = new DateTime(2026, 3, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Status = "ACTIVE",
                             Subject = "Mathematics",
                             TeacherId = 4L,
                             ThumbnailUrl = "https://placehold.co/400/fce7f3/be185d?text=T12",
-                            TotalSessions = 24,
                             UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
@@ -449,16 +424,12 @@ namespace DataAccessLayer.Migrations
                             Id = 5L,
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Chuyên sâu Điện học và Từ trường lớp 11: điện tích, tụ điện, định luật Ohm, từ trường, cảm ứng điện từ.",
-                            EndDate = new DateTime(2026, 6, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             MaxStudents = 15,
                             Name = "Vật Lý 11 — Điện và Từ Trường",
-                            Price = 1500000m,
-                            StartDate = new DateTime(2026, 3, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Status = "ACTIVE",
                             Subject = "Science",
                             TeacherId = 4L,
                             ThumbnailUrl = "https://placehold.co/400/fce7f3/be185d?text=VL11",
-                            TotalSessions = 24,
                             UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
@@ -466,16 +437,12 @@ namespace DataAccessLayer.Migrations
                             Id = 6L,
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Hệ thống hóa toàn bộ Hóa 12: Polymer, Este-Lipid, Amin-Aminoaxit, Kim loại kiềm, Kim loại chuyển tiếp. Luyện đề THPT.",
-                            EndDate = new DateTime(2026, 8, 15, 0, 0, 0, 0, DateTimeKind.Utc),
                             MaxStudents = 18,
                             Name = "Hóa Học 12 — Hữu Cơ & Vô Cơ",
-                            Price = 1500000m,
-                            StartDate = new DateTime(2026, 4, 15, 0, 0, 0, 0, DateTimeKind.Utc),
                             Status = "ACTIVE",
                             Subject = "Science",
                             TeacherId = 5L,
                             ThumbnailUrl = "https://placehold.co/400/dcfce7/16a34a?text=HH12",
-                            TotalSessions = 32,
                             UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
@@ -483,16 +450,12 @@ namespace DataAccessLayer.Migrations
                             Id = 7L,
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Sinh lý thực vật: trao đổi chất, quang hợp, hô hấp. Sinh lý động vật: tuần hoàn, hô hấp, bài tiết, thần kinh.",
-                            EndDate = new DateTime(2026, 8, 15, 0, 0, 0, 0, DateTimeKind.Utc),
                             MaxStudents = 15,
                             Name = "Sinh Học 11 — Sinh Lý Thực Vật & Động Vật",
-                            Price = 1500000m,
-                            StartDate = new DateTime(2026, 4, 15, 0, 0, 0, 0, DateTimeKind.Utc),
                             Status = "ACTIVE",
                             Subject = "Science",
                             TeacherId = 5L,
                             ThumbnailUrl = "https://placehold.co/400/dcfce7/16a34a?text=SH11",
-                            TotalSessions = 32,
                             UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
@@ -500,16 +463,12 @@ namespace DataAccessLayer.Migrations
                             Id = 8L,
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Luyện thi IELTS toàn diện 4 kỹ năng: Listening, Reading, Writing Task 1&2, Speaking. Cam kết đầu ra Band 6.5 sau 3 tháng.",
-                            EndDate = new DateTime(2026, 8, 10, 0, 0, 0, 0, DateTimeKind.Utc),
                             MaxStudents = 12,
                             Name = "IELTS Preparation — Band 6.5+",
-                            Price = 2500000m,
-                            StartDate = new DateTime(2026, 2, 10, 0, 0, 0, 0, DateTimeKind.Utc),
                             Status = "ACTIVE",
                             Subject = "English",
                             TeacherId = 6L,
                             ThumbnailUrl = "https://placehold.co/400/fef9c3/ca8a04?text=IELTS",
-                            TotalSessions = 48,
                             UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
@@ -517,16 +476,12 @@ namespace DataAccessLayer.Migrations
                             Id = 9L,
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Phát triển kỹ năng giao tiếp tiếng Anh tự nhiên: phát âm, ngữ điệu, từ vựng thực tế. Phù hợp trình độ A2-B1.",
-                            EndDate = new DateTime(2026, 8, 10, 0, 0, 0, 0, DateTimeKind.Utc),
                             MaxStudents = 15,
                             Name = "English Communication — Intermediate",
-                            Price = 2000000m,
-                            StartDate = new DateTime(2026, 2, 10, 0, 0, 0, 0, DateTimeKind.Utc),
                             Status = "ACTIVE",
                             Subject = "English",
                             TeacherId = 6L,
                             ThumbnailUrl = "https://placehold.co/400/fef9c3/ca8a04?text=ENG",
-                            TotalSessions = 48,
                             UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
@@ -534,16 +489,12 @@ namespace DataAccessLayer.Migrations
                             Id = 10L,
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Từ cú pháp Python đến OOP, xử lý file, API, và Data Science cơ bản với Pandas/NumPy. Thực hành dự án thực tế.",
-                            EndDate = new DateTime(2026, 6, 20, 0, 0, 0, 0, DateTimeKind.Utc),
                             MaxStudents = 20,
                             Name = "Python Cơ Bản đến Nâng Cao",
-                            Price = 2000000m,
-                            StartDate = new DateTime(2026, 5, 5, 0, 0, 0, 0, DateTimeKind.Utc),
                             Status = "ACTIVE",
                             Subject = "Coding",
                             TeacherId = 7L,
                             ThumbnailUrl = "https://placehold.co/400/ede9fe/7c3aed?text=PY",
-                            TotalSessions = 12,
                             UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
@@ -551,16 +502,12 @@ namespace DataAccessLayer.Migrations
                             Id = 11L,
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Xây dựng Web API RESTful với ASP.NET Core 8, Entity Framework Core, JWT Auth, và deploy lên Azure. Thực hành project cuối khóa.",
-                            EndDate = new DateTime(2026, 6, 20, 0, 0, 0, 0, DateTimeKind.Utc),
                             MaxStudents = 15,
                             Name = "Web Development với ASP.NET Core",
-                            Price = 2000000m,
-                            StartDate = new DateTime(2026, 5, 5, 0, 0, 0, 0, DateTimeKind.Utc),
                             Status = "ACTIVE",
                             Subject = "Coding",
                             TeacherId = 7L,
                             ThumbnailUrl = "https://placehold.co/400/ede9fe/7c3aed?text=NET",
-                            TotalSessions = 12,
                             UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
@@ -568,16 +515,12 @@ namespace DataAccessLayer.Migrations
                             Id = 12L,
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Luyện viết văn nghị luận xã hội và phân tích tác phẩm văn học lớp 12. Bí quyết đạt điểm cao môn Văn THPT QG.",
-                            EndDate = new DateTime(2026, 5, 20, 0, 0, 0, 0, DateTimeKind.Utc),
                             MaxStudents = 20,
                             Name = "Ngữ Văn 12 — Nghị Luận Xã Hội & Văn Học",
-                            Price = 1200000m,
-                            StartDate = new DateTime(2026, 3, 20, 0, 0, 0, 0, DateTimeKind.Utc),
                             Status = "ACTIVE",
                             Subject = "English",
                             TeacherId = 8L,
                             ThumbnailUrl = "https://placehold.co/400/ffedd5/ea580c?text=VAN",
-                            TotalSessions = 16,
                             UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
@@ -585,16 +528,12 @@ namespace DataAccessLayer.Migrations
                             Id = 13L,
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Hệ thống toàn bộ Lịch Sử 12: Lịch sử thế giới, Lịch sử Việt Nam 1919-2000. Luyện câu hỏi tư duy và ghi nhớ nhanh.",
-                            EndDate = new DateTime(2026, 5, 20, 0, 0, 0, 0, DateTimeKind.Utc),
                             MaxStudents = 18,
                             Name = "Lịch Sử 12 — Ôn thi THPT Quốc Gia",
-                            Price = 1200000m,
-                            StartDate = new DateTime(2026, 3, 20, 0, 0, 0, 0, DateTimeKind.Utc),
                             Status = "ACTIVE",
                             Subject = "English",
                             TeacherId = 8L,
                             ThumbnailUrl = "https://placehold.co/400/ffedd5/ea580c?text=LS",
-                            TotalSessions = 16,
                             UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
@@ -602,16 +541,12 @@ namespace DataAccessLayer.Migrations
                             Id = 14L,
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Giải tích hàm một biến và nhiều biến, Đại số tuyến tính, Phương trình vi phân. Phù hợp sinh viên ĐH Kỹ thuật.",
-                            EndDate = new DateTime(2026, 9, 30, 0, 0, 0, 0, DateTimeKind.Utc),
                             MaxStudents = 25,
                             Name = "Toán Cao Cấp A1 & A2 cho Sinh viên",
-                            Price = 1800000m,
-                            StartDate = new DateTime(2026, 7, 10, 0, 0, 0, 0, DateTimeKind.Utc),
                             Status = "ACTIVE",
                             Subject = "Mathematics",
                             TeacherId = 9L,
                             ThumbnailUrl = "https://placehold.co/400/cffafe/0891b2?text=TCC",
-                            TotalSessions = 24,
                             UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
@@ -619,16 +554,12 @@ namespace DataAccessLayer.Migrations
                             Id = 15L,
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Xác suất, Phân phối xác suất, Kiểm định giả thuyết, Hồi quy tuyến tính. Ứng dụng trong Data Science và Kinh tế.",
-                            EndDate = new DateTime(2026, 9, 30, 0, 0, 0, 0, DateTimeKind.Utc),
                             MaxStudents = 20,
                             Name = "Thống Kê Xác Suất & Ứng Dụng",
-                            Price = 1800000m,
-                            StartDate = new DateTime(2026, 7, 10, 0, 0, 0, 0, DateTimeKind.Utc),
                             Status = "ACTIVE",
                             Subject = "Mathematics",
                             TeacherId = 9L,
                             ThumbnailUrl = "https://placehold.co/400/cffafe/0891b2?text=TK",
-                            TotalSessions = 24,
                             UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
@@ -636,16 +567,12 @@ namespace DataAccessLayer.Migrations
                             Id = 16L,
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Khóa học tiếng Anh giao tiếp dành cho người mới bắt đầu. Xây dựng vốn từ vựng, phát âm chuẩn và phản xạ hội thoại cơ bản.",
-                            EndDate = new DateTime(2026, 11, 30, 0, 0, 0, 0, DateTimeKind.Utc),
                             MaxStudents = 12,
                             Name = "Tiếng Anh Giao Tiếp — Beginner A1-A2",
-                            Price = 1500000m,
-                            StartDate = new DateTime(2026, 8, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Status = "ACTIVE",
                             Subject = "English",
                             TeacherId = 10L,
                             ThumbnailUrl = "https://placehold.co/400/fce7f3/db2777?text=ENG",
-                            TotalSessions = 32,
                             UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
@@ -653,16 +580,12 @@ namespace DataAccessLayer.Migrations
                             Id = 17L,
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Tiếng Pháp từ đầu: ngữ âm, ngữ pháp cơ bản, hội thoại thực tế. Chuẩn bị cho kỳ thi DELF A1 và A2.",
-                            EndDate = new DateTime(2026, 11, 30, 0, 0, 0, 0, DateTimeKind.Utc),
                             MaxStudents = 10,
                             Name = "Tiếng Pháp Cơ Bản A1-A2 (DELF)",
-                            Price = 1500000m,
-                            StartDate = new DateTime(2026, 8, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Status = "ACTIVE",
                             Subject = "English",
                             TeacherId = 10L,
                             ThumbnailUrl = "https://placehold.co/400/fce7f3/db2777?text=FR",
-                            TotalSessions = 32,
                             UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
@@ -670,16 +593,12 @@ namespace DataAccessLayer.Migrations
                             Id = 18L,
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Dao động, Sóng, Điện xoay chiều, Lượng tử ánh sáng, Hạt nhân nguyên tử. Luyện đề THPT QG theo cấu trúc mới.",
-                            EndDate = new DateTime(2026, 5, 15, 0, 0, 0, 0, DateTimeKind.Utc),
                             MaxStudents = 20,
                             Name = "Vật Lý 12 — Luyện thi THPT Quốc Gia",
-                            Price = 1500000m,
-                            StartDate = new DateTime(2026, 1, 15, 0, 0, 0, 0, DateTimeKind.Utc),
                             Status = "ACTIVE",
                             Subject = "Science",
                             TeacherId = 11L,
                             ThumbnailUrl = "https://placehold.co/400/e0f2fe/0284c7?text=VL12",
-                            TotalSessions = 40,
                             UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
@@ -687,16 +606,12 @@ namespace DataAccessLayer.Migrations
                             Id = 19L,
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Đại cương hóa hữu cơ, Hydrocarbon, Dẫn xuất Halogen, Ancol-Phenol-Ete, Andehit-Axit Cacboxylic. Bài tập từ cơ bản đến nâng cao.",
-                            EndDate = new DateTime(2026, 5, 15, 0, 0, 0, 0, DateTimeKind.Utc),
                             MaxStudents = 18,
                             Name = "Hóa Học 11 — Hóa Hữu Cơ Cơ Bản",
-                            Price = 1500000m,
-                            StartDate = new DateTime(2026, 1, 15, 0, 0, 0, 0, DateTimeKind.Utc),
                             Status = "ACTIVE",
                             Subject = "Science",
                             TeacherId = 11L,
                             ThumbnailUrl = "https://placehold.co/400/e0f2fe/0284c7?text=HH11",
-                            TotalSessions = 40,
                             UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
@@ -704,16 +619,12 @@ namespace DataAccessLayer.Migrations
                             Id = 20L,
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Dành cho học sinh chuyên Toán và HSG: Số học, Đại số, Hình học Euclidean, Tổ hợp. Luyện đề Olympic cấp tỉnh và quốc gia.",
-                            EndDate = new DateTime(2026, 6, 15, 0, 0, 0, 0, DateTimeKind.Utc),
                             MaxStudents = 10,
                             Name = "Toán Chuyên — Luyện thi Olympic & Đại học",
-                            Price = 2500000m,
-                            StartDate = new DateTime(2026, 4, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Status = "ACTIVE",
                             Subject = "Mathematics",
                             TeacherId = 12L,
                             ThumbnailUrl = "https://placehold.co/400/f1f5f9/475569?text=OLP",
-                            TotalSessions = 20,
                             UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
@@ -721,16 +632,12 @@ namespace DataAccessLayer.Migrations
                             Id = 21L,
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Xây dựng nền tảng Toán lớp 10 vững chắc: Mệnh đề-Tập hợp, Hàm số, Phương trình-Bất phương trình, Hình học phẳng, Lượng giác.",
-                            EndDate = new DateTime(2026, 6, 15, 0, 0, 0, 0, DateTimeKind.Utc),
                             MaxStudents = 20,
                             Name = "Toán 10 — Đại Số, Hình Học & Lượng Giác",
-                            Price = 1200000m,
-                            StartDate = new DateTime(2026, 4, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Status = "ACTIVE",
                             Subject = "Mathematics",
                             TeacherId = 12L,
                             ThumbnailUrl = "https://placehold.co/400/f1f5f9/475569?text=T10",
-                            TotalSessions = 20,
                             UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
@@ -738,16 +645,12 @@ namespace DataAccessLayer.Migrations
                             Id = 22L,
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "C# từ cơ bản đến nâng cao, ASP.NET Core MVC, EF Core, SQL Server, React + Blazor. Xây dựng portfolio project thực tế.",
-                            EndDate = new DateTime(2027, 2, 28, 0, 0, 0, 0, DateTimeKind.Utc),
                             MaxStudents = 15,
                             Name = "Lập Trình C# — .NET Full Stack Developer",
-                            Price = 3000000m,
-                            StartDate = new DateTime(2026, 9, 5, 0, 0, 0, 0, DateTimeKind.Utc),
                             Status = "ACTIVE",
                             Subject = "Coding",
                             TeacherId = 13L,
                             ThumbnailUrl = "https://placehold.co/400/fef2f2/dc2626?text=CS",
-                            TotalSessions = 48,
                             UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
@@ -755,16 +658,12 @@ namespace DataAccessLayer.Migrations
                             Id = 23L,
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Logic mệnh đề, Lý thuyết tập hợp, Quan hệ, Hàm, Lý thuyết đồ thị, Đếm tổ hợp, Xác suất rời rạc. Ứng dụng trong Khoa học máy tính.",
-                            EndDate = new DateTime(2027, 2, 28, 0, 0, 0, 0, DateTimeKind.Utc),
                             MaxStudents = 20,
                             Name = "Toán Rời Rạc cho Sinh viên CNTT",
-                            Price = 1800000m,
-                            StartDate = new DateTime(2026, 9, 5, 0, 0, 0, 0, DateTimeKind.Utc),
                             Status = "ACTIVE",
                             Subject = "Mathematics",
                             TeacherId = 13L,
                             ThumbnailUrl = "https://placehold.co/400/fef2f2/dc2626?text=TRR",
-                            TotalSessions = 48,
                             UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         });
                 });
@@ -918,49 +817,6 @@ namespace DataAccessLayer.Migrations
                         });
                 });
 
-            modelBuilder.Entity("BusinessObject.Models.ClassMessage", b =>
-                {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint")
-                        .HasColumnName("id");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
-
-                    b.Property<long>("ClassId")
-                        .HasColumnType("bigint")
-                        .HasColumnName("class_id");
-
-                    b.Property<string>("Content")
-                        .IsRequired()
-                        .HasMaxLength(4000)
-                        .HasColumnType("character varying(4000)")
-                        .HasColumnName("content");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("created_at");
-
-                    b.Property<long>("SenderId")
-                        .HasColumnType("bigint")
-                        .HasColumnName("sender_id");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("updated_at");
-
-                    b.HasKey("Id")
-                        .HasName("pk_class_messages");
-
-                    b.HasIndex("ClassId")
-                        .HasDatabaseName("ix_class_messages_class_id");
-
-                    b.HasIndex("SenderId")
-                        .HasDatabaseName("ix_class_messages_sender_id");
-
-                    b.ToTable("class_messages", (string)null);
-                });
-
             modelBuilder.Entity("BusinessObject.Models.Conversation", b =>
                 {
                     b.Property<long>("Id")
@@ -1104,10 +960,6 @@ namespace DataAccessLayer.Migrations
                         .HasDefaultValue("PENDING")
                         .HasColumnName("status");
 
-                    b.Property<long?>("StudentId")
-                        .HasColumnType("bigint")
-                        .HasColumnName("student_id");
-
                     b.Property<long>("TeacherId")
                         .HasColumnType("bigint")
                         .HasColumnName("teacher_id");
@@ -1125,9 +977,6 @@ namespace DataAccessLayer.Migrations
 
                     b.HasIndex("ClassId")
                         .HasDatabaseName("ix_invoices_class_id");
-
-                    b.HasIndex("StudentId")
-                        .HasDatabaseName("ix_invoices_student_id");
 
                     b.HasIndex("TeacherId")
                         .HasDatabaseName("ix_invoices_teacher_id");
@@ -1453,15 +1302,6 @@ namespace DataAccessLayer.Migrations
                         .HasColumnType("numeric(12,2)")
                         .HasColumnName("amount");
 
-                    b.Property<string>("BankCode")
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
-                        .HasColumnName("bank_code");
-
-                    b.Property<long?>("BookingId")
-                        .HasColumnType("bigint")
-                        .HasColumnName("booking_id");
-
                     b.Property<long>("ClassId")
                         .HasColumnType("bigint")
                         .HasColumnName("class_id");
@@ -1474,22 +1314,9 @@ namespace DataAccessLayer.Migrations
                         .HasColumnType("timestamp without time zone")
                         .HasColumnName("deleted_at");
 
-                    b.Property<DateTime?>("ExpiredAt")
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("expired_at");
-
-                    b.Property<string>("FailureReason")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)")
-                        .HasColumnName("failure_reason");
-
                     b.Property<long?>("InvoiceId")
                         .HasColumnType("bigint")
                         .HasColumnName("invoice_id");
-
-                    b.Property<string>("Method")
-                        .HasColumnType("text")
-                        .HasColumnName("method");
 
                     b.Property<DateTime?>("PaidAt")
                         .HasColumnType("timestamp without time zone")
@@ -1514,16 +1341,6 @@ namespace DataAccessLayer.Migrations
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp without time zone")
                         .HasColumnName("updated_at");
-
-                    b.Property<string>("VnpTransactionNo")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)")
-                        .HasColumnName("vnp_transaction_no");
-
-                    b.Property<string>("VnpTxnRef")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)")
-                        .HasColumnName("vnp_txn_ref");
 
                     b.HasKey("Id")
                         .HasName("pk_payments");
@@ -1611,32 +1428,6 @@ namespace DataAccessLayer.Migrations
                         });
 
                     b.HasData(
-                        new
-                        {
-                            Id = 101L,
-                            ClassId = 1L,
-                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            EndTime = new DateTime(2026, 3, 9, 2, 30, 0, 0, DateTimeKind.Utc),
-                            IsTrial = false,
-                            StartTime = new DateTime(2026, 3, 9, 0, 30, 0, 0, DateTimeKind.Utc),
-                            Status = "SCHEDULED",
-                            Title = "Buổi 1 sáng",
-                            Type = "REGULAR",
-                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
-                        },
-                        new
-                        {
-                            Id = 102L,
-                            ClassId = 1L,
-                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            EndTime = new DateTime(2026, 3, 9, 6, 0, 0, 0, DateTimeKind.Utc),
-                            IsTrial = false,
-                            StartTime = new DateTime(2026, 3, 9, 5, 0, 0, 0, DateTimeKind.Utc),
-                            Status = "SCHEDULED",
-                            Title = "Buổi 2 trưa",
-                            Type = "REGULAR",
-                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
-                        },
                         new
                         {
                             Id = 1L,
@@ -2894,15 +2685,6 @@ namespace DataAccessLayer.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
 
-                    b.Property<string>("CancelReason")
-                        .HasMaxLength(1000)
-                        .HasColumnType("character varying(1000)")
-                        .HasColumnName("cancel_reason");
-
-                    b.Property<long?>("ClassId")
-                        .HasColumnType("bigint")
-                        .HasColumnName("class_id");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp without time zone")
                         .HasColumnName("created_at");
@@ -2915,10 +2697,6 @@ namespace DataAccessLayer.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)")
                         .HasColumnName("note");
-
-                    b.Property<DateTime?>("PaymentDeadline")
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("payment_deadline");
 
                     b.Property<DateTime>("RequestedEndTime")
                         .HasColumnType("timestamp without time zone")
@@ -2951,9 +2729,6 @@ namespace DataAccessLayer.Migrations
 
                     b.HasKey("Id")
                         .HasName("pk_tutor_booking_requests");
-
-                    b.HasIndex("ClassId")
-                        .HasDatabaseName("ix_tutor_booking_requests_class_id");
 
                     b.HasIndex("ResultClassId")
                         .HasDatabaseName("ix_tutor_booking_requests_result_class_id");
@@ -3357,27 +3132,6 @@ namespace DataAccessLayer.Migrations
                     b.Navigation("Student");
                 });
 
-            modelBuilder.Entity("BusinessObject.Models.ClassMessage", b =>
-                {
-                    b.HasOne("BusinessObject.Models.Class", "Class")
-                        .WithMany()
-                        .HasForeignKey("ClassId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_class_messages_classes_class_id");
-
-                    b.HasOne("BusinessObject.Models.User", "Sender")
-                        .WithMany()
-                        .HasForeignKey("SenderId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("fk_class_messages_users_sender_id");
-
-                    b.Navigation("Class");
-
-                    b.Navigation("Sender");
-                });
-
             modelBuilder.Entity("BusinessObject.Models.Conversation", b =>
                 {
                     b.HasOne("BusinessObject.Models.User", "ParticipantA")
@@ -3670,11 +3424,6 @@ namespace DataAccessLayer.Migrations
 
             modelBuilder.Entity("BusinessObject.Models.TutorBookingRequest", b =>
                 {
-                    b.HasOne("BusinessObject.Models.Class", "LinkedClass")
-                        .WithMany()
-                        .HasForeignKey("ClassId")
-                        .HasConstraintName("fk_tutor_booking_requests_classes_class_id");
-
                     b.HasOne("BusinessObject.Models.Class", "ResultClass")
                         .WithMany()
                         .HasForeignKey("ResultClassId")
@@ -3694,8 +3443,6 @@ namespace DataAccessLayer.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_tutor_booking_requests_users_teacher_id");
-
-                    b.Navigation("LinkedClass");
 
                     b.Navigation("ResultClass");
 

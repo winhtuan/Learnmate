@@ -2,6 +2,7 @@
 @layout ClassLayout
 @rendermode InteractiveServer
 @using BusinessLogicLayer.DTOs
+@using BusinessLogicLayer.DTOs.Class
 @using BusinessLogicLayer.DTOs.Tutor
 @using LearnmateSolution.Components.Layout
 @using LearnmateSolution.Components.Pages.Student.Class.Components.Shared
@@ -74,7 +75,7 @@
 
                     <!-- Price -->
                     <div class="flex flex-col gap-2">
-                        <p class="text-xs font-semibold uppercase tracking-wide text-slate-400">Price per hour</p>
+                        <p class="text-xs font-semibold uppercase tracking-wide text-slate-400">Học phí / giờ</p>
                         <div class="flex flex-wrap gap-2">
                             @foreach (var opt in _priceOptions)
                             {
@@ -163,7 +164,9 @@
                     {
                         <ClassListCard Class="cls"
                                        IsSelected="@(_selected?.ClassId == cls.ClassId)"
-                                       OnSelected="SelectClass" />
+                                       IsEnrolled="@(_enrolledClassIds.Contains(cls.ClassId))"
+                                       OnSelected="SelectClass"
+                                       OnEnroll="EnrollAsync" />
                     }
                 }
             </div>
@@ -199,10 +202,10 @@
     private static readonly string[] _subjectChips =
         ["All Subjects", "Mathematics", "Science", "English", "Coding", "Languages"];
     private static readonly string[] _priceOptions =
-        ["Any Price", "Under $30", "$30 – $50", "Over $50"];
+        ["Tất cả", "Dưới 100k", "100k – 200k", "200k – 500k", "Trên 500k"];
 
     private string _activeSubject = "All Subjects";
-    private string _priceFilter   = "Any Price";
+    private string _priceFilter   = "Tất cả";
     private bool   _verifiedOnly;
     private bool   _showFilters;
     private string _searchQuery   = "";
@@ -216,11 +219,12 @@
     private TutorListItem?  _selectedTutor;
 
     private int ActiveFilterCount =>
-        (_priceFilter != "Any Price" ? 1 : 0) +
+        (_priceFilter != "Tất cả" ? 1 : 0) +
         (_verifiedOnly               ? 1 : 0);
 
     private List<ClassListItem> _classes  = [];
     private List<ClassListItem> _filtered = [];
+    private HashSet<long>       _enrolledClassIds = [];
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -231,7 +235,7 @@
             Nav.NavigateTo("/login", replace: true);
             return;
         }
-        await FetchTutorsAsync();
+        await Task.WhenAll(FetchTutorsAsync(), FetchEnrolledClassIdsAsync());
         ApplyFilter();
         SelectClass(_filtered.FirstOrDefault());
         _loading = false;
@@ -265,18 +269,19 @@
             var subject  = _activeSubject == "All Subjects" ? null : _activeSubject;
             decimal? max = _priceFilter switch
             {
-                "Under $30" => 29.99m,
-                "$30 – $50" => 50m,
-                _           => null
+                "Dưới 100k"    => 99_999m,
+                "100k – 200k"  => 200_000m,
+                "200k – 500k"  => 500_000m,
+                _              => null
             };
 
-            var url = "api/tutors";
+            var url = "api/tutors/classes";
             var query = new List<string>();
             if (subject is not null) query.Add($"subject={Uri.EscapeDataString(subject)}");
             if (max.HasValue) query.Add($"maxRate={max.Value}");
             if (query.Count > 0) url += "?" + string.Join("&", query);
 
-            var resp = await client.GetFromJsonAsync<ApiResponse<IReadOnlyList<TutorSummaryDto>>>(url);
+            var resp = await client.GetFromJsonAsync<ApiResponse<IReadOnlyList<ClassListingDto>>>(url);
             _classes = resp?.Data?.Select(MapToClassItem).ToList() ?? [];
         }
         catch
@@ -286,31 +291,52 @@
         }
     }
 
-    private static ClassListItem MapToClassItem(TutorSummaryDto dto)
+    private async Task FetchEnrolledClassIdsAsync()
     {
-        var initials = dto.FullName.Length >= 2
-            ? dto.FullName[..2].ToUpper()
-            : dto.FullName.ToUpper();
+        try
+        {
+            var client = HttpClientFactory.CreateClient("learnmate");
+            client.BaseAddress = new Uri(Nav.BaseUri);
+            client.DefaultRequestHeaders.Authorization =
+                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", Session.AccessToken);
+
+            var resp = await client.GetFromJsonAsync<ApiResponse<IReadOnlyList<ClassListItemDto>>>("api/classes");
+            _enrolledClassIds = resp?.Data?.Select(c => c.Id).ToHashSet() ?? [];
+        }
+        catch
+        {
+            _enrolledClassIds = [];
+        }
+    }
+
+    private static ClassListItem MapToClassItem(ClassListingDto dto)
+    {
+        var initials = dto.TeacherName.Length >= 2
+            ? dto.TeacherName[..2].ToUpper()
+            : dto.TeacherName.ToUpper();
 
         var subjects = dto.Subjects.Split(',').Select(s => s.Trim()).Where(s => s.Length > 0).ToArray();
-        var primarySubject = subjects.FirstOrDefault() ?? "General";
 
         return new ClassListItem(
-            ClassId:          dto.TeacherUserId,   // tạm dùng TeacherUserId, sẽ thay bằng ClassId thật sau
-            ClassName:        $"{primarySubject} — {dto.FullName}",
-            Description:      dto.Bio,
-            Subject:          primarySubject,
-            ScheduleSummary:  "",                  // sẽ có khi API trả về class thật
-            EnrolledCount:    0,
-            MaxStudents:      30,
-            TeacherId:        dto.TeacherUserId,
-            TeacherName:      dto.FullName,
-            TeacherAvatarUrl: dto.AvatarUrl ?? $"https://placehold.co/200/e0e7ff/4f46e5?text={Uri.EscapeDataString(initials)}",
-            Rating:           dto.RatingAvg,
-            ReviewCount:      dto.TotalRatingCount,
+            ClassId:          dto.ClassId,
+            ClassName:        dto.ClassName,
+            Description:      dto.Description,
+            Subject:          dto.Subject,
+            ScheduleSummary:  dto.ScheduleSummary,
+            EnrolledCount:    dto.EnrolledCount,
+            MaxStudents:      dto.MaxStudents,
+            TeacherId:        dto.TeacherId,
+            TeacherName:      dto.TeacherName,
+            TeacherAvatarUrl: dto.TeacherAvatarUrl ?? $"https://placehold.co/200/e0e7ff/4f46e5?text={Uri.EscapeDataString(initials)}",
+            Rating:           dto.Rating,
+            ReviewCount:      dto.ReviewCount,
             Subjects:         subjects,
             HourlyRate:       dto.HourlyRate,
-            Bio:              dto.Bio ?? ""
+            Bio:              dto.Bio ?? "",
+            Schedules:        dto.Schedules,
+            StartDate:        dto.StartDate,
+            EndDate:          dto.EndDate,
+            TotalSessions:    dto.TotalSessions
         );
     }
 
@@ -332,7 +358,11 @@
         ResponseTime:     "",
         TotalLessons:     0,
         FullBio:          cls.Bio,
-        AvailableSlots:   []
+        AvailableSlots:   [],
+        Schedules:        cls.Schedules,
+        StartDate:        cls.StartDate,
+        EndDate:          cls.EndDate,
+        TotalSessions:    cls.TotalSessions
     );
 
     private void SetSubject(string chip) { _activeSubject = chip; ApplyFilter(); }
@@ -340,7 +370,7 @@
 
     private void ResetFilters()
     {
-        _priceFilter  = "Any Price";
+        _priceFilter  = "Tất cả";
         _verifiedOnly = false;
         ApplyFilter();
     }
@@ -369,10 +399,11 @@
 
                 var pass = _priceFilter switch
                 {
-                    "Under $30" => c.HourlyRate < 30,
-                    "$30 – $50" => c.HourlyRate is >= 30 and <= 50,
-                    "Over $50"  => c.HourlyRate > 50,
-                    _           => true
+                    "Dưới 100k"   => c.HourlyRate < 100_000,
+                    "100k – 200k" => c.HourlyRate is >= 100_000 and <= 200_000,
+                    "200k – 500k" => c.HourlyRate is > 200_000 and <= 500_000,
+                    "Trên 500k"   => c.HourlyRate > 500_000,
+                    _             => true
                 };
                 if (!pass) return false;
 
@@ -397,6 +428,36 @@
         StateHasChanged();
         await Task.Delay(3000);
         _successMessage = "";
+        StateHasChanged();
+    }
+
+    private async Task EnrollAsync(ClassListItem cls)
+    {
+        SelectClass(cls);
+        _errorMessage = "";
+        StateHasChanged();
+
+        try
+        {
+            var client = HttpClientFactory.CreateClient("learnmate");
+            client.BaseAddress = new Uri(Nav.BaseUri);
+            client.DefaultRequestHeaders.Authorization =
+                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", Session.AccessToken);
+
+            var resp   = await client.PostAsJsonAsync("api/enrollment/create-invoice", cls.ClassId);
+            var result = await resp.Content
+                .ReadFromJsonAsync<BusinessLogicLayer.DTOs.ApiResponse<BusinessLogicLayer.DTOs.Payment.CreateInvoiceResponseDto>>();
+
+            if (result?.Success == true && result.Data is not null)
+                Nav.NavigateTo($"/student/payment/{result.Data.InvoiceId}");
+            else
+                _errorMessage = result?.Message ?? "Không thể tạo hoá đơn. Vui lòng thử lại.";
+        }
+        catch
+        {
+            _errorMessage = "Lỗi kết nối. Vui lòng thử lại.";
+        }
+
         StateHasChanged();
     }
 }

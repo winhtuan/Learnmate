@@ -13,4 +13,10 @@ public interface ITeacherCourseRepository
     Task<Assignment?> GetAssignmentDetailAsync(long assignmentId, long classId, long teacherId, CancellationToken ct = default);
     Task<Submission?> GradeSubmissionAsync(long submissionId, long teacherId, decimal score, string? feedback, CancellationToken ct = default);
     Task<Class> UpdateAsync(Class cls);
+
+    /// <summary>Lấy tất cả lớp ACTIVE kèm teacher profile + schedules + enrolled count.</summary>
+    Task<IReadOnlyList<Class>> GetActiveClassListingsAsync(
+        string? subject = null,
+        decimal? maxRate = null,
+        CancellationToken ct = default);
 }

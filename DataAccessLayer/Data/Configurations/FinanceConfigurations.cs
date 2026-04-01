@@ -15,6 +15,7 @@ internal sealed class PaymentConfiguration : IEntityTypeConfiguration<Payment>
         builder.HasIndex(p => p.InvoiceId);
 
         builder.Property(p => p.Type).HasConversion<string>();
+        builder.Property(p => p.Method).HasConversion<string>().IsRequired(false);
         builder
             .Property(p => p.Status)
             .HasConversion<string>()
@@ -51,6 +52,7 @@ internal sealed class InvoiceConfiguration : IEntityTypeConfiguration<Invoice>
     {
         builder.HasIndex(i => i.TeacherId);
         builder.HasIndex(i => i.ClassId);
+        builder.HasIndex(i => i.StudentId);
 
         builder
             .Property(i => i.Status)

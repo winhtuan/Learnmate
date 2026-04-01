@@ -114,4 +114,28 @@ public class TeacherCourseRepository : ITeacherCourseRepository
         await db.SaveChangesAsync();
         return cls;
     }
+
+    public async Task<IReadOnlyList<Class>> GetActiveClassListingsAsync(
+        string? subject = null,
+        decimal? maxRate = null,
+        CancellationToken ct = default)
+    {
+        var nowUtc = DateTime.UtcNow;
+
+        IQueryable<Class> query = db.Classes
+            .AsNoTracking()
+            .Where(c => c.Status == ClassStatus.ACTIVE && c.DeletedAt == null)
+            .Where(c => c.Schedules.Count(s => s.StartTime <= nowUtc && s.Status != ScheduleStatus.CANCELLED) <= 3)
+            .Include(c => c.Teacher).ThenInclude(u => u.TeacherProfile)
+            .Include(c => c.ClassMembers.Where(m => m.Status == ClassMemberStatus.ACTIVE))
+            .Include(c => c.Schedules.Where(s => s.Status != ScheduleStatus.CANCELLED).OrderBy(s => s.StartTime));
+
+        if (!string.IsNullOrWhiteSpace(subject))
+            query = query.Where(c => c.Subject.Contains(subject));
+
+        if (maxRate.HasValue)
+            query = query.Where(c => c.Teacher.TeacherProfile != null && c.Teacher.TeacherProfile.HourlyRate <= maxRate.Value);
+
+        return await query.ToListAsync(ct);
+    }
 }

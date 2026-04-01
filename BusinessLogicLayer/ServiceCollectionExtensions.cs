@@ -1,6 +1,8 @@
 using BusinessLogicLayer.Services;
+using BusinessLogicLayer.Services.ClassManagement;
 using BusinessLogicLayer.Services.Dashboard;
 using BusinessLogicLayer.Services.Interfaces;
+using BusinessLogicLayer.Services.Interfaces.ClassManagement;
 using BusinessLogicLayer.Services.Interfaces.Dashboard;
 using BusinessLogicLayer.Settings;
 using DataAccessLayer.Repositories;
@@ -55,6 +57,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<BusinessLogicLayer.Services.Interfaces.ClassManagement.IClassMessageService, BusinessLogicLayer.Services.ClassManagement.ClassMessageService>();
         services.AddSingleton<IVnPayService, VnPayService>();
         services.AddScoped<IPaymentService, PaymentService>();
+        services.AddScoped<IEnrollmentService, EnrollmentService>();
 
         // Token blacklist cache
         services.AddMemoryCache();
