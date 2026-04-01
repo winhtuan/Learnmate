@@ -29,7 +29,7 @@
         <HeroBanner ClassCode="@_subject" ClassStatus="@_status" ClassName="@_className"
                     Description="@_description" BackgroundImage="" />
 
-        <ClassTabNav ClassId="@Id" ActiveTab="assignments" />
+        <ClassTabNav ClassId="@Id" ActiveTab="assignments" AssignmentCount="@(_upcoming.Count + _missing.Count + _completed.Count)" />
 
         <div class="grid grid-cols-1 xl:grid-cols-5 gap-6">
             @* Left: Assignment list *@

@@ -38,6 +38,7 @@ public class TeacherScheduleService(ITeacherScheduleRepository repo) : ITeacherS
             Name = c.Name,
             Subject = c.Subject,
             Status = c.Status,
+            TotalSessions = c.TotalSessions,
             EnrolledStudents =
                 c.ClassMembers?.Count(cm =>
                     cm.Status == BusinessObject.Enum.ClassMemberStatus.ACTIVE
@@ -121,6 +122,61 @@ public class TeacherScheduleService(ITeacherScheduleRepository repo) : ITeacherS
         await repo.CreateScheduleAsync(schedule);
 
         return ApiResponse<object>.Ok(schedule.Id, "Schedule created successfully");
+    }
+
+    public async Task<ApiResponse<object>> BulkCreateSchedulesAsync(
+        long teacherId,
+        List<CreateScheduleDto> dtos)
+    {
+        if (dtos.Count == 0)
+            return ApiResponse<object>.Fail("No schedules provided.");
+
+        var classId = dtos[0].ClassId;
+        var c = await repo.GetClassByIdAsync(classId, teacherId);
+        if (c == null)
+            return ApiResponse<object>.Fail("Class not found or access denied.");
+
+        var toCreate = new List<Schedule>();
+        int skipped = 0;
+
+        foreach (var dto in dtos)
+        {
+            if (dto.StartTime >= dto.EndTime)
+            {
+                skipped++;
+                continue;
+            }
+
+            var overlap = await repo.HasOverlappingScheduleAsync(classId, dto.StartTime, dto.EndTime);
+            if (overlap)
+            {
+                skipped++;
+                continue;
+            }
+
+            toCreate.Add(new Schedule
+            {
+                ClassId = classId,
+                Title = dto.Title,
+                StartTime = dto.StartTime,
+                EndTime = dto.EndTime,
+                Type = dto.Type,
+                Status = dto.Status,
+                IsTrial = dto.IsTrial,
+                CreatedAt = DateTime.UtcNow,
+            });
+        }
+
+        if (toCreate.Count == 0)
+            return ApiResponse<object>.Fail($"All {skipped} slots were skipped due to time conflicts.");
+
+        await repo.BulkCreateSchedulesAsync(toCreate);
+
+        var msg = skipped > 0
+            ? $"Created {toCreate.Count} schedules. Skipped {skipped} due to time conflicts."
+            : $"Created {toCreate.Count} schedules successfully.";
+
+        return ApiResponse<object>.Ok(toCreate.Count, msg);
     }
 
     public async Task<ApiResponse<object>> UpdateScheduleAsync(

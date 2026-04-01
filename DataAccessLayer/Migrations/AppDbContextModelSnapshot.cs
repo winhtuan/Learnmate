@@ -112,6 +112,30 @@ namespace DataAccessLayer.Migrations
                             TeacherId = 2L,
                             Title = "Lab 1: Unity Scene",
                             UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 3L,
+                            ClassId = 2L,
+                            CreatedAt = new DateTime(2026, 3, 20, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Áp dụng mô hình MVVM vào ứng dụng MAUI: tạo ViewModel, sử dụng INotifyPropertyChanged và binding hai chiều cho form nhập liệu.",
+                            DueDate = new DateTime(2026, 4, 10, 16, 59, 0, 0, DateTimeKind.Utc),
+                            Status = "PUBLISHED",
+                            TeacherId = 2L,
+                            Title = "Lab 2: MVVM & Data Binding",
+                            UpdatedAt = new DateTime(2026, 3, 20, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 4L,
+                            ClassId = 2L,
+                            CreatedAt = new DateTime(2026, 3, 10, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Trả lời các câu hỏi về XAML layout: StackLayout, Grid, FlexLayout, và các thuộc tính căn chỉnh trong .NET MAUI.",
+                            DueDate = new DateTime(2026, 3, 20, 16, 59, 0, 0, DateTimeKind.Utc),
+                            Status = "PUBLISHED",
+                            TeacherId = 2L,
+                            Title = "Quiz 1: XAML & Layout Fundamentals",
+                            UpdatedAt = new DateTime(2026, 3, 10, 0, 0, 0, 0, DateTimeKind.Utc)
                         });
                 });
 
@@ -240,6 +264,61 @@ namespace DataAccessLayer.Migrations
                             Points = 10m,
                             Type = "ESSAY",
                             UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 4L,
+                            AssignmentId = 3L,
+                            Content = "Tạo ViewModel kế thừa INotifyPropertyChanged và bind vào View bằng two-way binding.",
+                            CreatedAt = new DateTime(2026, 3, 20, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Order = 1,
+                            Points = 5m,
+                            Type = "ESSAY",
+                            UpdatedAt = new DateTime(2026, 3, 20, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 5L,
+                            AssignmentId = 3L,
+                            Content = "Viết Command (ICommand) để xử lý sự kiện button click trong ViewModel.",
+                            CreatedAt = new DateTime(2026, 3, 20, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Order = 2,
+                            Points = 5m,
+                            Type = "ESSAY",
+                            UpdatedAt = new DateTime(2026, 3, 20, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 6L,
+                            AssignmentId = 4L,
+                            Content = "So sánh StackLayout, Grid và FlexLayout trong MAUI. Khi nào nên dùng loại nào?",
+                            CreatedAt = new DateTime(2026, 3, 10, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Order = 1,
+                            Points = 3m,
+                            Type = "MULTIPLE_CHOICE",
+                            UpdatedAt = new DateTime(2026, 3, 10, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 7L,
+                            AssignmentId = 4L,
+                            Content = "Thuộc tính nào dùng để căn giữa một phần tử theo chiều ngang trong Grid?",
+                            CreatedAt = new DateTime(2026, 3, 10, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Order = 2,
+                            Points = 3m,
+                            Type = "MULTIPLE_CHOICE",
+                            UpdatedAt = new DateTime(2026, 3, 10, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 8L,
+                            AssignmentId = 4L,
+                            Content = "Giải thích sự khác biệt giữa Margin và Padding trong XAML.",
+                            CreatedAt = new DateTime(2026, 3, 10, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Order = 3,
+                            Points = 4m,
+                            Type = "ESSAY",
+                            UpdatedAt = new DateTime(2026, 3, 10, 0, 0, 0, 0, DateTimeKind.Utc)
                         });
                 });
 
@@ -411,6 +490,7 @@ namespace DataAccessLayer.Migrations
                             Subject = "PRN222",
                             TeacherId = 2L,
                             ThumbnailUrl = "https://placehold.co/400?text=Course",
+                            TotalSessions = 24,
                             UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
@@ -425,6 +505,7 @@ namespace DataAccessLayer.Migrations
                             Subject = "PRU213",
                             TeacherId = 2L,
                             ThumbnailUrl = "https://placehold.co/400?text=Course",
+                            TotalSessions = 20,
                             UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new

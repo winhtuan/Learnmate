@@ -9,6 +9,7 @@ public class TeacherScheduleClassDto
     public string Subject { get; set; } = string.Empty;
     public ClassStatus Status { get; set; }
     public int EnrolledStudents { get; set; }
+    public int? TotalSessions { get; set; }
 }
 
 public class TeacherScheduleDto

@@ -31,6 +31,7 @@
 @code {
     [Parameter] public long ClassId { get; set; }
     [Parameter] public string ActiveTab { get; set; } = "overview";
+    [Parameter] public int? AssignmentCount { get; set; }
 
     private bool IsChatOpen = false;
 
@@ -38,7 +39,7 @@
 
     private IEnumerable<TabEntry> Tabs => [
         new("overview",    "Overview",       $"/classes/{ClassId}"),
-        new("assignments", "Assignments",    $"/classes/{ClassId}/assignments", "2"),
+        new("assignments", "Assignments",    $"/classes/{ClassId}/assignments", AssignmentCount > 0 ? AssignmentCount.ToString() : null),
         new("materials",   "Materials",      $"/classes/{ClassId}/materials"),
         new("schedule",    "Schedule",       $"/classes/{ClassId}/schedule"),
         new("videos",      "Video Sessions", $"/classes/{ClassId}/videos"),

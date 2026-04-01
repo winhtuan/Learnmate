@@ -46,6 +46,12 @@ public class TeacherScheduleRepository(AppDbContext db) : ITeacherScheduleReposi
         return schedule;
     }
 
+    public async Task BulkCreateSchedulesAsync(List<Schedule> schedules)
+    {
+        db.Schedules.AddRange(schedules);
+        await db.SaveChangesAsync();
+    }
+
     public async Task UpdateScheduleAsync(Schedule schedule)
     {
         db.Schedules.Update(schedule);

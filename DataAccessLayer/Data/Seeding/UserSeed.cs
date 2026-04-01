@@ -55,6 +55,7 @@ public static class ClassSeed
                     Subject = "PRN222",
                     Status = ClassStatus.ACTIVE,
                     MaxStudents = 30,
+                    TotalSessions = 24,
                     Price = 2_000_000m,
                     CreatedAt = Now,
                     UpdatedAt = Now,
@@ -68,6 +69,7 @@ public static class ClassSeed
                     Subject = "PRU213",
                     Status = ClassStatus.ACTIVE,
                     MaxStudents = 30,
+                    TotalSessions = 20,
                     Price = 2_000_000m,
                     CreatedAt = Now,
                     UpdatedAt = Now,
@@ -193,6 +195,34 @@ public static class ClassSeed
                     DueDate = new DateTime(2026, 3, 15, 16, 59, 0, DateTimeKind.Utc), // 23:59 VN
                     CreatedAt = Now,
                     UpdatedAt = Now,
+                },
+                // PRN222 — Bài tập đến hạn (chưa nộp, hạn 10/04/2026)
+                new Assignment
+                {
+                    Id = 3,
+                    ClassId = 2, // PRN222
+                    TeacherId = 2,
+                    Title = "Lab 2: MVVM & Data Binding",
+                    Description =
+                        "Áp dụng mô hình MVVM vào ứng dụng MAUI: tạo ViewModel, sử dụng INotifyPropertyChanged và binding hai chiều cho form nhập liệu.",
+                    Status = AssignmentStatus.PUBLISHED,
+                    DueDate = new DateTime(2026, 4, 10, 16, 59, 0, DateTimeKind.Utc), // 23:59 VN — sắp đến hạn
+                    CreatedAt = new DateTime(2026, 3, 20, 0, 0, 0, DateTimeKind.Utc),
+                    UpdatedAt = new DateTime(2026, 3, 20, 0, 0, 0, DateTimeKind.Utc),
+                },
+                // PRN222 — Bài tập quá hạn (chưa nộp, hạn đã qua 20/03/2026)
+                new Assignment
+                {
+                    Id = 4,
+                    ClassId = 2, // PRN222
+                    TeacherId = 2,
+                    Title = "Quiz 1: XAML & Layout Fundamentals",
+                    Description =
+                        "Trả lời các câu hỏi về XAML layout: StackLayout, Grid, FlexLayout, và các thuộc tính căn chỉnh trong .NET MAUI.",
+                    Status = AssignmentStatus.PUBLISHED,
+                    DueDate = new DateTime(2026, 3, 20, 16, 59, 0, DateTimeKind.Utc), // 23:59 VN — đã quá hạn
+                    CreatedAt = new DateTime(2026, 3, 10, 0, 0, 0, DateTimeKind.Utc),
+                    UpdatedAt = new DateTime(2026, 3, 10, 0, 0, 0, DateTimeKind.Utc),
                 }
             );
     }
@@ -235,6 +265,63 @@ public static class ClassSeed
                     Points = 10m,
                     CreatedAt = Now,
                     UpdatedAt = Now,
+                },
+                // Lab 2: MVVM & Data Binding (Assignment Id=3)
+                new AssignmentQuestion
+                {
+                    Id = 4,
+                    AssignmentId = 3,
+                    Content = "Tạo ViewModel kế thừa INotifyPropertyChanged và bind vào View bằng two-way binding.",
+                    Type = QuestionType.ESSAY,
+                    Order = 1,
+                    Points = 5m,
+                    CreatedAt = new DateTime(2026, 3, 20, 0, 0, 0, DateTimeKind.Utc),
+                    UpdatedAt = new DateTime(2026, 3, 20, 0, 0, 0, DateTimeKind.Utc),
+                },
+                new AssignmentQuestion
+                {
+                    Id = 5,
+                    AssignmentId = 3,
+                    Content = "Viết Command (ICommand) để xử lý sự kiện button click trong ViewModel.",
+                    Type = QuestionType.ESSAY,
+                    Order = 2,
+                    Points = 5m,
+                    CreatedAt = new DateTime(2026, 3, 20, 0, 0, 0, DateTimeKind.Utc),
+                    UpdatedAt = new DateTime(2026, 3, 20, 0, 0, 0, DateTimeKind.Utc),
+                },
+                // Quiz 1: XAML & Layout (Assignment Id=4)
+                new AssignmentQuestion
+                {
+                    Id = 6,
+                    AssignmentId = 4,
+                    Content = "So sánh StackLayout, Grid và FlexLayout trong MAUI. Khi nào nên dùng loại nào?",
+                    Type = QuestionType.MULTIPLE_CHOICE,
+                    Order = 1,
+                    Points = 3m,
+                    CreatedAt = new DateTime(2026, 3, 10, 0, 0, 0, DateTimeKind.Utc),
+                    UpdatedAt = new DateTime(2026, 3, 10, 0, 0, 0, DateTimeKind.Utc),
+                },
+                new AssignmentQuestion
+                {
+                    Id = 7,
+                    AssignmentId = 4,
+                    Content = "Thuộc tính nào dùng để căn giữa một phần tử theo chiều ngang trong Grid?",
+                    Type = QuestionType.MULTIPLE_CHOICE,
+                    Order = 2,
+                    Points = 3m,
+                    CreatedAt = new DateTime(2026, 3, 10, 0, 0, 0, DateTimeKind.Utc),
+                    UpdatedAt = new DateTime(2026, 3, 10, 0, 0, 0, DateTimeKind.Utc),
+                },
+                new AssignmentQuestion
+                {
+                    Id = 8,
+                    AssignmentId = 4,
+                    Content = "Giải thích sự khác biệt giữa Margin và Padding trong XAML.",
+                    Type = QuestionType.ESSAY,
+                    Order = 3,
+                    Points = 4m,
+                    CreatedAt = new DateTime(2026, 3, 10, 0, 0, 0, DateTimeKind.Utc),
+                    UpdatedAt = new DateTime(2026, 3, 10, 0, 0, 0, DateTimeKind.Utc),
                 }
             );
     }
