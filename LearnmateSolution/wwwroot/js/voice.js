@@ -19,7 +19,15 @@ window.voiceAssistant = {
 
         recognition.onerror = function (event) {
             console.error("Lỗi nhận diện giọng nói: ", event.error);
-            dotnetHelper.invokeMethodAsync(callbackMethod, "ERROR: " + event.error);
+            let detail = event.error;
+            if (event.error === 'network') {
+                detail = 'network: Không thể kết nối tới máy chủ nhận diện giọng nói. Kiểm tra kết nối Internet và thử lại.';
+            } else if (event.error === 'not-allowed') {
+                detail = 'not-allowed: Trình duyệt không có quyền truy cập microphone. Vui lòng cấp quyền và thử lại.';
+            } else if (event.error === 'no-speech') {
+                detail = 'no-speech: Không nhận được giọng nói. Vui lòng thử lại.';
+            }
+            dotnetHelper.invokeMethodAsync(callbackMethod, "ERROR: " + detail);
         };
 
         recognition.start();

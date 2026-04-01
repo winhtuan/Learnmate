@@ -11,6 +11,7 @@ public interface ITeacherScheduleService
     Task<TeacherScheduleDto?> GetScheduleByIdAsync(long scheduleId);
     
     Task<ApiResponse<object>> CreateScheduleAsync(long teacherId, CreateScheduleDto dto);
+    Task<ApiResponse<object>> BulkCreateSchedulesAsync(long teacherId, List<CreateScheduleDto> dtos);
     Task<ApiResponse<object>> UpdateScheduleAsync(long teacherId, long scheduleId, UpdateScheduleDto dto);
     Task<ApiResponse<object>> DeleteScheduleAsync(long teacherId, long scheduleId);
 

@@ -7,10 +7,12 @@
 @using BusinessLogicLayer.Services.Interfaces.Teacher.Schedules
 @using BusinessLogicLayer.Services.Teacher.Schedules
 @using BusinessObject.Enum
+@using LearnmateSolution.AppState
 @inject ITeacherScheduleService ScheduleService
 @inject IVoiceScheduleAnalyzer VoiceScheduleAnalyzer
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JSRuntime
+@inject UserSessionService Session
 @implements IDisposable
 
 <PageTitle>Schedules | Class @Class?.Name</PageTitle>
@@ -161,11 +163,11 @@ else
                     <div class="grid grid-cols-2 gap-4">
                         <div>
                             <label class="block text-sm font-medium text-slate-700 mb-1">Start Time <span class="text-red-500">*</span></label>
-                            <input type="datetime-local" @bind="ModalModel.StartTime" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary outline-none transition-all" />
+                            <input type="datetime-local" @bind="ModalModel.StartTime" min="@DateTime.Now.ToString("yyyy-MM-ddTHH:mm")" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary outline-none transition-all" />
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-slate-700 mb-1">End Time <span class="text-red-500">*</span></label>
-                            <input type="datetime-local" @bind="ModalModel.EndTime" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary outline-none transition-all" />
+                            <input type="datetime-local" @bind="ModalModel.EndTime" min="@DateTime.Now.ToString("yyyy-MM-ddTHH:mm")" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary outline-none transition-all" />
                         </div>
                     </div>
 
@@ -195,22 +197,46 @@ else
                 </div>
             </div>
             
-            <div class="px-6 py-4 border-t border-slate-100 bg-slate-50 flex items-center justify-end gap-3 shrink-0">
+            <div class="px-6 py-4 border-t border-slate-100 bg-slate-50 flex items-center justify-between gap-3 shrink-0">
                 <button type="button" @onclick="CloseModal" class="px-4 py-2 text-sm font-medium text-slate-600 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors">
                     Cancel
                 </button>
-                <button type="button" @onclick="SaveSchedule" disabled="@IsSaving" class="px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-blue-600 flex items-center gap-2 transition-colors disabled:opacity-70">
-                    @if (IsSaving)
+                <div class="flex items-center gap-3">
+                    @if (!IsEditing)
                     {
-                        <span class="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>
-                        <span>Saving...</span>
+                        bool pinDisabled = IsPinSaving || IsSaving || Class?.TotalSessions == null || PinSlotCount <= 0;
+                        string pinTitle = Class?.TotalSessions == null
+                            ? "Lớp học chưa có tổng số buổi"
+                            : PinSlotCount <= 0
+                                ? "Tất cả buổi đã được lên lịch"
+                                : $"Tạo {PinSlotCount} buổi mỗi tuần cùng thứ, cùng giờ";
+                        <button type="button" @onclick="PinAndRepeat" disabled="@pinDisabled" title="@pinTitle"
+                                class="px-4 py-2 text-sm font-medium text-amber-700 bg-amber-50 border border-amber-300 rounded-lg hover:bg-amber-100 flex items-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                            @if (IsPinSaving)
+                            {
+                                <span class="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>
+                                <span>Đang tạo...</span>
+                            }
+                            else
+                            {
+                                <span class="material-symbols-outlined text-[18px]">push_pin</span>
+                                <span>Ghim lịch @(PinSlotCount > 0 ? $"({PinSlotCount} buổi)" : "")</span>
+                            }
+                        </button>
                     }
-                    else
-                    {
-                        <span class="material-symbols-outlined text-[18px]">save</span>
-                        <span>Save Schedule</span>
-                    }
-                </button>
+                    <button type="button" @onclick="SaveSchedule" disabled="@(IsSaving || IsPinSaving)" class="px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-blue-600 flex items-center gap-2 transition-colors disabled:opacity-70">
+                        @if (IsSaving)
+                        {
+                            <span class="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>
+                            <span>Saving...</span>
+                        }
+                        else
+                        {
+                            <span class="material-symbols-outlined text-[18px]">save</span>
+                            <span>Save Schedule</span>
+                        }
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -220,7 +246,7 @@ else
     [Parameter]
     public long ClassId { get; set; }
 
-    private long TeacherId = 2;
+    private long TeacherId => Session.UserId;
 
     private TeacherScheduleClassDto? Class;
     private List<TeacherScheduleDto>? Schedules;
@@ -232,14 +258,40 @@ else
     private bool IsEditing = false;
     private long EditScheduleId;
     private CreateScheduleDto ModalModel = new();
-    
+
     private bool IsListening = false;
+    private bool IsPinSaving = false;
     private DotNetObjectReference<ClassScheduleList>? objRef;
 
     protected override async Task OnInitializedAsync()
     {
         objRef = DotNetObjectReference.Create(this);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+
+        if (!Session.IsAuthenticated)
+        {
+            var email     = await JSRuntime.InvokeAsync<string?>("sessionStorage.getItem", "lm_email");
+            var role      = await JSRuntime.InvokeAsync<string?>("sessionStorage.getItem", "lm_role");
+            var token     = await JSRuntime.InvokeAsync<string?>("sessionStorage.getItem", "lm_token");
+            var avatar    = await JSRuntime.InvokeAsync<string?>("sessionStorage.getItem", "lm_avatar");
+            var userIdStr = await JSRuntime.InvokeAsync<string?>("sessionStorage.getItem", "lm_userid");
+
+            if (!string.IsNullOrEmpty(email) && !string.IsNullOrEmpty(token) && long.TryParse(userIdStr, out var uid))
+                Session.SetSession(email, role ?? "TEACHER", token, avatar, uid);
+        }
+
+        if (Session.UserId <= 0)
+        {
+            NavigationManager.NavigateTo("/login");
+            return;
+        }
+
         await LoadData();
+        StateHasChanged();
     }
 
     public void Dispose()
@@ -267,6 +319,8 @@ else
         
         if (transcript.StartsWith("ERROR:"))
         {
+            ErrorMessage = transcript["ERROR: ".Length..];
+            StateHasChanged();
             return;
         }
 
@@ -352,14 +406,107 @@ else
         IsModalOpen = false;
     }
 
+    private int PinSlotCount =>
+        (Class?.TotalSessions ?? 0) - (Schedules?.Count ?? 0);
+
+    private async Task PinAndRepeat()
+    {
+        if (string.IsNullOrWhiteSpace(ModalModel.Title))
+        {
+            ErrorMessage = "Tiêu đề không được để trống.";
+            return;
+        }
+
+        if (ModalModel.StartTime < DateTime.Now)
+        {
+            ErrorMessage = "Không thể ghim lịch bắt đầu từ quá khứ. Vui lòng chọn thời gian trong tương lai.";
+            return;
+        }
+
+        if (ModalModel.StartTime >= ModalModel.EndTime)
+        {
+            ErrorMessage = "Thời gian kết thúc phải sau thời gian bắt đầu.";
+            return;
+        }
+
+        if (Class?.TotalSessions == null)
+        {
+            ErrorMessage = "Lớp học chưa cài đặt số buổi (TotalSessions). Không thể ghim lịch hàng loạt.";
+            return;
+        }
+
+        int toCreate = PinSlotCount;
+        if (toCreate <= 0)
+        {
+            ErrorMessage = "Tất cả các buổi đã được lên lịch.";
+            return;
+        }
+
+        IsPinSaving = true;
+        ErrorMessage = null;
+
+        var duration = ModalModel.EndTime - ModalModel.StartTime;
+        int existingCount = Schedules?.Count ?? 0;
+        var dtos = new List<CreateScheduleDto>();
+
+        for (int i = 0; i < toCreate; i++)
+        {
+            var start = ModalModel.StartTime.AddDays(7 * i);
+            dtos.Add(new CreateScheduleDto
+            {
+                ClassId = ClassId,
+                Title = $"{ModalModel.Title} {existingCount + i + 1}",
+                StartTime = start,
+                EndTime = start + duration,
+                Type = ModalModel.Type,
+                Status = ModalModel.Status,
+                IsTrial = ModalModel.IsTrial
+            });
+        }
+
+        try
+        {
+            var res = await ScheduleService.BulkCreateSchedulesAsync(TeacherId, dtos);
+            if (res.Success)
+            {
+                CloseModal();
+                await LoadData();
+            }
+            else
+            {
+                ErrorMessage = res.Message;
+            }
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = "Lỗi: " + ex.Message;
+        }
+        finally
+        {
+            IsPinSaving = false;
+        }
+    }
+
     private async Task SaveSchedule()
     {
         if (string.IsNullOrWhiteSpace(ModalModel.Title))
         {
-            ErrorMessage = "Title is required.";
+            ErrorMessage = "Tiêu đề không được để trống.";
             return;
         }
-        
+
+        if (!IsEditing && ModalModel.StartTime < DateTime.Now)
+        {
+            ErrorMessage = "Không thể tạo lịch trong quá khứ. Vui lòng chọn thời gian trong tương lai.";
+            return;
+        }
+
+        if (ModalModel.StartTime >= ModalModel.EndTime)
+        {
+            ErrorMessage = "Thời gian kết thúc phải sau thời gian bắt đầu.";
+            return;
+        }
+
         IsSaving = true;
         ErrorMessage = null;
 
