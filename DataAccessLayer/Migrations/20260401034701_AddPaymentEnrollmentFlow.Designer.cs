@@ -3,6 +3,7 @@ using System;
 using DataAccessLayer.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace DataAccessLayer.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260401034701_AddPaymentEnrollmentFlow")]
+    partial class AddPaymentEnrollmentFlow
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -390,7 +393,7 @@ namespace DataAccessLayer.Migrations
                             EndDate = new DateTime(2026, 6, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             MaxStudents = 20,
                             Name = "Toán 12 — Luyện thi THPT",
-                            Price = 1500000m,
+                            Price = 0m,
                             StartDate = new DateTime(2026, 3, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Status = "ACTIVE",
                             Subject = "Toán",
@@ -406,7 +409,7 @@ namespace DataAccessLayer.Migrations
                             Description = "Cross-Platform Mobile App Development With .NET MAUI",
                             MaxStudents = 30,
                             Name = "PRN222",
-                            Price = 2000000m,
+                            Price = 0m,
                             Status = "ACTIVE",
                             Subject = "PRN222",
                             TeacherId = 2L,
@@ -420,7 +423,7 @@ namespace DataAccessLayer.Migrations
                             Description = "Unity Game Development — Scripting & Physics",
                             MaxStudents = 30,
                             Name = "PRU213",
-                            Price = 2000000m,
+                            Price = 0m,
                             Status = "ACTIVE",
                             Subject = "PRU213",
                             TeacherId = 2L,
@@ -435,7 +438,7 @@ namespace DataAccessLayer.Migrations
                             EndDate = new DateTime(2026, 6, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             MaxStudents = 20,
                             Name = "Toán 12 — Luyện thi THPT Quốc Gia",
-                            Price = 1500000m,
+                            Price = 0m,
                             StartDate = new DateTime(2026, 3, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Status = "ACTIVE",
                             Subject = "Mathematics",
@@ -452,7 +455,7 @@ namespace DataAccessLayer.Migrations
                             EndDate = new DateTime(2026, 6, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             MaxStudents = 15,
                             Name = "Vật Lý 11 — Điện và Từ Trường",
-                            Price = 1500000m,
+                            Price = 0m,
                             StartDate = new DateTime(2026, 3, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Status = "ACTIVE",
                             Subject = "Science",
@@ -469,7 +472,7 @@ namespace DataAccessLayer.Migrations
                             EndDate = new DateTime(2026, 8, 15, 0, 0, 0, 0, DateTimeKind.Utc),
                             MaxStudents = 18,
                             Name = "Hóa Học 12 — Hữu Cơ & Vô Cơ",
-                            Price = 1500000m,
+                            Price = 0m,
                             StartDate = new DateTime(2026, 4, 15, 0, 0, 0, 0, DateTimeKind.Utc),
                             Status = "ACTIVE",
                             Subject = "Science",
@@ -486,7 +489,7 @@ namespace DataAccessLayer.Migrations
                             EndDate = new DateTime(2026, 8, 15, 0, 0, 0, 0, DateTimeKind.Utc),
                             MaxStudents = 15,
                             Name = "Sinh Học 11 — Sinh Lý Thực Vật & Động Vật",
-                            Price = 1500000m,
+                            Price = 0m,
                             StartDate = new DateTime(2026, 4, 15, 0, 0, 0, 0, DateTimeKind.Utc),
                             Status = "ACTIVE",
                             Subject = "Science",
@@ -503,7 +506,7 @@ namespace DataAccessLayer.Migrations
                             EndDate = new DateTime(2026, 8, 10, 0, 0, 0, 0, DateTimeKind.Utc),
                             MaxStudents = 12,
                             Name = "IELTS Preparation — Band 6.5+",
-                            Price = 2500000m,
+                            Price = 0m,
                             StartDate = new DateTime(2026, 2, 10, 0, 0, 0, 0, DateTimeKind.Utc),
                             Status = "ACTIVE",
                             Subject = "English",
@@ -520,7 +523,7 @@ namespace DataAccessLayer.Migrations
                             EndDate = new DateTime(2026, 8, 10, 0, 0, 0, 0, DateTimeKind.Utc),
                             MaxStudents = 15,
                             Name = "English Communication — Intermediate",
-                            Price = 2000000m,
+                            Price = 0m,
                             StartDate = new DateTime(2026, 2, 10, 0, 0, 0, 0, DateTimeKind.Utc),
                             Status = "ACTIVE",
                             Subject = "English",
@@ -537,7 +540,7 @@ namespace DataAccessLayer.Migrations
                             EndDate = new DateTime(2026, 6, 20, 0, 0, 0, 0, DateTimeKind.Utc),
                             MaxStudents = 20,
                             Name = "Python Cơ Bản đến Nâng Cao",
-                            Price = 2000000m,
+                            Price = 0m,
                             StartDate = new DateTime(2026, 5, 5, 0, 0, 0, 0, DateTimeKind.Utc),
                             Status = "ACTIVE",
                             Subject = "Coding",
@@ -554,7 +557,7 @@ namespace DataAccessLayer.Migrations
                             EndDate = new DateTime(2026, 6, 20, 0, 0, 0, 0, DateTimeKind.Utc),
                             MaxStudents = 15,
                             Name = "Web Development với ASP.NET Core",
-                            Price = 2000000m,
+                            Price = 0m,
                             StartDate = new DateTime(2026, 5, 5, 0, 0, 0, 0, DateTimeKind.Utc),
                             Status = "ACTIVE",
                             Subject = "Coding",
@@ -571,7 +574,7 @@ namespace DataAccessLayer.Migrations
                             EndDate = new DateTime(2026, 5, 20, 0, 0, 0, 0, DateTimeKind.Utc),
                             MaxStudents = 20,
                             Name = "Ngữ Văn 12 — Nghị Luận Xã Hội & Văn Học",
-                            Price = 1200000m,
+                            Price = 0m,
                             StartDate = new DateTime(2026, 3, 20, 0, 0, 0, 0, DateTimeKind.Utc),
                             Status = "ACTIVE",
                             Subject = "English",
@@ -588,7 +591,7 @@ namespace DataAccessLayer.Migrations
                             EndDate = new DateTime(2026, 5, 20, 0, 0, 0, 0, DateTimeKind.Utc),
                             MaxStudents = 18,
                             Name = "Lịch Sử 12 — Ôn thi THPT Quốc Gia",
-                            Price = 1200000m,
+                            Price = 0m,
                             StartDate = new DateTime(2026, 3, 20, 0, 0, 0, 0, DateTimeKind.Utc),
                             Status = "ACTIVE",
                             Subject = "English",
@@ -605,7 +608,7 @@ namespace DataAccessLayer.Migrations
                             EndDate = new DateTime(2026, 9, 30, 0, 0, 0, 0, DateTimeKind.Utc),
                             MaxStudents = 25,
                             Name = "Toán Cao Cấp A1 & A2 cho Sinh viên",
-                            Price = 1800000m,
+                            Price = 0m,
                             StartDate = new DateTime(2026, 7, 10, 0, 0, 0, 0, DateTimeKind.Utc),
                             Status = "ACTIVE",
                             Subject = "Mathematics",
@@ -622,7 +625,7 @@ namespace DataAccessLayer.Migrations
                             EndDate = new DateTime(2026, 9, 30, 0, 0, 0, 0, DateTimeKind.Utc),
                             MaxStudents = 20,
                             Name = "Thống Kê Xác Suất & Ứng Dụng",
-                            Price = 1800000m,
+                            Price = 0m,
                             StartDate = new DateTime(2026, 7, 10, 0, 0, 0, 0, DateTimeKind.Utc),
                             Status = "ACTIVE",
                             Subject = "Mathematics",
@@ -639,7 +642,7 @@ namespace DataAccessLayer.Migrations
                             EndDate = new DateTime(2026, 11, 30, 0, 0, 0, 0, DateTimeKind.Utc),
                             MaxStudents = 12,
                             Name = "Tiếng Anh Giao Tiếp — Beginner A1-A2",
-                            Price = 1500000m,
+                            Price = 0m,
                             StartDate = new DateTime(2026, 8, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Status = "ACTIVE",
                             Subject = "English",
@@ -656,7 +659,7 @@ namespace DataAccessLayer.Migrations
                             EndDate = new DateTime(2026, 11, 30, 0, 0, 0, 0, DateTimeKind.Utc),
                             MaxStudents = 10,
                             Name = "Tiếng Pháp Cơ Bản A1-A2 (DELF)",
-                            Price = 1500000m,
+                            Price = 0m,
                             StartDate = new DateTime(2026, 8, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Status = "ACTIVE",
                             Subject = "English",
@@ -673,7 +676,7 @@ namespace DataAccessLayer.Migrations
                             EndDate = new DateTime(2026, 5, 15, 0, 0, 0, 0, DateTimeKind.Utc),
                             MaxStudents = 20,
                             Name = "Vật Lý 12 — Luyện thi THPT Quốc Gia",
-                            Price = 1500000m,
+                            Price = 0m,
                             StartDate = new DateTime(2026, 1, 15, 0, 0, 0, 0, DateTimeKind.Utc),
                             Status = "ACTIVE",
                             Subject = "Science",
@@ -690,7 +693,7 @@ namespace DataAccessLayer.Migrations
                             EndDate = new DateTime(2026, 5, 15, 0, 0, 0, 0, DateTimeKind.Utc),
                             MaxStudents = 18,
                             Name = "Hóa Học 11 — Hóa Hữu Cơ Cơ Bản",
-                            Price = 1500000m,
+                            Price = 0m,
                             StartDate = new DateTime(2026, 1, 15, 0, 0, 0, 0, DateTimeKind.Utc),
                             Status = "ACTIVE",
                             Subject = "Science",
@@ -707,7 +710,7 @@ namespace DataAccessLayer.Migrations
                             EndDate = new DateTime(2026, 6, 15, 0, 0, 0, 0, DateTimeKind.Utc),
                             MaxStudents = 10,
                             Name = "Toán Chuyên — Luyện thi Olympic & Đại học",
-                            Price = 2500000m,
+                            Price = 0m,
                             StartDate = new DateTime(2026, 4, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Status = "ACTIVE",
                             Subject = "Mathematics",
@@ -724,7 +727,7 @@ namespace DataAccessLayer.Migrations
                             EndDate = new DateTime(2026, 6, 15, 0, 0, 0, 0, DateTimeKind.Utc),
                             MaxStudents = 20,
                             Name = "Toán 10 — Đại Số, Hình Học & Lượng Giác",
-                            Price = 1200000m,
+                            Price = 0m,
                             StartDate = new DateTime(2026, 4, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Status = "ACTIVE",
                             Subject = "Mathematics",
@@ -741,7 +744,7 @@ namespace DataAccessLayer.Migrations
                             EndDate = new DateTime(2027, 2, 28, 0, 0, 0, 0, DateTimeKind.Utc),
                             MaxStudents = 15,
                             Name = "Lập Trình C# — .NET Full Stack Developer",
-                            Price = 3000000m,
+                            Price = 0m,
                             StartDate = new DateTime(2026, 9, 5, 0, 0, 0, 0, DateTimeKind.Utc),
                             Status = "ACTIVE",
                             Subject = "Coding",
@@ -758,7 +761,7 @@ namespace DataAccessLayer.Migrations
                             EndDate = new DateTime(2027, 2, 28, 0, 0, 0, 0, DateTimeKind.Utc),
                             MaxStudents = 20,
                             Name = "Toán Rời Rạc cho Sinh viên CNTT",
-                            Price = 1800000m,
+                            Price = 0m,
                             StartDate = new DateTime(2026, 9, 5, 0, 0, 0, 0, DateTimeKind.Utc),
                             Status = "ACTIVE",
                             Subject = "Mathematics",

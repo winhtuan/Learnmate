@@ -122,7 +122,8 @@ public class PaymentService(
             VnpTxnRef:    vnpTxnRef,
             TransactionNo: transactionNo,
             BankCode:      bankCode,
-            Amount:        amount
+            Amount:        amount,
+            ClassId:       payment.ClassId > 0 ? payment.ClassId : null
         );
 
         // Nếu thành công → xử lý luôn (cho trường hợp IPN không đến được, localhost dev)
@@ -147,7 +148,7 @@ public class PaymentService(
             }
         }
 
-        return success ? ApiResponse<PaymentResultDto>.Ok(result) : ApiResponse<PaymentResultDto>.Fail(result.Message);
+        return ApiResponse<PaymentResultDto>.Ok(result);
     }
 
     // ─── Process VNPay IPN (server-to-server) ────────────────────────────────
@@ -266,7 +267,35 @@ public class PaymentService(
         payment.UpdatedAt       = DateTime.UtcNow;
         await paymentRepo.UpdateAsync(payment, ct);
 
-        // 2. Lấy booking
+        // 2a. Enrollment flow (InvoiceId)
+        if (payment.InvoiceId.HasValue)
+        {
+            var invoice = await db.Invoices.FindAsync(new object[] { payment.InvoiceId.Value }, ct);
+            if (invoice is { Status: InvoiceStatus.PENDING })
+            {
+                invoice.Status = InvoiceStatus.PAID;
+                invoice.PaidAt = DateTime.UtcNow;
+
+                var alreadyMember = await db.ClassMembers
+                    .AnyAsync(m => m.ClassId == payment.ClassId && m.StudentId == payment.StudentId, ct);
+                if (!alreadyMember)
+                {
+                    db.ClassMembers.Add(new ClassMember
+                    {
+                        ClassId   = payment.ClassId,
+                        StudentId = payment.StudentId,
+                        Status    = ClassMemberStatus.ACTIVE,
+                        JoinedAt  = DateTime.UtcNow,
+                    });
+                }
+                await db.SaveChangesAsync(ct);
+            }
+            await SendPaymentSuccessNotification(payment.StudentId, payment.Amount, ct);
+            logger.LogInformation("Payment {PayId} finalized. Invoice {InvId} → PAID", payment.Id, payment.InvoiceId.Value);
+            return;
+        }
+
+        // 2b. Booking flow
         if (!payment.BookingId.HasValue) return;
         var booking = await bookingRepo.GetByIdAsync(payment.BookingId.Value, ct);
         if (booking is null) return;

@@ -2,6 +2,7 @@
 @layout ClassLayout
 @rendermode InteractiveServer
 @using BusinessLogicLayer.DTOs
+@using BusinessLogicLayer.DTOs.Class
 @using BusinessLogicLayer.DTOs.Tutor
 @using LearnmateSolution.Components.Layout
 @using LearnmateSolution.Components.Pages.Student.Class.Components.Shared
@@ -74,7 +75,7 @@
 
                     <!-- Price -->
                     <div class="flex flex-col gap-2">
-                        <p class="text-xs font-semibold uppercase tracking-wide text-slate-400">Price per hour</p>
+                        <p class="text-xs font-semibold uppercase tracking-wide text-slate-400">Học phí / giờ</p>
                         <div class="flex flex-wrap gap-2">
                             @foreach (var opt in _priceOptions)
                             {
@@ -163,7 +164,9 @@
                     {
                         <ClassListCard Class="cls"
                                        IsSelected="@(_selected?.ClassId == cls.ClassId)"
-                                       OnSelected="SelectClass" />
+                                       IsEnrolled="@(_enrolledClassIds.Contains(cls.ClassId))"
+                                       OnSelected="SelectClass"
+                                       OnEnroll="EnrollAsync" />
                     }
                 }
             </div>
@@ -199,10 +202,10 @@
     private static readonly string[] _subjectChips =
         ["All Subjects", "Mathematics", "Science", "English", "Coding", "Languages"];
     private static readonly string[] _priceOptions =
-        ["Any Price", "Under $30", "$30 – $50", "Over $50"];
+        ["Tất cả", "Dưới 100k", "100k – 200k", "200k – 500k", "Trên 500k"];
 
     private string _activeSubject = "All Subjects";
-    private string _priceFilter   = "Any Price";
+    private string _priceFilter   = "Tất cả";
     private bool   _verifiedOnly;
     private bool   _showFilters;
     private string _searchQuery   = "";
@@ -216,11 +219,12 @@
     private TutorListItem?  _selectedTutor;
 
     private int ActiveFilterCount =>
-        (_priceFilter != "Any Price" ? 1 : 0) +
+        (_priceFilter != "Tất cả" ? 1 : 0) +
         (_verifiedOnly               ? 1 : 0);
 
     private List<ClassListItem> _classes  = [];
     private List<ClassListItem> _filtered = [];
+    private HashSet<long>       _enrolledClassIds = [];
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -231,7 +235,7 @@
             Nav.NavigateTo("/login", replace: true);
             return;
         }
-        await FetchTutorsAsync();
+        await Task.WhenAll(FetchTutorsAsync(), FetchEnrolledClassIdsAsync());
         ApplyFilter();
         SelectClass(_filtered.FirstOrDefault());
         _loading = false;
@@ -265,9 +269,10 @@
             var subject  = _activeSubject == "All Subjects" ? null : _activeSubject;
             decimal? max = _priceFilter switch
             {
-                "Under $30" => 29.99m,
-                "$30 – $50" => 50m,
-                _           => null
+                "Dưới 100k"    => 99_999m,
+                "100k – 200k"  => 200_000m,
+                "200k – 500k"  => 500_000m,
+                _              => null
             };
 
             var url = "api/tutors/classes";
@@ -283,6 +288,24 @@
         {
             _errorMessage = "Failed to load classes. Please try again.";
             _classes = [];
+        }
+    }
+
+    private async Task FetchEnrolledClassIdsAsync()
+    {
+        try
+        {
+            var client = HttpClientFactory.CreateClient("learnmate");
+            client.BaseAddress = new Uri(Nav.BaseUri);
+            client.DefaultRequestHeaders.Authorization =
+                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", Session.AccessToken);
+
+            var resp = await client.GetFromJsonAsync<ApiResponse<IReadOnlyList<ClassListItemDto>>>("api/classes");
+            _enrolledClassIds = resp?.Data?.Select(c => c.Id).ToHashSet() ?? [];
+        }
+        catch
+        {
+            _enrolledClassIds = [];
         }
     }
 
@@ -347,7 +370,7 @@
 
     private void ResetFilters()
     {
-        _priceFilter  = "Any Price";
+        _priceFilter  = "Tất cả";
         _verifiedOnly = false;
         ApplyFilter();
     }
@@ -376,10 +399,11 @@
 
                 var pass = _priceFilter switch
                 {
-                    "Under $30" => c.HourlyRate < 30,
-                    "$30 – $50" => c.HourlyRate is >= 30 and <= 50,
-                    "Over $50"  => c.HourlyRate > 50,
-                    _           => true
+                    "Dưới 100k"   => c.HourlyRate < 100_000,
+                    "100k – 200k" => c.HourlyRate is >= 100_000 and <= 200_000,
+                    "200k – 500k" => c.HourlyRate is > 200_000 and <= 500_000,
+                    "Trên 500k"   => c.HourlyRate > 500_000,
+                    _             => true
                 };
                 if (!pass) return false;
 
@@ -404,6 +428,36 @@
         StateHasChanged();
         await Task.Delay(3000);
         _successMessage = "";
+        StateHasChanged();
+    }
+
+    private async Task EnrollAsync(ClassListItem cls)
+    {
+        SelectClass(cls);
+        _errorMessage = "";
+        StateHasChanged();
+
+        try
+        {
+            var client = HttpClientFactory.CreateClient("learnmate");
+            client.BaseAddress = new Uri(Nav.BaseUri);
+            client.DefaultRequestHeaders.Authorization =
+                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", Session.AccessToken);
+
+            var resp   = await client.PostAsJsonAsync("api/enrollment/create-invoice", cls.ClassId);
+            var result = await resp.Content
+                .ReadFromJsonAsync<BusinessLogicLayer.DTOs.ApiResponse<BusinessLogicLayer.DTOs.Payment.CreateInvoiceResponseDto>>();
+
+            if (result?.Success == true && result.Data is not null)
+                Nav.NavigateTo($"/student/payment/{result.Data.InvoiceId}");
+            else
+                _errorMessage = result?.Message ?? "Không thể tạo hoá đơn. Vui lòng thử lại.";
+        }
+        catch
+        {
+            _errorMessage = "Lỗi kết nối. Vui lòng thử lại.";
+        }
+
         StateHasChanged();
     }
 }

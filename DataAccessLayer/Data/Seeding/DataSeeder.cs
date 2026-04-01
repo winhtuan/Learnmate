@@ -151,6 +151,7 @@ public static class DataSeeder
                 StartDate = new DateTime(2026, 3, 1, 0, 0, 0, DateTimeKind.Utc),
                 EndDate = new DateTime(2026, 6, 1, 0, 0, 0, DateTimeKind.Utc),
                 TotalSessions = 24,
+                Price = 1_500_000m,
                 ThumbnailUrl = "https://placehold.co/400?text=Course",
                 CreatedAt = Now,
                 UpdatedAt = Now,

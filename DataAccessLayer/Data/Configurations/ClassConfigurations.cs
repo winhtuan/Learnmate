@@ -14,6 +14,10 @@ internal sealed class ClassConfiguration : IEntityTypeConfiguration<Class>
 
         builder.Property(c => c.MaxStudents).HasDefaultValue(30);
 
+        builder.Property(c => c.Price)
+            .HasColumnType("numeric(12,2)")
+            .HasDefaultValue(0m);
+
         builder.ToTable(t => t.HasCheckConstraint("ck_classes_max_students", "max_students > 0"));
 
         builder

@@ -23,8 +23,8 @@
         <div class="flex flex-col items-center gap-4 text-slate-400">
             <span class="material-symbols-outlined text-5xl">error_outline</span>
             <p class="text-base font-semibold">Không thể xử lý kết quả thanh toán</p>
-            <a href="/student/bookings" class="mt-2 px-5 py-2.5 bg-primary text-white text-sm font-bold rounded-xl hover:bg-blue-600 transition-colors">
-                Quay lại lịch đặt học
+            <a href="/student/find-tutor" class="mt-2 px-5 py-2.5 bg-primary text-white text-sm font-bold rounded-xl hover:bg-blue-600 transition-colors">
+                Quay lại tìm lớp học
             </a>
         </div>
     }
@@ -43,30 +43,50 @@
 
             <!-- Details -->
             <div class="p-8 space-y-4">
-                <DetailRow Icon="receipt_long"    Label="Mã giao dịch"   Value="@_result.VnpTxnRef" />
+                <div class="flex items-center justify-between py-2 border-b border-slate-100">
+                    <span class="text-sm text-slate-500 flex items-center gap-2">
+                        <span class="material-symbols-outlined text-[16px]">receipt_long</span> Mã giao dịch
+                    </span>
+                    <span class="text-sm font-semibold text-slate-800">@_result.VnpTxnRef</span>
+                </div>
                 @if (!string.IsNullOrEmpty(_result.TransactionNo))
                 {
-                    <DetailRow Icon="tag"             Label="Mã VNPay"       Value="@_result.TransactionNo" />
+                    <div class="flex items-center justify-between py-2 border-b border-slate-100">
+                        <span class="text-sm text-slate-500 flex items-center gap-2">
+                            <span class="material-symbols-outlined text-[16px]">tag</span> Mã VNPay
+                        </span>
+                        <span class="text-sm font-semibold text-slate-800">@_result.TransactionNo</span>
+                    </div>
                 }
                 @if (!string.IsNullOrEmpty(_result.BankCode))
                 {
-                    <DetailRow Icon="account_balance" Label="Ngân hàng"      Value="@_result.BankCode" />
+                    <div class="flex items-center justify-between py-2 border-b border-slate-100">
+                        <span class="text-sm text-slate-500 flex items-center gap-2">
+                            <span class="material-symbols-outlined text-[16px]">account_balance</span> Ngân hàng
+                        </span>
+                        <span class="text-sm font-semibold text-slate-800">@_result.BankCode</span>
+                    </div>
                 }
-                <DetailRow Icon="payments"        Label="Số tiền"        Value="@_result.Amount.ToString("N0") đ" Highlight="true" />
+                <div class="flex items-center justify-between py-2">
+                    <span class="text-sm text-slate-500 flex items-center gap-2">
+                        <span class="material-symbols-outlined text-[16px]">payments</span> Số tiền
+                    </span>
+                    <span class="text-lg font-bold text-emerald-600">@_result.Amount.ToString("N0") đ</span>
+                </div>
 
                 <div class="pt-4 flex flex-col gap-3">
-                    @if (_classId.HasValue)
+                    @if (_result.ClassId.HasValue && _result.ClassId.Value > 0)
                     {
-                        <a href="/classes/@_classId"
+                        <a href="/classes/@_result.ClassId.Value"
                            class="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold transition-all shadow-md shadow-emerald-200">
                             <span class="material-symbols-outlined text-[20px]">school</span>
                             Vào lớp học ngay
                         </a>
                     }
-                    <a href="/student/bookings"
+                    <a href="/student/find-tutor"
                        class="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold transition-colors">
-                        <span class="material-symbols-outlined text-[20px]">list_alt</span>
-                        Xem lịch đặt học
+                        <span class="material-symbols-outlined text-[20px]">search</span>
+                        Tìm lớp học khác
                     </a>
                 </div>
             </div>
@@ -86,23 +106,33 @@
             </div>
 
             <div class="p-8 space-y-4">
-                <DetailRow Icon="receipt_long" Label="Mã giao dịch" Value="@_result.VnpTxnRef" />
+                <div class="flex items-center justify-between py-2 border-b border-slate-100">
+                    <span class="text-sm text-slate-500 flex items-center gap-2">
+                        <span class="material-symbols-outlined text-[16px]">receipt_long</span> Mã giao dịch
+                    </span>
+                    <span class="text-sm font-semibold text-slate-800">@_result.VnpTxnRef</span>
+                </div>
                 @if (!string.IsNullOrEmpty(_result.BankCode))
                 {
-                    <DetailRow Icon="account_balance" Label="Ngân hàng" Value="@_result.BankCode" />
+                    <div class="flex items-center justify-between py-2 border-b border-slate-100">
+                        <span class="text-sm text-slate-500 flex items-center gap-2">
+                            <span class="material-symbols-outlined text-[16px]">account_balance</span> Ngân hàng
+                        </span>
+                        <span class="text-sm font-semibold text-slate-800">@_result.BankCode</span>
+                    </div>
                 }
 
                 <!-- Info: có thể thử lại -->
                 <div class="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 flex items-start gap-2 text-sm text-amber-700">
                     <span class="material-symbols-outlined text-[18px] shrink-0 mt-0.5">info</span>
-                    <p>Bạn có thể thử thanh toán lại nếu còn trong thời hạn. Booking vẫn đang ở trạng thái <strong>Chờ thanh toán</strong>.</p>
+                    <p>Bạn có thể thử thanh toán lại. Hoá đơn vẫn ở trạng thái <strong>Chờ thanh toán</strong>.</p>
                 </div>
 
                 <div class="pt-4 flex flex-col gap-3">
-                    <a href="/student/bookings"
+                    <a href="/student/find-tutor"
                        class="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold transition-all">
                         <span class="material-symbols-outlined text-[20px]">refresh</span>
-                        Thử thanh toán lại
+                        Quay lại chọn lớp để thử lại
                     </a>
                     <a href="/student-dashboard"
                        class="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold transition-colors">
@@ -115,15 +145,9 @@
     }
 </div>
 
-@* Helper sub-component *@
-<div style="display:none">
-    @* Placeholder for DetailRow; inlined below in code *@
-</div>
-
 @code {
     private bool _loading = true;
     private PaymentResultDto? _result;
-    private long? _classId;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -147,7 +171,7 @@
         {
             var queryString = new Uri(Nav.Uri).Query;
             var apiUrl      = $"api/payment/vnpay-return-api{queryString}";
-            
+
             var client = HttpClientFactory.CreateClient("learnmate");
             client.BaseAddress = new Uri(Nav.BaseUri);
             if (!string.IsNullOrEmpty(Session.AccessToken))
@@ -156,36 +180,10 @@
 
             var resp = await client.GetFromJsonAsync<ApiResponse<PaymentResultDto>>(apiUrl);
             _result  = resp?.Data;
-
-            // Try to get class ID for the booking
-            if (_result?.Success == true && long.TryParse(_result.BookingId, out var bId))
-            {
-                _classId = await GetClassIdForBookingAsync(bId);
-            }
         }
         catch { }
 
         _loading = false;
         StateHasChanged();
     }
-
-    private async Task<long?> GetClassIdForBookingAsync(long bookingId)
-    {
-        try
-        {
-            var client = HttpClientFactory.CreateClient("learnmate");
-            client.BaseAddress = new Uri(Nav.BaseUri);
-            if (!string.IsNullOrEmpty(Session.AccessToken))
-                client.DefaultRequestHeaders.Authorization =
-                    new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", Session.AccessToken);
-
-            var resp = await client.GetFromJsonAsync<ApiResponse<IReadOnlyList<BookingPaymentSummaryDto>>>("api/bookings/my/payment");
-            var booking = resp?.Data?.FirstOrDefault(b => b.BookingId == bookingId);
-            return booking?.ClassId;
-        }
-        catch { return null; }
-    }
 }
-
-@* Simple detail row partial *@
-@* Used inline since Blazor can't truly have nested components in same file *@

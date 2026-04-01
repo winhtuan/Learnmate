@@ -1,3 +1,5 @@
+using BusinessObject.Enum;
+
 namespace BusinessLogicLayer.DTOs.Payment;
 
 /// <summary>Kết quả sau khi VNPay redirect về</summary>
@@ -8,7 +10,8 @@ public record PaymentResultDto(
     string  VnpTxnRef,
     string? TransactionNo,
     string? BankCode,
-    decimal Amount
+    decimal Amount,
+    long?   ClassId = null
 );
 
 /// <summary>Tổng quan booking + payment status cho Student</summary>
@@ -31,4 +34,41 @@ public record BookingPaymentSummaryDto(
 /// <summary>Body request khi student khởi tạo thanh toán</summary>
 public record InitiatePaymentRequestDto(
     long BookingId
+);
+
+// ─── Enrollment flow ──────────────────────────────────────────────────────────
+
+/// <summary>Trả về cho client sau khi tạo invoice — dùng để redirect sang PaymentPage</summary>
+public record CreateInvoiceResponseDto(
+    long    InvoiceId,
+    long    ClassId,
+    string  ClassName,
+    string  TeacherName,
+    decimal Amount
+);
+
+/// <summary>Thông tin đầy đủ của invoice — PaymentPage dùng để hiển thị</summary>
+public record InvoiceDetailDto(
+    long          InvoiceId,
+    long          ClassId,
+    string        ClassName,
+    string        TeacherName,
+    string?       Schedule,
+    decimal       Amount,
+    InvoiceStatus Status
+);
+
+/// <summary>Request body khi student xác nhận thanh toán</summary>
+public record ConfirmPaymentRequestDto(
+    long          InvoiceId,
+    PaymentMethod Method,
+    /// <summary>Mock: "SUCCESS" hoặc "FAILED". Thực tế: mã từ cổng thanh toán.</summary>
+    string        TransactionId
+);
+
+/// <summary>Kết quả sau khi confirm thanh toán</summary>
+public record ConfirmPaymentResponseDto(
+    bool   Success,
+    long?  ClassId,
+    string Message
 );

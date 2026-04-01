@@ -55,6 +55,7 @@ public static class ClassSeed
                     Subject = "PRN222",
                     Status = ClassStatus.ACTIVE,
                     MaxStudents = 30,
+                    Price = 2_000_000m,
                     CreatedAt = Now,
                     UpdatedAt = Now,
                 },
@@ -67,6 +68,7 @@ public static class ClassSeed
                     Subject = "PRU213",
                     Status = ClassStatus.ACTIVE,
                     MaxStudents = 30,
+                    Price = 2_000_000m,
                     CreatedAt = Now,
                     UpdatedAt = Now,
                 }

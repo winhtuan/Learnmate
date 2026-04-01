@@ -13,7 +13,7 @@
         </div>
         <div class="shrink-0 flex flex-col items-end gap-1">
             <p class="text-xl font-bold text-indigo-600 leading-none">
-                $@Class.HourlyRate.ToString("0")<span class="text-xs font-normal text-slate-400">/hr</span>
+                @Class.HourlyRate.ToString("N0")<span class="text-xs font-normal text-slate-400">đ/hr</span>
             </p>
             @{ int remaining = Class.MaxStudents - Class.EnrolledCount; }
             <span class="text-xs font-semibold px-2 py-0.5 rounded-md @(remaining <= 3 ? "bg-rose-50 text-rose-600 border border-rose-200" : remaining <= 10 ? "bg-amber-50 text-amber-700 border border-amber-200" : "bg-emerald-50 text-emerald-700 border border-emerald-200")">
@@ -72,11 +72,25 @@
                     @onclick="() => OnSelected.InvokeAsync(Class)">
                 View
             </button>
-            <button class="bg-indigo-600 text-white text-sm font-semibold px-3 py-1.5 rounded-xl hover:bg-indigo-700 transition-colors shadow-sm shadow-indigo-200"
-                    @onclick:stopPropagation
-                    @onclick="() => OnSelected.InvokeAsync(Class)">
-                Enroll
-            </button>
+            @if (IsEnrolled)
+            {
+                <a href="/classes/@Class.ClassId"
+                   class="bg-emerald-600 text-white text-sm font-semibold px-3 py-1.5 rounded-xl hover:bg-emerald-700 transition-colors shadow-sm shadow-emerald-200 no-underline"
+                   @onclick:stopPropagation>
+                    Go to class
+                </a>
+                <span class="bg-slate-100 text-slate-400 text-sm font-semibold px-3 py-1.5 rounded-xl cursor-not-allowed select-none">
+                    Enrolled
+                </span>
+            }
+            else
+            {
+                <button class="bg-indigo-600 text-white text-sm font-semibold px-3 py-1.5 rounded-xl hover:bg-indigo-700 transition-colors shadow-sm shadow-indigo-200"
+                        @onclick:stopPropagation
+                        @onclick="() => OnEnroll.InvokeAsync(Class)">
+                    Enroll
+                </button>
+            }
         </div>
     </div>
 </div>
@@ -84,5 +98,8 @@
 @code {
     [Parameter, EditorRequired] public ClassListItem Class { get; set; } = null!;
     [Parameter] public bool IsSelected { get; set; }
+    [Parameter] public bool IsEnrolled { get; set; }
     [Parameter] public EventCallback<ClassListItem> OnSelected { get; set; }
+    [Parameter] public EventCallback<ClassListItem> OnEnroll { get; set; }
 }
+
